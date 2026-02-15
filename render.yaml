@@ -1,0 +1,71 @@
+services:
+  - type: web
+    name: bluewatt-api
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: API_VERSION
+        value: v1
+      # Database Configuration (Add your Aiven MySQL details)
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: 3306
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: DB_SSL
+        value: true
+      - key: DB_CONNECTION_LIMIT
+        value: 10
+      # JWT Secrets (Generate secure keys)
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 24h
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+      # Supabase Configuration (Add your Supabase details)
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: profile-images
+      # API Key Configuration
+      - key: API_KEY_PREFIX
+        value: bw_
+      - key: API_KEY_LENGTH
+        value: 32
+      # Rate Limiting
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 100
+      # CORS Configuration
+      - key: CORS_ORIGIN
+        value: https://bluewatt-admin.vercel.app,https://bluewatt.vercel.app
+      # Logging
+      - key: LOG_LEVEL
+        value: info
+      - key: LOG_FILE_PATH
+        value: /tmp/logs
+      # Data Retention
+      - key: DETAILED_DATA_RETENTION_DAYS
+        value: 30
+      - key: AGGREGATED_DATA_RETENTION_DAYS
+        value: 365
