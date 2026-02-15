@@ -1,0 +1,94 @@
+#################################################
+# GLOBAL
+#################################################
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+#################################################
+# FLUTTER APP (client/flutter_app)
+#################################################
+
+client/flutter_app/.dart_tool/
+client/flutter_app/.flutter-plugins
+client/flutter_app/.flutter-plugins-dependencies
+client/flutter_app/.packages
+client/flutter_app/build/
+client/flutter_app/.pub-cache/
+client/flutter_app/pubspec.lock
+
+# iOS
+client/flutter_app/ios/Pods/
+client/flutter_app/ios/.symlinks/
+client/flutter_app/ios/Flutter/Flutter.framework
+client/flutter_app/ios/Flutter/Flutter.podspec
+
+# Android
+client/flutter_app/android/.gradle/
+client/flutter_app/android/app/build/
+
+#################################################
+# NEXT.JS (client/web_admin)
+#################################################
+
+client/web_admin/node_modules/
+client/web_admin/.next/
+client/web_admin/out/
+client/web_admin/build/
+client/web_admin/.turbo/
+client/web_admin/coverage/
+
+# TypeScript
+client/web_admin/*.tsbuildinfo
+
+#################################################
+# SERVER (Node + Express + TypeScript)
+#################################################
+
+server/node_modules/
+server/dist/
+server/build/
+server/coverage/
+
+# TypeScript
+server/*.tsbuildinfo
+
+#################################################
+# PLATFORMIO (esp/*)
+#################################################
+
+esp/**/.pio/
+esp/**/.vscode/
+esp/**/.clangd/
+esp/**/.cache/
+
+# Compiled binaries
+esp/**/*.bin
+esp/**/*.elf
+esp/**/*.map
+
+#################################################
+# MISC
+#################################################
+
+coverage/
+*.coverage
