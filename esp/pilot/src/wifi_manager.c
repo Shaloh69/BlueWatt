@@ -1,4 +1,5 @@
 #include "wifi_manager.h"
+#include "wifi_provisioning.h"
 #include "logger.h"
 #include "config.h"
 #include "esp_wifi.h"
@@ -17,6 +18,9 @@ static wifi_context_t wifi_ctx = {
     .retry_count = 0,
     .has_internet = false
 };
+
+static esp_netif_t *sta_netif = NULL;
+static esp_netif_t *ap_netif = NULL;
 
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                                int32_t event_id, void* event_data) {
@@ -43,6 +47,12 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 
         LOG_INFO(TAG_WIFI, "Connected! IP: " IPSTR, IP2STR(&event->ip_info.ip));
         xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_BIT);
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STACONNECTED) {
+        wifi_event_ap_staconnected_t* event = (wifi_event_ap_staconnected_t*) event_data;
+        LOG_INFO(TAG_WIFI, "Station joined AP, AID=%d", event->aid);
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STADISCONNECTED) {
+        wifi_event_ap_stadisconnected_t* event = (wifi_event_ap_stadisconnected_t*) event_data;
+        LOG_INFO(TAG_WIFI, "Station left AP, AID=%d", event->aid);
     }
 }
 
@@ -53,7 +63,9 @@ esp_err_t wifi_init(void) {
 
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-    esp_netif_create_default_wifi_sta();
+
+    sta_netif = esp_netif_create_default_wifi_sta();
+    ap_netif = esp_netif_create_default_wifi_ap();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -71,20 +83,40 @@ esp_err_t wifi_init(void) {
                                                         NULL,
                                                         &instance_got_ip));
 
+    // Initialize provisioning
+    ESP_ERROR_CHECK(wifi_provisioning_init());
+
     LOG_INFO(TAG_WIFI, "WiFi initialized successfully");
     return ESP_OK;
 }
 
 esp_err_t wifi_connect(void) {
-    LOG_INFO(TAG_WIFI, "Connecting to WiFi SSID: %s", WIFI_SSID);
+    char ssid[64] = {0};
+    char password[64] = {0};
 
-    wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = WIFI_SSID,
-            .password = WIFI_PASSWORD,
-            .threshold.authmode = WIFI_AUTH_WPA2_PSK,
-        },
-    };
+    // Try to load credentials from NVS first
+    if (wifi_provisioning_is_configured()) {
+        esp_err_t err = wifi_provisioning_load_credentials(ssid, sizeof(ssid),
+                                                           password, sizeof(password));
+        if (err == ESP_OK) {
+            LOG_INFO(TAG_WIFI, "Using saved WiFi credentials: %s", ssid);
+        } else {
+            LOG_WARN(TAG_WIFI, "Failed to load saved credentials, using defaults");
+            strncpy(ssid, WIFI_SSID, sizeof(ssid) - 1);
+            strncpy(password, WIFI_PASSWORD, sizeof(password) - 1);
+        }
+    } else {
+        LOG_INFO(TAG_WIFI, "No saved credentials, using default config");
+        strncpy(ssid, WIFI_SSID, sizeof(ssid) - 1);
+        strncpy(password, WIFI_PASSWORD, sizeof(password) - 1);
+    }
+
+    LOG_INFO(TAG_WIFI, "Connecting to WiFi SSID: %s", ssid);
+
+    wifi_config_t wifi_config = {0};
+    strncpy((char *)wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid) - 1);
+    strncpy((char *)wifi_config.sta.password, password, sizeof(wifi_config.sta.password) - 1);
+    wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
@@ -97,7 +129,7 @@ esp_err_t wifi_connect(void) {
             WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
             pdFALSE,
             pdFALSE,
-            portMAX_DELAY);
+            pdMS_TO_TICKS(WIFI_RECONNECT_MS));
 
     if (bits & WIFI_CONNECTED_BIT) {
         LOG_INFO(TAG_WIFI, "Successfully connected to WiFi");
@@ -107,7 +139,30 @@ esp_err_t wifi_connect(void) {
         return ESP_FAIL;
     }
 
+    LOG_WARN(TAG_WIFI, "WiFi connection timeout");
     return ESP_ERR_TIMEOUT;
+}
+
+esp_err_t wifi_start_provisioning_mode(void) {
+    LOG_WARN(TAG_WIFI, "Starting WiFi provisioning mode - AP SSID: %s", PROVISIONING_AP_SSID);
+
+    wifi_ctx.state = WIFI_STATE_DISCONNECTED;
+
+    // Start provisioning AP
+    esp_err_t err = wifi_provisioning_start_ap();
+    if (err != ESP_OK) {
+        LOG_ERROR(TAG_WIFI, "Failed to start provisioning AP");
+        return err;
+    }
+
+    LOG_INFO(TAG_WIFI, "===============================================");
+    LOG_INFO(TAG_WIFI, "  WiFi Provisioning Mode Active");
+    LOG_INFO(TAG_WIFI, "  Connect to WiFi: %s", PROVISIONING_AP_SSID);
+    LOG_INFO(TAG_WIFI, "  Password: %s", PROVISIONING_AP_PASSWORD);
+    LOG_INFO(TAG_WIFI, "  Open browser and go to: http://192.168.4.1");
+    LOG_INFO(TAG_WIFI, "===============================================");
+
+    return ESP_OK;
 }
 
 esp_err_t wifi_disconnect(void) {

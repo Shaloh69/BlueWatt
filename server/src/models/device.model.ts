@@ -113,4 +113,11 @@ export class DeviceModel {
 
     return rows.length > 0;
   }
+
+  static async updateDeviceImage(id: number, imageUrl: string): Promise<void> {
+    await pool.execute(
+      'UPDATE devices SET device_image_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [imageUrl, id]
+    );
+  }
 }

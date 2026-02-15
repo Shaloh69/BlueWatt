@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { DeviceModel } from '../models/device.model';
 import { AnomalyEventModel } from '../models/anomalyEvent.model';
+import { sseService } from '../services/sse.service';
 import { AppError } from '../utils/AppError';
 import { sendSuccess } from '../utils/apiResponse';
 import { asyncHandler } from '../utils/asyncHandler';
@@ -24,11 +25,13 @@ export const submitAnomalyEvent = asyncHandler(async (req: Request, res: Respons
 
   const eventTimestamp = new Date(timestamp * 1000);
 
+  const determinedSeverity = relay_tripped ? 'critical' : (severity || 'medium');
+
   const eventId = await AnomalyEventModel.create(
     device.id,
     eventTimestamp,
     anomaly_type,
-    severity || 'medium',
+    determinedSeverity,
     current,
     voltage,
     power,
@@ -42,6 +45,16 @@ export const submitAnomalyEvent = asyncHandler(async (req: Request, res: Respons
   await DeviceModel.updateLastSeen(device.id);
 
   logger.warn(`Anomaly event recorded: ${anomaly_type} on device ${device_id} (ID: ${eventId})`);
+
+  // Send real-time SSE notification
+  sseService.sendToDevice(device.id, 'anomaly', {
+    event_id: eventId,
+    device_id,
+    anomaly_type,
+    severity: determinedSeverity,
+    relay_tripped,
+    timestamp: eventTimestamp,
+  });
 
   sendSuccess(res, { event_id: eventId, message: 'Anomaly event recorded successfully' }, HTTP_STATUS.CREATED);
 });
@@ -123,7 +136,14 @@ export const resolveAnomaly = asyncHandler(async (req: Request, res: Response, _
     throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
   }
 
-  await AnomalyEventModel.markResolved(eventId);
+  await AnomalyEventModel.markResolved(eventId, req.user.id);
+
+  // Send real-time SSE notification
+  sseService.sendToDevice(device.id, 'anomaly_resolved', {
+    event_id: eventId,
+    resolved_by: req.user.id,
+    resolved_at: new Date(),
+  });
 
   sendSuccess(res, { message: 'Anomaly marked as resolved' });
 });

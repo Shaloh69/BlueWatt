@@ -38,6 +38,11 @@ esp_err_t wifi_connect(void);
 esp_err_t wifi_disconnect(void);
 
 /**
+ * Start WiFi provisioning mode (AP with web configuration)
+ */
+esp_err_t wifi_start_provisioning_mode(void);
+
+/**
  * Get current WiFi state
  */
 wifi_state_t wifi_get_state(void);

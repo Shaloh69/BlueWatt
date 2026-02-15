@@ -11,6 +11,7 @@
 #include "power_calc.h"
 #include "anomaly_detector.h"
 #include "wifi_manager.h"
+#include "wifi_provisioning.h"
 #include "http_client.h"
 
 // FreeRTOS queues for inter-task communication
@@ -113,13 +114,46 @@ void task_relay_control(void *pvParameters) {
  * Task 5: WiFi manager
  */
 void task_wifi_manager(void *pvParameters) {
-    LOG_INFO(TAG_WIFI, "WiFi manager task started");
-    wifi_connect();
+    LOG_INFO(TAG_WIFI, "WiFi manager task started with provisioning support");
 
+    // Try to connect to WiFi
+    esp_err_t wifi_result = wifi_connect();
+
+    // If connection fails, start provisioning mode
+    if (wifi_result != ESP_OK) {
+        LOG_WARN(TAG_WIFI, "Initial WiFi connection failed, starting provisioning mode");
+        wifi_start_provisioning_mode();
+
+        // Wait for credentials to be configured
+        while (wifi_provisioning_get_state() != PROV_STATE_CREDENTIALS_RECEIVED) {
+            vTaskDelay(pdMS_TO_TICKS(1000));
+        }
+
+        // Stop AP and try to connect with new credentials
+        LOG_INFO(TAG_WIFI, "New credentials received, attempting connection...");
+        wifi_provisioning_stop_ap();
+        vTaskDelay(pdMS_TO_TICKS(2000));
+
+        wifi_result = wifi_connect();
+        if (wifi_result == ESP_OK) {
+            LOG_INFO(TAG_WIFI, "Successfully connected with new credentials!");
+        } else {
+            LOG_ERROR(TAG_WIFI, "Failed to connect with new credentials, restarting provisioning");
+            wifi_start_provisioning_mode();
+        }
+    }
+
+    // Main WiFi monitoring loop
     while (1) {
         if (wifi_get_state() == WIFI_STATE_DISCONNECTED || wifi_get_state() == WIFI_STATE_FAILED) {
             LOG_WARN(TAG_WIFI, "WiFi disconnected, reconnecting...");
-            wifi_connect();
+            esp_err_t result = wifi_connect();
+
+            // If reconnection fails multiple times, restart provisioning
+            if (result != ESP_OK) {
+                LOG_ERROR(TAG_WIFI, "Persistent connection failure, starting provisioning mode");
+                wifi_start_provisioning_mode();
+            }
         }
         vTaskDelay(pdMS_TO_TICKS(WIFI_RECONNECT_MS));
     }

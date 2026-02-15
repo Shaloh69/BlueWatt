@@ -72,4 +72,11 @@ export class UserModel {
   static async delete(id: number): Promise<void> {
     await pool.execute('DELETE FROM users WHERE id = ?', [id]);
   }
+
+  static async updateProfileImage(id: number, imageUrl: string): Promise<void> {
+    await pool.execute(
+      'UPDATE users SET profile_image_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [imageUrl, id]
+    );
+  }
 }

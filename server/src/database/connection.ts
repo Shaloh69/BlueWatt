@@ -1,8 +1,9 @@
-import mysql from 'mysql2/promise';
+import mysql, { PoolOptions } from 'mysql2/promise';
+import { readFileSync } from 'fs';
 import { config } from '../config/environment';
 import { logger } from '../utils/logger';
 
-export const pool = mysql.createPool({
+const poolConfig: PoolOptions = {
   host: config.db.host,
   port: config.db.port,
   user: config.db.user,
@@ -13,7 +14,16 @@ export const pool = mysql.createPool({
   queueLimit: 0,
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
-});
+};
+
+// Add SSL configuration for Aiven MySQL
+if (config.db.ssl) {
+  poolConfig.ssl = config.db.sslCa
+    ? { ca: readFileSync(config.db.sslCa, 'utf-8') }
+    : { rejectUnauthorized: true };
+}
+
+export const pool = mysql.createPool(poolConfig);
 
 export const getConnection = async () => {
   try {

@@ -70,10 +70,10 @@ export class AnomalyEventModel {
     return rows as AnomalyEvent[];
   }
 
-  static async markResolved(id: number): Promise<void> {
+  static async markResolved(id: number, userId: number): Promise<void> {
     await pool.execute(
-      'UPDATE anomaly_events SET is_resolved = 1, resolved_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [id]
+      'UPDATE anomaly_events SET is_resolved = 1, resolved_at = CURRENT_TIMESTAMP, resolved_by = ? WHERE id = ?',
+      [userId, id]
     );
   }
 

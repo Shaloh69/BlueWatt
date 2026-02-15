@@ -5,6 +5,7 @@ export interface User {
   full_name: string;
   role: 'admin' | 'user';
   is_active: boolean;
+  profile_image_url?: string;
   created_at: Date;
   updated_at: Date;
   last_login_at?: Date;
@@ -19,6 +20,7 @@ export interface Device {
   description?: string;
   is_active: boolean;
   relay_status: 'on' | 'off' | 'tripped';
+  device_image_url?: string;
   last_seen_at?: Date;
   firmware_version?: string;
   created_at: Date;

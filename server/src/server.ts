@@ -2,12 +2,15 @@ import app from './app';
 import { config } from './config/environment';
 import { logger } from './utils/logger';
 import { testConnection } from './database/connection';
+import { supabaseService } from './services/supabase.service';
 
 const startServer = async (): Promise<void> => {
   try {
     logger.info('Starting BlueWatt API Server...');
 
     await testConnection();
+
+    supabaseService.initialize();
 
     const server = app.listen(config.port, () => {
       logger.info(`Server running on port ${config.port}`);

@@ -15,6 +15,14 @@ export const config = {
     name: process.env.DB_NAME || 'bluewatt_db',
     connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '10', 10),
     ssl: process.env.DB_SSL === 'true',
+    sslCa: process.env.DB_SSL_CA,
+  },
+
+  supabase: {
+    url: process.env.SUPABASE_URL || '',
+    anonKey: process.env.SUPABASE_ANON_KEY || '',
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+    storageBucket: process.env.SUPABASE_STORAGE_BUCKET || 'profile-images',
   },
 
   jwt: {

@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { config } from '../config/environment';
 import { User } from '../types/models';
 
@@ -17,8 +17,8 @@ export class AuthService {
     };
 
     return jwt.sign(payload, config.jwt.secret, {
-      expiresIn: config.jwt.expiresIn,
-    });
+      expiresIn: config.jwt.expiresIn as string,
+    } as SignOptions);
   }
 
   static generateRefreshToken(user: User): string {
@@ -29,8 +29,8 @@ export class AuthService {
     };
 
     return jwt.sign(payload, config.jwt.refreshSecret, {
-      expiresIn: config.jwt.refreshExpiresIn,
-    });
+      expiresIn: config.jwt.refreshExpiresIn as string,
+    } as SignOptions);
   }
 
   static verifyAccessToken(token: string): JwtPayload {
