@@ -3,7 +3,13 @@
     "allow": [
       "Bash(pio run)",
       "Bash(npm run build:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.platformio.org)",
+      "WebFetch(domain:docs.espressif.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(ls ~/.platformio/packages/framework-espidf/components/partition_table/*.csv)",
+      "Bash(pio run:*)"
     ]
   }
 }

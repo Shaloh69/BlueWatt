@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/Projects-Shem/Thesis/2026/BlueWatt/server/**)",
+      "Read(//d/Projects-Shem/Thesis/2026/BlueWatt//**)",
+      "Bash(find /d/Projects-Shem/Thesis/2026/BlueWatt/client/src -type f \\\\\\(-name *.ts -o -name *.tsx -o -name *.jsx -o -name *.js \\\\\\))",
+      "Bash(find /d/Projects-Shem/Thesis/2026/BlueWatt/client/web_admin -type f \\\\\\(-name *.ts -o -name *.tsx -o -name *.jsx -o -name *.js \\\\\\))",
+      "Read(//d/Projects-Shem/Thesis/2026/BlueWatt/**)",
+      "Bash(find /d/Projects-Shem/Thesis/2026/BlueWatt/client/web_admin -type f -name *.tsx -o -name *.ts)",
+      "Bash(find /d/Projects-Shem/Thesis/2026/BlueWatt/client/flutter_app/lib -type f -name *.dart)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:docs.espressif.com)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:randomnerdtutorials.com)",
+      "WebFetch(domain:infoneva.com)",
+      "WebFetch(domain:ctlsys.com)",
+      "WebFetch(domain:how2electronics.com)",
+      "WebFetch(domain:forum.arduino.cc)",
+      "WebFetch(domain:docs.cirkitdesigner.com)",
+      "WebFetch(domain:www.donskytech.com)",
+      "WebFetch(domain:manuals.plus)",
+      "WebFetch(domain:tasmota.github.io)",
+      "WebFetch(domain:components101.com)"
+    ]
+  }
+}
