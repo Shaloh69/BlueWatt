@@ -18,12 +18,10 @@ export interface SSEClient {
  */
 class SSEService {
   private clients: Map<string, SSEClient> = new Map();
-  private _heartbeatInterval: NodeJS.Timeout;
-
   constructor() {
     // Send a comment ping every 20s to prevent Render's 30s idle timeout
     // from closing SSE connections
-    this._heartbeatInterval = setInterval(() => {
+    setInterval(() => {
       this.clients.forEach((client) => {
         try {
           client.res.write(': ping\n\n');
