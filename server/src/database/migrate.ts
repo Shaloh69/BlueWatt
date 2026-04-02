@@ -11,10 +11,20 @@ interface Migration {
   filepath: string;
 }
 
+async function runStatements(sql: string): Promise<void> {
+  const statements = sql
+    .split(';')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0 && !s.startsWith('--'));
+  for (const statement of statements) {
+    await pool.query(statement);
+  }
+}
+
 async function ensureMigrationsTable() {
   const migrationLogPath = path.join(MIGRATIONS_DIR, '000_create_migrations_log.sql');
   const sql = fs.readFileSync(migrationLogPath, 'utf-8');
-  await pool.query(sql);
+  await runStatements(sql);
   console.log('✓ Migrations log table ensured');
 }
 
@@ -48,7 +58,7 @@ async function getPendingMigrations(applied: string[]): Promise<Migration[]> {
 async function applyMigration(migration: Migration) {
   const sql = fs.readFileSync(migration.filepath, 'utf-8');
 
-  await pool.query(sql);
+  await runStatements(sql);
   await pool.query('INSERT INTO migrations_log (version, name) VALUES (?, ?)', [
     migration.version,
     migration.name,
