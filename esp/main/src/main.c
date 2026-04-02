@@ -183,12 +183,14 @@ static void task_wifi_manager(void *pvParam)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Task 5: HTTP Client (lowest priority)
-// Anomaly events are sent immediately; power data batched every 10 reads
+// Anomaly events are sent immediately; power data batched every 10 reads.
+// Also polls the server every 5 seconds for pending relay commands.
 // ─────────────────────────────────────────────────────────────────────────────
 static void task_http_client(void *pvParam)
 {
     anomaly_event_t event;
     pzem_data_t     power;
+    uint32_t        last_relay_poll_ms = 0;
 
     ESP_LOGI(TAG_MAIN, "task_http_client started");
 
@@ -201,6 +203,35 @@ static void task_http_client(void *pvParam)
         // Then try power data (100 ms wait allows anomaly events to arrive)
         if (xQueueReceive(queue_http_power, &power, pdMS_TO_TICKS(100)) == pdTRUE) {
             http_post_power_data(&power);
+        }
+
+        // Poll server for relay commands every 5 seconds
+        uint32_t now_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
+        if ((now_ms - last_relay_poll_ms) >= 5000 && wifi_is_connected()) {
+            last_relay_poll_ms = now_ms;
+
+            int  cmd_id  = -1;
+            char cmd[16] = {0};
+
+            if (http_poll_relay_command(&cmd_id, cmd, sizeof(cmd)) == ESP_OK && cmd_id >= 0) {
+                ESP_LOGI(TAG_MAIN, "Server relay command: %s (id=%d)", cmd, cmd_id);
+
+                esp_err_t relay_err = ESP_OK;
+                if (strcmp(cmd, "on") == 0) {
+                    relay_err = relay_set_state(RELAY_STATE_ON);
+                } else if (strcmp(cmd, "off") == 0) {
+                    relay_err = relay_set_state(RELAY_STATE_OFF);
+                } else if (strcmp(cmd, "reset") == 0) {
+                    relay_err = relay_set_state(RELAY_STATE_OFF);
+                    if (relay_err == ESP_OK) anomaly_detector_reset();
+                }
+
+                // ACK with resulting relay state
+                relay_state_t rs    = relay_get_state();
+                const char   *rs_str = (rs == RELAY_STATE_ON)     ? "on"      :
+                                       (rs == RELAY_STATE_TRIPPED) ? "tripped" : "off";
+                http_ack_relay_command(cmd_id, rs_str);
+            }
         }
     }
 }

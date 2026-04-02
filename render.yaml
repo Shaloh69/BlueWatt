@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     rootDir: server
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && npm run build && npm run migrate:up
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -17,15 +17,17 @@ services:
       - key: DB_HOST
         sync: false
       - key: DB_PORT
-        value: 3306
+        value: 20011
       - key: DB_USER
         sync: false
       - key: DB_PASSWORD
         sync: false
       - key: DB_NAME
-        sync: false
+        value: defaultdb
       - key: DB_SSL
-        value: true
+        value: "true"
+      - key: DB_SSL_CA_B64
+        sync: false
       - key: DB_CONNECTION_LIMIT
         value: 10
       # JWT Secrets (Generate secure keys)
@@ -56,16 +58,36 @@ services:
         value: 900000
       - key: RATE_LIMIT_MAX_REQUESTS
         value: 100
-      # CORS Configuration
+      # CORS Configuration — must match the deployed frontend URL
       - key: CORS_ORIGIN
-        value: https://bluewatt-admin.vercel.app,https://bluewatt.vercel.app
+        value: https://bluewatt-admin.onrender.com
       # Logging
       - key: LOG_LEVEL
         value: info
       - key: LOG_FILE_PATH
         value: /tmp/logs
+      # Background Jobs
+      - key: ENABLE_AGGREGATION_JOB
+        value: "true"
+      - key: ENABLE_CLEANUP_JOB
+        value: "true"
       # Data Retention
       - key: DETAILED_DATA_RETENTION_DAYS
         value: 30
       - key: AGGREGATED_DATA_RETENTION_DAYS
         value: 365
+
+  - type: web
+    name: bluewatt-admin
+    runtime: node
+    plan: free
+    rootDir: client/web_admin
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: NEXT_PUBLIC_API_URL
+        value: https://bluewatt-api.onrender.com/api/v1

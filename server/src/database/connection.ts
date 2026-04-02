@@ -17,10 +17,15 @@ const poolConfig: PoolOptions = {
 };
 
 // Add SSL configuration for Aiven MySQL
+// Priority: base64 env var (Render/cloud) → file path (local) → rejectUnauthorized
 if (config.db.ssl) {
-  poolConfig.ssl = config.db.sslCa
-    ? { ca: readFileSync(config.db.sslCa, 'utf-8') }
-    : { rejectUnauthorized: true };
+  if (config.db.sslCaBase64) {
+    poolConfig.ssl = { ca: Buffer.from(config.db.sslCaBase64, 'base64').toString('utf-8') };
+  } else if (config.db.sslCa) {
+    poolConfig.ssl = { ca: readFileSync(config.db.sslCa, 'utf-8') };
+  } else {
+    poolConfig.ssl = { rejectUnauthorized: true };
+  }
 }
 
 export const pool = mysql.createPool(poolConfig);

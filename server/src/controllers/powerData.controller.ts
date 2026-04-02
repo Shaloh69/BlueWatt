@@ -6,10 +6,11 @@ import { sendSuccess } from '../utils/apiResponse';
 import { asyncHandler } from '../utils/asyncHandler';
 import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
 import { PowerDataRequest } from '../types/api';
+import { sseService } from '../services/sse.service';
 
 export const submitPowerData = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-  const { device_id, timestamp, voltage_rms, current_rms, power_apparent, power_real, power_factor } =
-    req.body as PowerDataRequest;
+  const { device_id, timestamp, voltage_rms, current_rms, power_apparent, power_real, power_factor, energy_kwh, frequency } =
+    req.body as PowerDataRequest & { energy_kwh?: number; frequency?: number };
 
   const device = await DeviceModel.findByDeviceId(device_id);
 
@@ -30,10 +31,25 @@ export const submitPowerData = asyncHandler(async (req: Request, res: Response, 
     current_rms,
     power_apparent,
     power_real,
-    power_factor
+    power_factor,
+    energy_kwh,
+    frequency
   );
 
   await DeviceModel.updateLastSeen(device.id);
+
+  // Forward live reading to SSE subscribers of this device
+  sseService.sendToDevice(device.id, 'power_reading', {
+    device_id: device.id,
+    timestamp,
+    voltage_rms,
+    current_rms,
+    power_real,
+    power_apparent,
+    power_factor,
+    energy_kwh,
+    frequency,
+  });
 
   sendSuccess(res, { message: 'Power data recorded successfully' }, HTTP_STATUS.CREATED);
 });

@@ -9,7 +9,42 @@
       "WebFetch(domain:docs.espressif.com)",
       "WebFetch(domain:github.com)",
       "Bash(ls ~/.platformio/packages/framework-espidf/components/partition_table/*.csv)",
-      "Bash(pio run:*)"
+      "Bash(pio run:*)",
+      "Bash(npm run:*)",
+      "WebFetch(domain:www.heroui.com)",
+      "WebFetch(domain:heroui.com)",
+      "Bash(ls \"D:\\\\Projects-Shem\\\\Thesis\\\\2026\\\\BlueWatt\\\\client\\\\web_admin\\\\app\\\\\\(dashboard\\)\"\")",
+      "Bash(ls \"C:\\\\Users\\\\Shaloh\\\\.claude\\\\projects\\\\D--Projects-Shem-Thesis-2026-BlueWatt\\\\memory\"\" 2>/dev/null || echo \"DOES_NOT_EXIST \")",
+      "WebFetch(domain:www.elektroda.com)",
+      "WebFetch(domain:tasmota.github.io)",
+      "WebFetch(domain:mathieu.carbou.me)",
+      "WebFetch(domain:randomnerdtutorials.com)",
+      "WebFetch(domain:forum.arduino.cc)",
+      "WebFetch(domain:how2electronics.com)",
+      "WebFetch(domain:www.esp32.com)",
+      "WebFetch(domain:esp32developer.com)",
+      "WebFetch(domain:design1systems.com)",
+      "WebFetch(domain:microcontrollerslab.com)",
+      "WebFetch(domain:www.michaelstinkerings.org)",
+      "WebFetch(domain:viox.com)",
+      "WebFetch(domain:components101.com)",
+      "WebFetch(domain:rntlab.com)",
+      "WebFetch(domain:www.letscontrolit.com)",
+      "WebFetch(domain:community.home-assistant.io)",
+      "WebFetch(domain:esp32.com)",
+      "WebFetch(domain:community.blynk.cc)",
+      "WebFetch(domain:www.espboards.dev)",
+      "WebFetch(domain:lastminuteengineers.com)",
+      "Bash(flutter pub:*)",
+      "Bash(cmd.exe /c \"where flutter\")",
+      "Bash(cmd.exe /c \"flutter --version\")",
+      "Bash(cmd.exe /c \"echo %PATH%\")",
+      "Bash(powershell.exe -Command \"Get-Command flutter -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source; \\(Get-Command dart -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source\\)\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem -Path 'C:\\\\Users\\\\Shaloh' -Recurse -Filter 'flutter.bat' -ErrorAction SilentlyContinue | Select-Object -First 3 FullName\")",
+      "Bash(powershell.exe -Command \"ls C:\\\\src\\\\flutter\\\\bin\\\\flutter.bat; ls C:\\\\flutter\\\\bin\\\\flutter.bat; ls D:\\\\flutter\\\\bin\\\\flutter.bat\")"
+    ],
+    "additionalDirectories": [
+      "d:\\Projects-Shem\\Thesis\\2026\\BlueWatt\\server\\src\\database\\migrations"
     ]
   }
 }

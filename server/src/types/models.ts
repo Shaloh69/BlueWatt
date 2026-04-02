@@ -47,6 +47,8 @@ export interface PowerReading {
   power_apparent: number;
   power_real: number;
   power_factor: number;
+  energy_kwh?: number;
+  frequency?: number;
   created_at: Date;
 }
 
@@ -65,6 +67,71 @@ export interface AnomalyEvent {
   resolved_by?: number;
   notes?: string;
   created_at: Date;
+}
+
+export interface Pad {
+  id: number;
+  name: string;
+  description?: string;
+  device_id?: number;
+  tenant_id?: number;
+  owner_id: number;
+  rate_per_kwh: number;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface BillingPeriod {
+  id: number;
+  pad_id: number;
+  tenant_id?: number;
+  period_start: Date;
+  period_end: Date;
+  energy_kwh: number;
+  rate_per_kwh: number;
+  amount_due: number;
+  status: 'unpaid' | 'paid' | 'overdue' | 'waived';
+  due_date: Date;
+  paid_at?: Date;
+  created_at: Date;
+}
+
+export interface Payment {
+  id: number;
+  billing_period_id: number;
+  tenant_id: number;
+  amount: number;
+  currency: string;
+  payment_method?: string;        // 'gcash', 'maya', 'bank_transfer', etc.
+  reference_number?: string;      // reference from the receipt (e.g. GCash ref #)
+  receipt_url?: string;           // Supabase URL of uploaded receipt image
+  status: 'pending' | 'pending_verification' | 'paid' | 'failed' | 'refunded';
+  rejection_reason?: string;      // set by admin when rejecting
+  verified_by?: number;           // admin user id
+  verified_at?: Date;
+  paid_at?: Date;
+  created_at: Date;
+}
+
+export interface PaymentQrCode {
+  id: number;
+  label: string;
+  image_url: string;
+  is_active: boolean;
+  uploaded_by: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface RelayCommand {
+  id: number;
+  device_id: number;
+  command: 'on' | 'off' | 'reset';
+  issued_by: number;
+  status: 'pending' | 'acked' | 'failed';
+  issued_at: Date;
+  acked_at?: Date;
 }
 
 export interface PowerAggregateHourly {
@@ -93,8 +160,22 @@ export interface PowerAggregateDaily {
   min_power_real: number;
   total_energy_kwh: number;
   avg_power_factor: number;
-  peak_hour?: string;
+  peak_hour?: number;
   reading_count: number;
+  anomaly_count: number;
+  created_at: Date;
+}
+
+export interface PowerAggregateMonthly {
+  id: number;
+  device_id: number;
+  year_month: string;
+  total_energy_kwh: number;
+  avg_power_real: number;
+  max_power_real: number;
+  avg_voltage: number;
+  avg_current: number;
+  avg_power_factor: number;
   anomaly_count: number;
   created_at: Date;
 }

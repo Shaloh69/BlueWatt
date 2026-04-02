@@ -8,8 +8,31 @@ export interface SSEClient {
   deviceIds?: number[];
 }
 
+/**
+ * SSE event types:
+ *   anomaly          — anomaly detected on a device
+ *   power_reading    — live power reading forwarded from ESP ingest
+ *   relay_state      — relay status changed (from ESP ack or admin command)
+ *   relay_command_issued — admin issued a relay command
+ *   payment_received — PayMongo webhook confirmed payment
+ */
 class SSEService {
   private clients: Map<string, SSEClient> = new Map();
+  private heartbeatInterval: NodeJS.Timeout;
+
+  constructor() {
+    // Send a comment ping every 20s to prevent Render's 30s idle timeout
+    // from closing SSE connections
+    this.heartbeatInterval = setInterval(() => {
+      this.clients.forEach((client) => {
+        try {
+          client.res.write(': ping\n\n');
+        } catch {
+          this.removeClient(client.id);
+        }
+      });
+    }, 20000);
+  }
 
   addClient(clientId: string, userId: number, res: Response, deviceIds?: number[]): void {
     this.clients.set(clientId, { id: clientId, userId, res, deviceIds });
@@ -23,7 +46,6 @@ class SSEService {
 
   sendToUser(userId: number, event: string, data: any): void {
     let sentCount = 0;
-
     this.clients.forEach((client) => {
       if (client.userId === userId) {
         try {
@@ -36,15 +58,13 @@ class SSEService {
         }
       }
     });
-
     if (sentCount > 0) {
-      logger.debug(`SSE event '${event}' sent to ${sentCount} client(s) for user ${userId}`);
+      logger.debug(`SSE '${event}' → user ${userId} (${sentCount} client(s))`);
     }
   }
 
   sendToDevice(deviceId: number, event: string, data: any): void {
     let sentCount = 0;
-
     this.clients.forEach((client) => {
       if (client.deviceIds && client.deviceIds.includes(deviceId)) {
         try {
@@ -57,15 +77,13 @@ class SSEService {
         }
       }
     });
-
     if (sentCount > 0) {
-      logger.debug(`SSE event '${event}' sent to ${sentCount} client(s) for device ${deviceId}`);
+      logger.debug(`SSE '${event}' → device ${deviceId} (${sentCount} client(s))`);
     }
   }
 
   broadcastToAll(event: string, data: any): void {
     let sentCount = 0;
-
     this.clients.forEach((client) => {
       try {
         client.res.write(`event: ${event}\n`);
@@ -76,8 +94,7 @@ class SSEService {
         this.removeClient(client.id);
       }
     });
-
-    logger.debug(`SSE event '${event}' broadcast to ${sentCount} client(s)`);
+    logger.debug(`SSE '${event}' broadcast to ${sentCount} client(s)`);
   }
 
   getClientCount(): number {

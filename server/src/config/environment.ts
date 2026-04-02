@@ -15,7 +15,8 @@ export const config = {
     name: process.env.DB_NAME || 'bluewatt_db',
     connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '10', 10),
     ssl: process.env.DB_SSL === 'true',
-    sslCa: process.env.DB_SSL_CA,
+    sslCa: process.env.DB_SSL_CA,           // file path (local dev)
+    sslCaBase64: process.env.DB_SSL_CA_B64, // base64-encoded cert (Render/cloud)
   },
 
   supabase: {
@@ -62,4 +63,5 @@ export const config = {
     detailedDays: parseInt(process.env.DETAILED_DATA_RETENTION_DAYS || '30', 10),
     aggregatedDays: parseInt(process.env.AGGREGATED_DATA_RETENTION_DAYS || '365', 10),
   },
+
 };

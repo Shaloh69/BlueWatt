@@ -1,0 +1,199 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../../config/constants.dart';
+import '../../models/billing_period.dart';
+import 'pay_bill_screen.dart';
+
+class BillDetailScreen extends StatelessWidget {
+  final BillingPeriod bill;
+
+  const BillDetailScreen({super.key, required this.bill});
+
+  @override
+  Widget build(BuildContext context) {
+    final fmt = NumberFormat.currency(symbol: '₱', decimalDigits: 2);
+    final dateFmt = DateFormat('MMMM d, yyyy');
+
+    DateTime? startDate, endDate, dueDate, paidAt;
+    try {
+      startDate = DateTime.parse(bill.periodStart);
+      endDate = DateTime.parse(bill.periodEnd);
+      dueDate = DateTime.parse(bill.dueDate);
+      if (bill.paidAt != null) paidAt = DateTime.parse(bill.paidAt!);
+    } catch (_) {}
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Bill Details')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: kCardBg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: kBorderColor),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Billing Period',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(color: Colors.white),
+                    ),
+                    _StatusChip(status: bill.status),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  startDate != null && endDate != null
+                      ? '${dateFmt.format(startDate)} – ${dateFmt.format(endDate)}'
+                      : '${bill.periodStart} – ${bill.periodEnd}',
+                  style: const TextStyle(color: kTextMuted, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Details
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: kCardBg,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: kBorderColor),
+            ),
+            child: Column(
+              children: [
+                _DetailRow(
+                  label: 'Energy Used',
+                  value: '${bill.energyKwh.toStringAsFixed(3)} kWh',
+                ),
+                const Divider(color: kBorderColor, height: 24),
+                _DetailRow(
+                  label: 'Rate per kWh',
+                  value: fmt.format(bill.ratePerKwh),
+                ),
+                const Divider(color: kBorderColor, height: 24),
+                _DetailRow(
+                  label: 'Due Date',
+                  value: dueDate != null ? dateFmt.format(dueDate) : bill.dueDate,
+                ),
+                if (paidAt != null) ...[
+                  const Divider(color: kBorderColor, height: 24),
+                  _DetailRow(
+                    label: 'Paid On',
+                    value: dateFmt.format(paidAt),
+                  ),
+                ],
+                const Divider(color: kBorderColor, height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Total Amount Due',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15),
+                    ),
+                    Text(
+                      fmt.format(bill.amountDue),
+                      style: const TextStyle(
+                          color: kPrimaryBlue,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          if (!bill.isPaid && !bill.isWaived)
+            SizedBox(
+              height: 50,
+              child: ElevatedButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PayBillScreen(bill: bill),
+                  ),
+                ),
+                icon: const Icon(Icons.payment),
+                label: const Text('Pay Now'),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+  const _DetailRow({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(color: kTextMuted, fontSize: 13)),
+        Text(value,
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.w500)),
+      ],
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  final String status;
+  const _StatusChip({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    Color color;
+    String label;
+    switch (status) {
+      case 'paid':
+        color = kSuccess;
+        label = 'Paid';
+        break;
+      case 'overdue':
+        color = kDanger;
+        label = 'Overdue';
+        break;
+      case 'waived':
+        color = kPurple;
+        label = 'Waived';
+        break;
+      default:
+        color = kWarning;
+        label = 'Unpaid';
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(label,
+          style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w600)),
+    );
+  }
+}

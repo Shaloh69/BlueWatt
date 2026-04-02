@@ -124,6 +124,7 @@ static const char provisioning_html[] =
 "<div class='tab active' onclick='showTab(0)'>&#x1F4CA; Readings</div>"
 "<div class='tab' onclick='showTab(1)'>&#x1F50C; Relay</div>"
 "<div class='tab' onclick='showTab(2)'>&#x1F4F6; WiFi</div>"
+"<div class='tab' onclick='showTab(3)'>&#x2699; Server</div>"
 "</div>"
 
 // ── READINGS PAGE ─────────────────────────────────────────────────────────────
@@ -189,6 +190,27 @@ static const char provisioning_html[] =
 "</div>"
 "<button class='wbtn' onclick='saveWifi()'>&#x1F4BE; Save &amp; Connect</button>"
 "<div class='msg' id='wmsg'></div>"
+"</div>"
+
+// ── SERVER SETTINGS PAGE ───────────────────────────────────────────────────────
+"<div class='page' id='p3'>"
+"<div class='fg'>"
+"<label class='flbl'>Server URL</label>"
+"<input type='url' id='svr_url' placeholder='http://192.168.1.100:3000' autocomplete='off'>"
+"</div>"
+"<div class='fg'>"
+"<label class='flbl'>API Key</label>"
+"<div class='pw-wrap'>"
+"<input type='password' id='svr_key' placeholder='bluewatt-api-key'>"
+"<button class='pw-eye' onclick='toggleKey()' title='Show/hide'>&#x1F441;</button>"
+"</div>"
+"</div>"
+"<div class='fg'>"
+"<label class='flbl'>Device ID</label>"
+"<input type='text' id='svr_did' placeholder='bluewatt-001' autocomplete='off'>"
+"</div>"
+"<button class='wbtn' onclick='saveServer()'>&#x1F4BE; Save Server Settings</button>"
+"<div class='msg' id='smsg'></div>"
 "</div>"
 
 // ── SCRIPT ───────────────────────────────────────────────────────────────────
@@ -338,6 +360,33 @@ static const char provisioning_html[] =
 "function togglePw(){"
 "var i=document.getElementById('pw');"
 "i.type=i.type==='password'?'text':'password';"
+"}"
+
+// ── API key show/hide ─────────────────────────────────────────────────────────
+"function toggleKey(){"
+"var i=document.getElementById('svr_key');"
+"i.type=i.type==='password'?'text':'password';"
+"}"
+
+// ── Server settings save ──────────────────────────────────────────────────────
+"function saveServer(){"
+"var url=document.getElementById('svr_url').value.trim(),"
+"key=document.getElementById('svr_key').value.trim(),"
+"did=document.getElementById('svr_did').value.trim(),"
+"msg=document.getElementById('smsg');"
+"if(!url){msg.textContent='Server URL is required';msg.className='msg err';return;}"
+"if(!did){msg.textContent='Device ID is required';msg.className='msg err';return;}"
+"msg.textContent='Saving...';msg.className='msg ok';"
+"fetch('/settings',{"
+"method:'POST',"
+"headers:{'Content-Type':'application/x-www-form-urlencoded'},"
+"body:'url='+encodeURIComponent(url)+'&key='+encodeURIComponent(key)+'&did='+encodeURIComponent(did)})"
+".then(function(r){return r.json();})"
+".then(function(d){"
+"msg.textContent=d.success?'Saved! Takes effect on next boot.':'Failed: '+d.message;"
+"msg.className='msg '+(d.success?'ok':'err');"
+"})"
+".catch(function(e){msg.textContent='Error: '+e.message;msg.className='msg err';});"
 "}"
 
 // ── WiFi save ─────────────────────────────────────────────────────────────────
@@ -629,6 +678,89 @@ static esp_err_t relay_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+// POST /settings — save server URL, API key, and device ID to NVS
+static esp_err_t settings_handler(httpd_req_t *req)
+{
+    char buf[400];
+    int remaining = req->content_len;
+
+    if (remaining <= 0 || remaining >= (int)sizeof(buf)) {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid content length");
+        return ESP_FAIL;
+    }
+
+    int ret = httpd_req_recv(req, buf, remaining);
+    if (ret <= 0) return ESP_FAIL;
+    buf[ret] = '\0';
+
+    char url_enc[200]  = {0};
+    char key_enc[100]  = {0};
+    char did_enc[100]  = {0};
+    char server_url[160] = {0};
+    char api_key[80]     = {0};
+    char device_id[80]   = {0};
+
+    char *url_start = strstr(buf, "url=");
+    char *key_start = strstr(buf, "key=");
+    char *did_start = strstr(buf, "did=");
+
+    if (url_start) {
+        url_start += 4;
+        char *end = strchr(url_start, '&');
+        size_t len = end ? (size_t)(end - url_start) : strlen(url_start);
+        if (len < sizeof(url_enc)) {
+            strncpy(url_enc, url_start, len);
+            url_enc[len] = '\0';
+            url_decode(server_url, url_enc, sizeof(server_url));
+        }
+    }
+    if (key_start) {
+        key_start += 4;
+        char *end = strchr(key_start, '&');
+        size_t len = end ? (size_t)(end - key_start) : strlen(key_start);
+        if (len < sizeof(key_enc)) {
+            strncpy(key_enc, key_start, len);
+            key_enc[len] = '\0';
+            url_decode(api_key, key_enc, sizeof(api_key));
+        }
+    }
+    if (did_start) {
+        did_start += 4;
+        char *end = strchr(did_start, '&');
+        size_t len = end ? (size_t)(end - did_start) : strlen(did_start);
+        if (len < sizeof(did_enc)) {
+            strncpy(did_enc, did_start, len);
+            did_enc[len] = '\0';
+            url_decode(device_id, did_enc, sizeof(device_id));
+        }
+    }
+
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &handle);
+    if (err == ESP_OK) {
+        if (strlen(server_url) > 0) nvs_set_str(handle, "server_url", server_url);
+        if (strlen(api_key)    > 0) nvs_set_str(handle, "api_key",    api_key);
+        if (strlen(device_id)  > 0) nvs_set_str(handle, "device_id",  device_id);
+        err = nvs_commit(handle);
+        nvs_close(handle);
+    }
+
+    ESP_LOGI(TAG_PROV, "Server settings saved: url=%s  device=%s", server_url, device_id);
+
+    char response[128];
+    if (err == ESP_OK) {
+        snprintf(response, sizeof(response), "{\"success\":true,\"message\":\"Saved\"}");
+    } else {
+        snprintf(response, sizeof(response),
+                 "{\"success\":false,\"message\":\"NVS error: %s\"}", esp_err_to_name(err));
+    }
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    httpd_resp_send(req, response, strlen(response));
+    return ESP_OK;
+}
+
 static esp_err_t start_provisioning_server(void)
 {
     httpd_config_t config   = HTTPD_DEFAULT_CONFIG();
@@ -672,6 +804,13 @@ static esp_err_t start_provisioning_server(void)
         .handler = relay_handler,
     };
     httpd_register_uri_handler(provisioning_server, &relay_uri);
+
+    httpd_uri_t settings_uri = {
+        .uri     = "/settings",
+        .method  = HTTP_POST,
+        .handler = settings_handler,
+    };
+    httpd_register_uri_handler(provisioning_server, &settings_uri);
 
     // ── Captive-portal handlers ───────────────────────────────────────────────
     // Android: expects HTTP 204 from /generate_204

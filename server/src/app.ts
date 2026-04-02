@@ -8,6 +8,7 @@ import { logger } from './utils/logger';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware';
 import { generalLimiter } from './middleware/rateLimit.middleware';
 import routes from './routes';
+import { startCronJobs } from './jobs';
 
 const app: Application = express();
 
@@ -37,7 +38,9 @@ app.use(generalLimiter);
 app.use(`/api/${config.apiVersion}`, routes);
 
 app.use(notFoundHandler);
-
 app.use(errorHandler);
+
+// Start background cron jobs
+startCronJobs();
 
 export default app;

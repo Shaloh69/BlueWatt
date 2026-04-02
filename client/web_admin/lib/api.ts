@@ -1,0 +1,144 @@
+import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api/v1";
+
+export const api = axios.create({
+  baseURL: BASE_URL,
+  timeout: 15000,
+  headers: { "Content-Type": "application/json" },
+});
+
+// Attach JWT on every request
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("bw_token");
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+// Auto-logout on 401
+api.interceptors.response.use(
+  (res) => res,
+  (err: AxiosError) => {
+    if (err.response?.status === 401 && typeof window !== "undefined") {
+      localStorage.removeItem("bw_token");
+      localStorage.removeItem("bw_user");
+      window.location.href = "/login";
+    }
+    return Promise.reject(err);
+  },
+);
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+export function getErrorMessage(err: unknown): string {
+  if (axios.isAxiosError(err)) {
+    const data = err.response?.data as { message?: string } | undefined;
+    return data?.message ?? err.message;
+  }
+  if (err instanceof Error) return err.message;
+  return "An unexpected error occurred";
+}
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+export const authApi = {
+  login: (email: string, password: string) =>
+    api.post("/auth/login", { email, password }),
+  me: () => api.get("/auth/me"),
+};
+
+// ── Devices ───────────────────────────────────────────────────────────────────
+export const devicesApi = {
+  list: () => api.get("/devices/"),
+  get: (id: number) => api.get(`/devices/${id}`),
+  register: (data: object) => api.post("/devices/register", data),
+  update: (id: number, data: object) => api.put(`/devices/${id}`, data),
+  updateRelay: (id: number, data: object) => api.put(`/devices/${id}/relay`, data),
+  issueRelayCommand: (id: number, command: string) =>
+    api.post(`/devices/${id}/relay-command`, { command }),
+  getRelayHistory: (id: number) => api.get(`/devices/${id}/relay-command/history`),
+  getLatestReading: (id: number) =>
+    api.get(`/power-data/devices/${id}/power-data/latest`),
+  uploadImage: (id: number, formData: FormData) =>
+    api.post(`/upload/device/${id}/image`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+};
+
+// ── Pads ──────────────────────────────────────────────────────────────────────
+export const padsApi = {
+  list: () => api.get("/pads/"),
+  get: (id: number) => api.get(`/pads/${id}`),
+  create: (data: object) => api.post("/pads/", data),
+  update: (id: number, data: object) => api.put(`/pads/${id}`, data),
+  assign: (id: number, data: object) => api.put(`/pads/${id}/assign`, data),
+  unassign: (id: number) => api.put(`/pads/${id}/unassign`, {}),
+  delete: (id: number) => api.delete(`/pads/${id}`),
+};
+
+// ── Billing ───────────────────────────────────────────────────────────────────
+export const billingApi = {
+  list: () => api.get("/billing/"),
+  getByPad: (padId: number) => api.get(`/billing/pad/${padId}`),
+  get: (id: number) => api.get(`/billing/${id}`),
+  generate: (data: object) => api.post("/billing/generate", data),
+  waive: (id: number) => api.put(`/billing/${id}/waive`, {}),
+};
+
+// ── Payments ──────────────────────────────────────────────────────────────────
+export const paymentsApi = {
+  pendingVerification: () => api.get("/payments/pending-verification"),
+  all: () => api.get("/payments/admin/all"),
+  approve: (id: number) => api.put(`/payments/${id}/approve`, {}),
+  reject: (id: number, reason: string) =>
+    api.put(`/payments/${id}/reject`, { reason }),
+  qrCodes: () => api.get("/payments/qr-codes"),
+  qrCodesAll: () => api.get("/payments/qr-codes/all"),
+  uploadQr: (formData: FormData) =>
+    api.post("/payments/qr-codes", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
+  toggleQr: (id: number) => api.put(`/payments/qr-codes/${id}/toggle`, {}),
+  deleteQr: (id: number) => api.delete(`/payments/qr-codes/${id}`),
+};
+
+// ── Reports ───────────────────────────────────────────────────────────────────
+export const reportsApi = {
+  hourly: (deviceId: number, date?: string) =>
+    api.get(`/reports/hourly/${deviceId}`, { params: { date } }),
+  daily: (deviceId: number, month?: string) =>
+    api.get(`/reports/daily/${deviceId}`, { params: { month } }),
+  monthly: (deviceId: number, year?: string) =>
+    api.get(`/reports/monthly/${deviceId}`, { params: { year } }),
+  padSummary: (month?: string) =>
+    api.get("/reports/pad-summary", { params: { month } }),
+  anomalies: (deviceId: number, start?: string, end?: string) =>
+    api.get(`/reports/anomalies/${deviceId}`, { params: { start, end } }),
+  anomalySummary: (month?: string) =>
+    api.get("/reports/anomalies/summary", { params: { month } }),
+  exportCsv: (deviceId: number, start?: string, end?: string) =>
+    api.get(`/reports/export/${deviceId}`, {
+      params: { start, end },
+      responseType: "blob",
+    }),
+};
+
+// ── Anomalies ─────────────────────────────────────────────────────────────────
+export const anomalyApi = {
+  list: (deviceId: number) =>
+    api.get(`/anomaly-events/devices/${deviceId}/anomaly-events`),
+  unresolved: (deviceId: number) =>
+    api.get(`/anomaly-events/devices/${deviceId}/anomaly-events/unresolved`),
+  resolve: (id: number) =>
+    api.put(`/anomaly-events/anomaly-events/${id}/resolve`, {}),
+};
+
+// ── Power Data ────────────────────────────────────────────────────────────────
+export const powerApi = {
+  latest: (deviceId: number) =>
+    api.get(`/power-data/devices/${deviceId}/power-data/latest`),
+  stats: (deviceId: number) =>
+    api.get(`/power-data/devices/${deviceId}/power-data/stats`),
+};

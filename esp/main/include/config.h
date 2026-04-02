@@ -5,13 +5,14 @@
 
 // ============================================================
 // PZEM-004T v3.0 Configuration
-// Physical wiring: PZEM TX -> ESP RX0 (GPIO3), PZEM RX -> ESP TX0 (GPIO1)
-// Using natural UART0 IOMUX pins (no software swap needed)
+// Physical wiring (custom PCB — TX-to-TX, RX-to-RX, DO NOT change):
+//   PZEM TX -> ESP GPIO1 (TX0)
+//   PZEM RX -> ESP GPIO3 (RX0)
 // Console disabled (CONFIG_ESP_CONSOLE_NONE) so GPIO1/GPIO3 are free
 // ============================================================
 #define PZEM_UART_NUM           UART_NUM_0
-#define PZEM_TX_PIN             GPIO_NUM_1   // GPIO1 (TX0) UART0 native TX -> PZEM RX
-#define PZEM_RX_PIN             GPIO_NUM_3   // GPIO3 (RX0) UART0 native RX <- PZEM TX
+#define PZEM_TX_PIN             GPIO_NUM_1   // GPIO1 (TX0) -> PZEM TX (TX-to-TX, custom PCB)
+#define PZEM_RX_PIN             GPIO_NUM_3   // GPIO3 (RX0) -> PZEM RX (RX-to-RX, custom PCB)
 #define PZEM_BAUD_RATE          9600
 #define PZEM_DEVICE_ADDR        0xF8         // Common default for many PZEM-004T v3 modules
 #define PZEM_READ_TIMEOUT_MS    1000

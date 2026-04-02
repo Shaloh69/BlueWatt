@@ -1,4 +1,6 @@
 -- Migration tracking table
+-- Drop and recreate to fix any schema mismatch from earlier attempts
+DROP TABLE IF EXISTS migrations_log;
 CREATE TABLE IF NOT EXISTS migrations_log (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     version VARCHAR(50) NOT NULL UNIQUE,

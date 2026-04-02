@@ -10,13 +10,16 @@ export class PowerReadingModel {
     currentRms: number,
     powerApparent: number,
     powerReal: number,
-    powerFactor: number
+    powerFactor: number,
+    energyKwh?: number,
+    frequency?: number
   ): Promise<number> {
     const [result] = await pool.execute<ResultSetHeader>(
       `INSERT INTO power_readings
-       (device_id, timestamp, voltage_rms, current_rms, power_apparent, power_real, power_factor)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [deviceId, timestamp, voltageRms, currentRms, powerApparent, powerReal, powerFactor]
+       (device_id, timestamp, voltage_rms, current_rms, power_apparent, power_real, power_factor, energy_kwh, frequency)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [deviceId, timestamp, voltageRms, currentRms, powerApparent, powerReal, powerFactor,
+       energyKwh ?? null, frequency ?? null]
     );
 
     return result.insertId;

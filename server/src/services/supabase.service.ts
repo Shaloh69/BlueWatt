@@ -79,6 +79,55 @@ class SupabaseService {
     return urlData.publicUrl;
   }
 
+  async uploadQrCode(file: Buffer, fileName: string, contentType: string): Promise<string> {
+    if (!this.client) {
+      throw new AppError('Supabase not configured', HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_CODES.INTERNAL_ERROR);
+    }
+
+    const filePath = `payment-qr/${Date.now()}-${fileName}`;
+
+    const { data, error } = await this.client.storage
+      .from(config.supabase.storageBucket)
+      .upload(filePath, file, { contentType, upsert: false });
+
+    if (error) {
+      logger.error('Supabase QR upload error:', error);
+      throw new AppError('Failed to upload QR code', HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_CODES.INTERNAL_ERROR);
+    }
+
+    const { data: urlData } = this.client.storage
+      .from(config.supabase.storageBucket)
+      .getPublicUrl(data.path);
+
+    return urlData.publicUrl;
+  }
+
+  async uploadReceiptImage(file: Buffer, fileName: string, contentType: string, tenantId: number): Promise<string> {
+    if (!this.client) {
+      throw new AppError('Supabase not configured', HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_CODES.INTERNAL_ERROR);
+    }
+
+    const filePath = `receipts/${tenantId}/${Date.now()}-${fileName}`;
+
+    const { data, error } = await this.client.storage
+      .from(config.supabase.storageBucket)
+      .upload(filePath, file, {
+        contentType,
+        upsert: false,
+      });
+
+    if (error) {
+      logger.error('Supabase receipt upload error:', error);
+      throw new AppError('Failed to upload receipt image', HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_CODES.INTERNAL_ERROR);
+    }
+
+    const { data: urlData } = this.client.storage
+      .from(config.supabase.storageBucket)
+      .getPublicUrl(data.path);
+
+    return urlData.publicUrl;
+  }
+
   async deleteImage(url: string): Promise<void> {
     if (!this.client) {
       return;
