@@ -1,14 +1,14 @@
--- Migration 001: Pads table
+-- Migration 009: Pads table
 -- A pad is a physical electrical slot (room/unit) monitored by one ESP32 device
 
 CREATE TABLE IF NOT EXISTS pads (
-  id            INT AUTO_INCREMENT PRIMARY KEY,
+  id            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   name          VARCHAR(100) NOT NULL,
   description   VARCHAR(255),
-  device_id     INT UNIQUE,                          -- FK → devices.id (1 pad : 1 device)
-  tenant_id     INT DEFAULT NULL,                    -- FK → users.id (nullable, unoccupied pad)
-  owner_id      INT NOT NULL,                        -- FK → users.id (admin/landlord)
-  rate_per_kwh  DECIMAL(10,4) NOT NULL DEFAULT 11.0, -- PHP per kWh (Meralco rate approx.)
+  device_id     INT UNSIGNED UNIQUE DEFAULT NULL,
+  tenant_id     INT UNSIGNED DEFAULT NULL,
+  owner_id      INT UNSIGNED NOT NULL,
+  rate_per_kwh  DECIMAL(10,4) NOT NULL DEFAULT 11.0,
   is_active     TINYINT(1) NOT NULL DEFAULT 1,
   created_at    DATETIME NOT NULL DEFAULT NOW(),
   updated_at    DATETIME NOT NULL DEFAULT NOW() ON UPDATE NOW(),

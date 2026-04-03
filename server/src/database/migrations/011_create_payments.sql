@@ -1,17 +1,16 @@
--- Migration 003: Payments table
--- Each payment attempt linked to a billing period (via PayMongo)
+-- Migration 011: Payments table
 
 CREATE TABLE IF NOT EXISTS payments (
-  id                    INT AUTO_INCREMENT PRIMARY KEY,
-  billing_period_id     INT NOT NULL,
-  tenant_id             INT NOT NULL,
+  id                    INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  billing_period_id     INT UNSIGNED NOT NULL,
+  tenant_id             INT UNSIGNED NOT NULL,
   amount                DECIMAL(10,2) NOT NULL,
   currency              CHAR(3) NOT NULL DEFAULT 'PHP',
-  payment_method        VARCHAR(50) DEFAULT NULL,     -- 'gcash', 'paymaya', 'card', etc.
+  payment_method        VARCHAR(50) DEFAULT NULL,
   status                ENUM('pending','paid','failed','refunded') NOT NULL DEFAULT 'pending',
-  paymongo_payment_id   VARCHAR(150) DEFAULT NULL,    -- PayMongo payment intent / checkout session ID
+  paymongo_payment_id   VARCHAR(150) DEFAULT NULL,
   paymongo_source_id    VARCHAR(150) DEFAULT NULL,
-  checkout_url          VARCHAR(1000) DEFAULT NULL,   -- redirect URL sent to tenant
+  checkout_url          VARCHAR(1000) DEFAULT NULL,
   paid_at               DATETIME DEFAULT NULL,
   created_at            DATETIME NOT NULL DEFAULT NOW(),
 

@@ -12,7 +12,7 @@ ALTER TABLE payments
   ADD COLUMN reference_number  VARCHAR(100)  DEFAULT NULL AFTER payment_method,
   ADD COLUMN receipt_url       VARCHAR(1000) DEFAULT NULL AFTER reference_number,
   ADD COLUMN rejection_reason  VARCHAR(500)  DEFAULT NULL AFTER receipt_url,
-  ADD COLUMN verified_by       INT           DEFAULT NULL AFTER rejection_reason,
+  ADD COLUMN verified_by       INT UNSIGNED  DEFAULT NULL AFTER rejection_reason,
   ADD COLUMN verified_at       DATETIME      DEFAULT NULL AFTER verified_by,
 
   -- Extend status enum to include pending_verification

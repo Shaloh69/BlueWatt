@@ -1,9 +1,9 @@
--- Migration 005: Power aggregate tables (hourly / daily / monthly)
+-- Migration 013: Power aggregate tables (hourly / daily / monthly)
 -- Pre-computed for fast report and graph queries, populated by cron jobs
 
 CREATE TABLE IF NOT EXISTS power_aggregates_hourly (
-  id                INT AUTO_INCREMENT PRIMARY KEY,
-  device_id         INT NOT NULL,
+  id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  device_id         INT UNSIGNED NOT NULL,
   hour_start        DATETIME NOT NULL,
   avg_voltage       FLOAT NOT NULL DEFAULT 0,
   avg_current       FLOAT NOT NULL DEFAULT 0,
@@ -20,8 +20,8 @@ CREATE TABLE IF NOT EXISTS power_aggregates_hourly (
 );
 
 CREATE TABLE IF NOT EXISTS power_aggregates_daily (
-  id                INT AUTO_INCREMENT PRIMARY KEY,
-  device_id         INT NOT NULL,
+  id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  device_id         INT UNSIGNED NOT NULL,
   date              DATE NOT NULL,
   avg_voltage       FLOAT NOT NULL DEFAULT 0,
   avg_current       FLOAT NOT NULL DEFAULT 0,
@@ -40,9 +40,9 @@ CREATE TABLE IF NOT EXISTS power_aggregates_daily (
 );
 
 CREATE TABLE IF NOT EXISTS power_aggregates_monthly (
-  id                INT AUTO_INCREMENT PRIMARY KEY,
-  device_id         INT NOT NULL,
-  year_month        CHAR(7) NOT NULL,               -- '2026-03'
+  id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  device_id         INT UNSIGNED NOT NULL,
+  year_month        CHAR(7) NOT NULL,
   total_energy_kwh  DECIMAL(10,4) NOT NULL DEFAULT 0,
   avg_power_real    FLOAT NOT NULL DEFAULT 0,
   max_power_real    FLOAT NOT NULL DEFAULT 0,
@@ -56,7 +56,6 @@ CREATE TABLE IF NOT EXISTS power_aggregates_monthly (
   CONSTRAINT fk_magg_device FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE
 );
 
--- Also add energy_kwh and frequency to power_readings if not already present
 ALTER TABLE power_readings
   ADD COLUMN energy_kwh DECIMAL(10,4) DEFAULT NULL AFTER power_factor,
   ADD COLUMN frequency  FLOAT         DEFAULT NULL AFTER energy_kwh;
