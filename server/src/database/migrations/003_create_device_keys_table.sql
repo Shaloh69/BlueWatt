@@ -1,5 +1,5 @@
 -- Device API keys for authentication
-CREATE TABLE device_keys (
+CREATE TABLE IF NOT EXISTS device_keys (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     device_id INT UNSIGNED NOT NULL,
     api_key VARCHAR(255) NOT NULL UNIQUE COMMENT 'API key for device authentication',

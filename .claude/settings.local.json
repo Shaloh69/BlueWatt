@@ -41,7 +41,12 @@
       "Bash(cmd.exe /c \"echo %PATH%\")",
       "Bash(powershell.exe -Command \"Get-Command flutter -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source; \\(Get-Command dart -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source\\)\")",
       "Bash(powershell.exe -Command \"Get-ChildItem -Path 'C:\\\\Users\\\\Shaloh' -Recurse -Filter 'flutter.bat' -ErrorAction SilentlyContinue | Select-Object -First 3 FullName\")",
-      "Bash(powershell.exe -Command \"ls C:\\\\src\\\\flutter\\\\bin\\\\flutter.bat; ls C:\\\\flutter\\\\bin\\\\flutter.bat; ls D:\\\\flutter\\\\bin\\\\flutter.bat\")"
+      "Bash(powershell.exe -Command \"ls C:\\\\src\\\\flutter\\\\bin\\\\flutter.bat; ls C:\\\\flutter\\\\bin\\\\flutter.bat; ls D:\\\\flutter\\\\bin\\\\flutter.bat\")",
+      "Bash(mv 001_create_pads.sql 009_create_pads.sql)",
+      "Bash(mv 002_create_billing_periods.sql 010_create_billing_periods.sql)",
+      "Bash(mv 003_create_payments.sql 011_create_payments.sql)",
+      "Bash(mv 004_create_relay_commands.sql 012_create_relay_commands.sql)",
+      "Bash(mv 005_create_power_aggregates.sql 013_create_power_aggregates.sql)"
     ],
     "additionalDirectories": [
       "d:\\Projects-Shem\\Thesis\\2026\\BlueWatt\\server\\src\\database\\migrations"

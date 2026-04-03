@@ -1,5 +1,5 @@
 -- Power readings table (time-series data)
-CREATE TABLE power_readings (
+CREATE TABLE IF NOT EXISTS power_readings (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     device_id INT UNSIGNED NOT NULL,
     timestamp TIMESTAMP(3) NOT NULL COMMENT 'Measurement timestamp with millisecond precision',

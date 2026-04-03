@@ -18,6 +18,7 @@ ALTER TABLE payments
   -- Extend status enum to include pending_verification
   MODIFY COLUMN status ENUM('pending','pending_verification','paid','failed','refunded') NOT NULL DEFAULT 'pending';
 
--- FK for verified_by → users.id
+-- FK for verified_by → users.id (drop first to make this idempotent on retry)
+ALTER TABLE payments DROP FOREIGN KEY IF EXISTS fk_pay_verified_by;
 ALTER TABLE payments
   ADD CONSTRAINT fk_pay_verified_by FOREIGN KEY (verified_by) REFERENCES users(id) ON DELETE SET NULL;

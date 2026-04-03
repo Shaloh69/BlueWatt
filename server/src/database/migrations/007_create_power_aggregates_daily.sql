@@ -1,5 +1,5 @@
 -- Daily power aggregates for long-term statistics
-CREATE TABLE power_aggregates_daily (
+CREATE TABLE IF NOT EXISTS power_aggregates_daily (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     device_id INT UNSIGNED NOT NULL,
     date DATE NOT NULL COMMENT 'Date of aggregation',

@@ -1,5 +1,5 @@
 -- Devices table for ESP32 registry
-CREATE TABLE devices (
+CREATE TABLE IF NOT EXISTS devices (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     device_id VARCHAR(100) NOT NULL UNIQUE COMMENT 'ESP32 device identifier (e.g., ESP32_001)',
     owner_id INT UNSIGNED NOT NULL COMMENT 'User who owns this device',

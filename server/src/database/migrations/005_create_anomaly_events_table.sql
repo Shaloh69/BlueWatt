@@ -1,5 +1,5 @@
 -- Anomaly events table for electrical safety alerts
-CREATE TABLE anomaly_events (
+CREATE TABLE IF NOT EXISTS anomaly_events (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     device_id INT UNSIGNED NOT NULL,
     timestamp TIMESTAMP(3) NOT NULL COMMENT 'When anomaly was detected',

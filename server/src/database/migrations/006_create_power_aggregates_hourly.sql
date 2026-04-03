@@ -1,5 +1,5 @@
 -- Hourly power aggregates for efficient querying
-CREATE TABLE power_aggregates_hourly (
+CREATE TABLE IF NOT EXISTS power_aggregates_hourly (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     device_id INT UNSIGNED NOT NULL,
     hour_start TIMESTAMP NOT NULL COMMENT 'Start of the hour',
