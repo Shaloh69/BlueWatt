@@ -23,7 +23,7 @@ export default function AnomaliesPage() {
 
   useEffect(() => {
     devicesApi.list().then(r => {
-      const d = r.data.data ?? [];
+      const d = r.data.data?.devices ?? [];
       setDevices(d);
       if (d.length > 0) setSelectedDevice(d[0].id);
     }).catch(err => {
@@ -35,7 +35,7 @@ export default function AnomaliesPage() {
     if (!silent) setLoading(true);
     try {
       const res = await anomalyApi.list(deviceId);
-      setEvents(res.data.data ?? []);
+      setEvents(res.data.data?.events ?? []);
     } catch (err) {
       addToast({ title: "Failed to load anomalies", description: getErrorMessage(err), color: "danger" });
     } finally {

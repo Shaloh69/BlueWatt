@@ -26,7 +26,7 @@ export default function PaymentsPage() {
     if (!silent) setLoading(true);
     try {
       const res = await paymentsApi.all();
-      setPayments(res.data.data ?? []);
+      setPayments(res.data.data?.payments ?? []);
     } catch (err) {
       addToast({ title: "Failed to load payments", description: getErrorMessage(err), color: "danger" });
     } finally {

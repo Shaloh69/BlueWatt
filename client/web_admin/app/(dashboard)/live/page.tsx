@@ -32,7 +32,7 @@ export default function LivePage() {
 
   useEffect(() => {
     devicesApi.list().then(r => {
-      const d = r.data.data ?? [];
+      const d = r.data.data?.devices ?? [];
       setDevices(d);
       if (d.length > 0) setSelectedDevice(d[0].id);
     }).catch(() => {});
@@ -43,7 +43,7 @@ export default function LivePage() {
     setConnected(false);
 
     const token = typeof window !== "undefined" ? localStorage.getItem("bw_token") : null;
-    const url = `${BASE_URL}/sse/stream?device_id=${deviceId}${token ? `&token=${token}` : ""}`;
+    const url = `${BASE_URL}/sse/events${token ? `?token=${token}` : ""}`;
     const es = new EventSource(url);
     esRef.current = es;
 
@@ -55,7 +55,7 @@ export default function LivePage() {
       } catch {}
     });
 
-    es.addEventListener("relay_state", () => { devicesApi.list().then(r => setDevices(r.data.data ?? [])).catch(() => {}); });
+    es.addEventListener("relay_state", () => { devicesApi.list().then(r => setDevices(r.data.data?.devices ?? [])).catch(() => {}); });
     es.onerror = () => setConnected(false);
 
     return () => { es.close(); };
@@ -66,7 +66,7 @@ export default function LivePage() {
 
     // Load latest reading immediately
     powerApi.latest(selectedDevice).then(r => {
-      const d = r.data.data;
+      const d = r.data.data?.reading;
       if (d) setReading(d);
     }).catch(() => {});
 

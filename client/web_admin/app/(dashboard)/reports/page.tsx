@@ -19,7 +19,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     devicesApi.list().then(r => {
-      const d = r.data.data ?? [];
+      const d = r.data.data?.devices ?? [];
       setDevices(d);
       if (d.length > 0) setSelectedDevice(d[0].id);
     }).catch(() => {});
@@ -29,7 +29,7 @@ export default function ReportsPage() {
     if (!silent) setLoading(true);
     try {
       const res = await reportsApi.daily(deviceId, month);
-      setDaily(res.data.data ?? []);
+      setDaily(res.data.data?.days ?? []);
     } catch (err) {
       addToast({ title: "Failed to load report", description: getErrorMessage(err), color: "danger" });
     } finally {

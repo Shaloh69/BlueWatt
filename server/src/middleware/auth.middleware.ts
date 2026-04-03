@@ -15,12 +15,13 @@ export const authenticateJWT = async (
 ): Promise<void> => {
   try {
     const authHeader = req.headers.authorization;
+    const queryToken = req.query.token as string | undefined;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader?.startsWith('Bearer ') && !queryToken) {
       throw new AppError('No token provided', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
     }
 
-    const token = authHeader.substring(7);
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : queryToken!;
 
     const payload = AuthService.verifyAccessToken(token);
 

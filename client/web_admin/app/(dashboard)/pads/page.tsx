@@ -25,7 +25,7 @@ export default function PadsPage() {
     if (!silent) setLoading(true);
     try {
       const res = await padsApi.list();
-      setPads(res.data.data ?? []);
+      setPads(res.data.data?.pads ?? []);
     } catch (err) {
       addToast({ title: "Failed to load pads", description: getErrorMessage(err), color: "danger" });
     } finally {

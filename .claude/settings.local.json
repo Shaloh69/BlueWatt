@@ -49,7 +49,10 @@
       "Bash(mv 005_create_power_aggregates.sql 013_create_power_aggregates.sql)",
       "WebFetch(domain:www.circuitstate.com)",
       "WebFetch(domain:blog.thefix.it.com)",
-      "Bash(xargs grep:*)"
+      "Bash(xargs grep:*)",
+      "WebFetch(domain:render.com)",
+      "Bash(rm -rf app/about app/blog app/docs app/pricing)",
+      "Bash(rm -f components/counter.tsx components/navbar.tsx components/primitives.ts config/site.ts hero.ts)"
     ],
     "additionalDirectories": [
       "d:\\Projects-Shem\\Thesis\\2026\\BlueWatt\\server\\src\\database\\migrations"

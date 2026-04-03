@@ -23,7 +23,7 @@ export default function DevicesPage() {
     if (!silent) setLoading(true);
     try {
       const res = await devicesApi.list();
-      setDevices(res.data.data ?? []);
+      setDevices(res.data.data?.devices ?? []);
     } catch (err) {
       addToast({ title: "Failed to load devices", description: getErrorMessage(err), color: "danger" });
     } finally {

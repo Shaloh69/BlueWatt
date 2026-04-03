@@ -26,7 +26,7 @@ export default function BillingPage() {
     if (!silent) setLoading(true);
     try {
       const res = await billingApi.list();
-      setBills(res.data.data ?? []);
+      setBills(res.data.data?.bills ?? []);
     } catch (err) {
       addToast({ title: "Failed to load billing", description: getErrorMessage(err), color: "danger" });
     } finally {

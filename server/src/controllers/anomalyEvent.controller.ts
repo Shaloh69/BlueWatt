@@ -72,7 +72,7 @@ export const getAnomalyEvents = asyncHandler(async (req: Request, res: Response,
     throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
   }
 
-  const isOwner = await DeviceModel.isOwnedByUser(deviceId, req.user.id);
+  const isOwner = req.user.role === 'admin' || await DeviceModel.isOwnedByUser(deviceId, req.user.id);
 
   if (!isOwner) {
     throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
@@ -100,7 +100,7 @@ export const getUnresolvedAnomalies = asyncHandler(async (req: Request, res: Res
     throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
   }
 
-  const isOwner = await DeviceModel.isOwnedByUser(deviceId, req.user.id);
+  const isOwner = req.user.role === 'admin' || await DeviceModel.isOwnedByUser(deviceId, req.user.id);
 
   if (!isOwner) {
     throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
@@ -130,7 +130,7 @@ export const resolveAnomaly = asyncHandler(async (req: Request, res: Response, _
     throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
   }
 
-  const isOwner = await DeviceModel.isOwnedByUser(device.id, req.user.id);
+  const isOwner = req.user.role === 'admin' || await DeviceModel.isOwnedByUser(device.id, req.user.id);
 
   if (!isOwner) {
     throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
