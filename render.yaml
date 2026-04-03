@@ -83,7 +83,7 @@ services:
     plan: free
     rootDir: client/web_admin
     buildCommand: npm install && npm run build
-    startCommand: node .next/standalone/server.js
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
