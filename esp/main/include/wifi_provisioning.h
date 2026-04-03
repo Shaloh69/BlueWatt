@@ -67,6 +67,12 @@ esp_err_t wifi_provisioning_clear_credentials(void);
 provisioning_state_t wifi_provisioning_get_state(void);
 
 /**
+ * @brief Load static IP from NVS.
+ *        Returns ESP_ERR_NVS_NOT_FOUND if not configured (use DHCP).
+ */
+esp_err_t wifi_provisioning_load_static_ip(char *ip, size_t ip_len);
+
+/**
  * @brief Start the HTTP dashboard server on the STA interface.
  *        Call this right after a successful wifi_connect() so the full
  *        BlueWatt dashboard (readings, relay, WiFi config) is reachable at

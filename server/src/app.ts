@@ -12,6 +12,11 @@ import { startCronJobs } from './jobs';
 
 const app: Application = express();
 
+// Render (and most cloud platforms) sit behind a reverse proxy that sets
+// X-Forwarded-For. Trust one proxy hop so express-rate-limit can read the
+// real client IP correctly.
+app.set('trust proxy', 1);
+
 app.use(helmet());
 
 app.use(cors({

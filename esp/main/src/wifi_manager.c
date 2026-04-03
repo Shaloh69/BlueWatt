@@ -9,6 +9,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
+#include "lwip/inet.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -105,6 +106,30 @@ esp_err_t wifi_init(void)
     return ESP_OK;
 }
 
+// If a static IP is saved in NVS, apply it to the STA netif.
+// Gateway is auto-derived by replacing the last octet with 1 (covers 99% of home routers).
+static void apply_static_ip_if_configured(void)
+{
+    char sip[20] = {0};
+    if (wifi_provisioning_load_static_ip(sip, sizeof(sip)) != ESP_OK) return;
+    if (strlen(sip) == 0) return;
+
+    unsigned int a, b, c, d;
+    if (sscanf(sip, "%u.%u.%u.%u", &a, &b, &c, &d) != 4) return;
+
+    char gw[20];
+    snprintf(gw, sizeof(gw), "%u.%u.%u.1", a, b, c);
+
+    esp_netif_ip_info_t ip_info = {0};
+    ip_info.ip.addr      = inet_addr(sip);
+    ip_info.gw.addr      = inet_addr(gw);
+    ip_info.netmask.addr = inet_addr("255.255.255.0");
+
+    esp_netif_dhcpc_stop(sta_netif);          // stop DHCP — ignore error if already stopped
+    esp_netif_set_ip_info(sta_netif, &ip_info);
+    LOG_INFO(TAG_WIFI, "Static IP: %s  GW: %s  Mask: 255.255.255.0", sip, gw);
+}
+
 esp_err_t wifi_connect(void)
 {
     char ssid[64]     = {0};
@@ -156,6 +181,7 @@ esp_err_t wifi_connect(void)
             LOG_ERROR(TAG_WIFI, "set_config failed: %s", esp_err_to_name(start_err));
             return start_err;
         }
+        apply_static_ip_if_configured();
         start_err = esp_wifi_start();
         if (start_err != ESP_OK) {
             LOG_ERROR(TAG_WIFI, "esp_wifi_start failed: %s", esp_err_to_name(start_err));

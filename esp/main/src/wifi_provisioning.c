@@ -190,6 +190,11 @@ static const char provisioning_html[] =
 "<button class='pw-eye' onclick='togglePw()' title='Show/hide'>&#x1F441;</button>"
 "</div>"
 "</div>"
+"<div class='fg'>"
+"<label class='flbl'>Static IP (optional — blank = DHCP)</label>"
+"<input type='text' id='sip' placeholder='e.g. 192.168.1.100' autocomplete='off'>"
+"<div style='font-size:11px;color:#64748b;margin-top:4px'>Set a fixed address so you can always reach the device at http://&lt;IP&gt;/</div>"
+"</div>"
 "<button class='wbtn' onclick='saveWifi()'>&#x1F4BE; Save &amp; Connect</button>"
 "<div class='msg' id='wmsg'></div>"
 "</div>"
@@ -395,13 +400,14 @@ static const char provisioning_html[] =
 "function saveWifi(){"
 "var ssid=document.getElementById('ssid').value.trim(),"
 "pw=document.getElementById('pw').value,"
+"sip=document.getElementById('sip').value.trim(),"
 "msg=document.getElementById('wmsg');"
 "if(!ssid){msg.textContent='Network name is required';msg.className='msg err';return;}"
 "msg.textContent='Saving credentials...';msg.className='msg ok';"
 "fetch('/wifi',{"
 "method:'POST',"
 "headers:{'Content-Type':'application/x-www-form-urlencoded'},"
-"body:'ssid='+encodeURIComponent(ssid)+'&password='+encodeURIComponent(pw)})"
+"body:'ssid='+encodeURIComponent(ssid)+'&password='+encodeURIComponent(pw)+'&sip='+encodeURIComponent(sip)})"
 ".then(function(r){return r.json();})"
 ".then(function(d){"
 "msg.textContent=d.success?'Saved! Connecting and restarting...':'Failed: '+d.message;"
@@ -542,11 +548,14 @@ static esp_err_t wifi_credentials_handler(httpd_req_t *req)
 
     char ssid_enc[128]  = {0};
     char pass_enc[128]  = {0};
+    char sip_enc[32]    = {0};
     char ssid[64]       = {0};
     char password[64]   = {0};
+    char static_ip[20]  = {0};
 
     char *ssid_start = strstr(buf, "ssid=");
     char *pass_start = strstr(buf, "password=");
+    char *sip_start  = strstr(buf, "sip=");
 
     if (ssid_start) {
         ssid_start += 5;
@@ -570,9 +579,31 @@ static esp_err_t wifi_credentials_handler(httpd_req_t *req)
         }
     }
 
-    ESP_LOGI(TAG_PROV, "Credentials received — SSID: %s", ssid);
+    if (sip_start) {
+        sip_start += 4;
+        char *end = strchr(sip_start, '&');
+        size_t len = end ? (size_t)(end - sip_start) : strlen(sip_start);
+        if (len < sizeof(sip_enc)) {
+            strncpy(sip_enc, sip_start, len);
+            sip_enc[len] = '\0';
+            url_decode(static_ip, sip_enc, sizeof(static_ip));
+        }
+    }
+
+    ESP_LOGI(TAG_PROV, "Credentials received — SSID: %s  StaticIP: %s",
+             ssid, strlen(static_ip) > 0 ? static_ip : "(DHCP)");
 
     esp_err_t err = wifi_provisioning_save_credentials(ssid, password);
+
+    // Save static IP (or clear it if left blank so DHCP is used)
+    if (err == ESP_OK) {
+        nvs_handle_t h;
+        if (nvs_open(PROV_NVS_NAMESPACE, NVS_READWRITE, &h) == ESP_OK) {
+            nvs_set_str(h, "static_ip", static_ip);
+            nvs_commit(h);
+            nvs_close(h);
+        }
+    }
 
     char response[128];
     if (err == ESP_OK) {
@@ -954,6 +985,16 @@ esp_err_t wifi_provisioning_clear_credentials(void)
 provisioning_state_t wifi_provisioning_get_state(void)
 {
     return current_state;
+}
+
+esp_err_t wifi_provisioning_load_static_ip(char *ip, size_t ip_len)
+{
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open(PROV_NVS_NAMESPACE, NVS_READONLY, &handle);
+    if (err != ESP_OK) return err;
+    err = nvs_get_str(handle, "static_ip", ip, &ip_len);
+    nvs_close(handle);
+    return err;
 }
 
 esp_err_t wifi_provisioning_start_sta_server(void)
