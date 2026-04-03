@@ -11,27 +11,76 @@
   --font-mono: ui-monospace, monospace;
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* ===== BlueWatt — Navy & Sky Blue Theme ===== */
+
+:root {
+  /* ── Navy Blues ── */
+  --navy-950: #020c1b;
+  --navy-900: #0a1628;
+  --navy-800: #0d1b2e;
+  --navy-700: #112240;
+  --navy-600: #162d4a;
+  --navy-500: #1e3a5f;
+  --navy-400: #2d527a;
+  --navy-300: #4a7a9b;
+  --navy-200: #6fa3bf;
+  --navy-100: #a0c4d8;
+
+  /* ── Sky Blues ── */
+  --sky-500: #0ea5e9;
+  --sky-400: #38bdf8;
+  --sky-300: #7dd3fc;
+  --sky-200: #bae6fd;
+  --sky-100: #e0f4ff;
+
+  /* ── Surfaces ── */
+  --surface-glass: rgba(13, 27, 46, 0.8);
+  --surface-glass-light: rgba(255, 255, 255, 0.06);
+  --border-subtle: rgba(14, 165, 233, 0.15);
+  --border-card: rgba(22, 45, 74, 0.9);
+
+  /* ── Text ── */
+  --text-strong: #ccd6f6;
+  --text-muted: #8892b0;
+  --text-faint: #495670;
+
+  /* ── Glow ── */
+  --glow-primary: rgba(14, 165, 233, 0.25);
+  --glow-primary-sm: rgba(14, 165, 233, 0.15);
 }
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: #006FEE44;
+  background: rgba(14, 165, 233, 0.3);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #006FEE88;
+  background: rgba(14, 165, 233, 0.55);
 }
 
 /* Page transition */
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(12px); }
+  from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 .page-enter {
-  animation: fadeInUp 0.25s ease-out both;
+  animation: fadeInUp 0.22s ease-out both;
+}
+
+/* Glass card utility */
+.glass-card {
+  background: var(--surface-glass);
+  border: 1px solid var(--border-subtle);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Subtle background glow */
+body {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(14, 165, 233, 0.08), transparent),
+    radial-gradient(ellipse 60% 40% at 90% 110%, rgba(29, 78, 216, 0.08), transparent);
+  background-attachment: fixed;
 }

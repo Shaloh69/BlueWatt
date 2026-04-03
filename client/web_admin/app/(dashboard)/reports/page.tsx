@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { addToast } from "@heroui/toast";
+import { toast } from "@/lib/toast";
+import { modalClassNames } from "@/lib/modal-styles";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { BarChart3, RefreshCw, Download } from "lucide-react";
@@ -31,7 +32,7 @@ export default function ReportsPage() {
       const res = await reportsApi.daily(deviceId, month);
       setDaily(res.data.data?.days ?? []);
     } catch (err) {
-      addToast({ title: "Failed to load report", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -52,7 +53,7 @@ export default function ReportsPage() {
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      addToast({ title: "Export failed", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     }
   }
 
@@ -81,7 +82,7 @@ export default function ReportsPage() {
             variant={selectedDevice === d.id ? "solid" : "flat"}
             color={selectedDevice === d.id ? "primary" : "default"}
             onPress={() => setSelectedDevice(d.id)}>
-            {d.name}
+            {d.device_name}
           </Button>
         ))}
       </div>

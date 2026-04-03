@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { addToast } from "@heroui/toast";
+import { toast } from "@/lib/toast";
+import { modalClassNames } from "@/lib/modal-styles";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
@@ -28,7 +29,7 @@ export default function BillingPage() {
       const res = await billingApi.list();
       setBills(res.data.data?.bills ?? []);
     } catch (err) {
-      addToast({ title: "Failed to load billing", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -38,18 +39,18 @@ export default function BillingPage() {
 
   async function handleGenerate() {
     if (!form.pad_id || !form.period_start || !form.period_end) {
-      addToast({ title: "Pad ID, start, and end dates are required", color: "warning" });
+      toast.warning("Please fill in all required fields");
       return;
     }
     setSaving(true);
     try {
       await billingApi.generate({ ...form, pad_id: parseInt(form.pad_id) });
-      addToast({ title: "Billing period generated", color: "success" });
+      toast.success("Billing period generated");
       setShowGen(false);
       setForm({ pad_id: "", period_start: "", period_end: "", due_date: "" });
       load(true);
     } catch (err) {
-      addToast({ title: "Generate failed", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -58,10 +59,10 @@ export default function BillingPage() {
   async function handleWaive(bill: BillingPeriod) {
     try {
       await billingApi.waive(bill.id);
-      addToast({ title: "Bill waived", color: "default" });
+      toast.info("Bill waived");
       load(true);
     } catch (err) {
-      addToast({ title: "Waive failed", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     }
   }
 
@@ -128,7 +129,7 @@ export default function BillingPage() {
         </CardBody>
       </Card>
 
-      <Modal isOpen={showGen} onOpenChange={setShowGen}>
+      <Modal isOpen={showGen} onOpenChange={setShowGen} classNames={modalClassNames}>
         <ModalContent>
           <ModalHeader>Generate Billing Period</ModalHeader>
           <ModalBody className="space-y-3">

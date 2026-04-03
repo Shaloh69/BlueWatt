@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { addToast } from "@heroui/toast";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
@@ -11,6 +10,8 @@ import { Building2, Plus, RefreshCw, UserPlus, UserMinus } from "lucide-react";
 import { padsApi, getErrorMessage } from "@/lib/api";
 import { Pad } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
+import { toast } from "@/lib/toast";
+import { modalClassNames } from "@/lib/modal-styles";
 
 export default function PadsPage() {
   const [pads, setPads] = useState<Pad[]>([]);
@@ -27,7 +28,7 @@ export default function PadsPage() {
       const res = await padsApi.list();
       setPads(res.data.data?.pads ?? []);
     } catch (err) {
-      addToast({ title: "Failed to load pads", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -36,16 +37,16 @@ export default function PadsPage() {
   useEffect(() => { load(); }, [load]);
 
   async function handleCreate() {
-    if (!form.name.trim()) { addToast({ title: "Name is required", color: "warning" }); return; }
+    if (!form.name.trim()) { toast.warning("Name is required"); return; }
     setSaving(true);
     try {
       await padsApi.create({ ...form, rate_per_kwh: parseFloat(form.rate_per_kwh) });
-      addToast({ title: "Pad created", color: "success" });
+      toast.success("Pad created");
       setShowAdd(false);
       setForm({ name: "", description: "", rate_per_kwh: "8.50" });
       load(true);
     } catch (err) {
-      addToast({ title: "Create failed", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -59,12 +60,12 @@ export default function PadsPage() {
         tenant_id: assignForm.tenant_id ? parseInt(assignForm.tenant_id) : undefined,
         device_id: assignForm.device_id ? parseInt(assignForm.device_id) : undefined,
       });
-      addToast({ title: "Pad assigned", color: "success" });
+      toast.success("Pad assigned");
       setShowAssign(null);
       setAssignForm({ tenant_id: "", device_id: "" });
       load(true);
     } catch (err) {
-      addToast({ title: "Assign failed", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -73,10 +74,10 @@ export default function PadsPage() {
   async function handleUnassign(pad: Pad) {
     try {
       await padsApi.unassign(pad.id);
-      addToast({ title: "Pad unassigned", color: "default" });
+      toast.info("Pad unassigned");
       load(true);
     } catch (err) {
-      addToast({ title: "Unassign failed", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     }
   }
 
@@ -153,7 +154,7 @@ export default function PadsPage() {
       </Card>
 
       {/* Add Pad */}
-      <Modal isOpen={showAdd} onOpenChange={setShowAdd}>
+      <Modal isOpen={showAdd} onOpenChange={setShowAdd} classNames={modalClassNames}>
         <ModalContent>
           <ModalHeader>Add New Pad</ModalHeader>
           <ModalBody className="space-y-3">
@@ -172,7 +173,7 @@ export default function PadsPage() {
       </Modal>
 
       {/* Assign */}
-      <Modal isOpen={!!showAssign} onOpenChange={() => setShowAssign(null)}>
+      <Modal isOpen={!!showAssign} onOpenChange={() => setShowAssign(null)} classNames={modalClassNames}>
         <ModalContent>
           <ModalHeader>Assign — {showAssign?.name}</ModalHeader>
           <ModalBody className="space-y-3">

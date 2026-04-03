@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { addToast } from "@heroui/toast";
+import { toast } from "@/lib/toast";
+import { modalClassNames } from "@/lib/modal-styles";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Chip } from "@heroui/chip";
 import { Button } from "@heroui/button";
@@ -81,9 +82,9 @@ export default function LivePage() {
     setRelayPending(true);
     try {
       await devicesApi.issueRelayCommand(selectedDevice, command);
-      addToast({ title: `Relay ${command.toUpperCase()} command sent`, color: "success" });
+      toast.success(`Relay ${command.toUpperCase()} sent`);
     } catch (err) {
-      addToast({ title: "Relay command failed", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     } finally {
       setRelayPending(false);
     }
@@ -122,7 +123,7 @@ export default function LivePage() {
             variant={selectedDevice === d.id ? "solid" : "flat"}
             color={selectedDevice === d.id ? "primary" : "default"}
             onPress={() => setSelectedDevice(d.id)}>
-            {d.name}
+            {d.device_name}
           </Button>
         ))}
       </div>

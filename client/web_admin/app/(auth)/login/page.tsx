@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { addToast } from "@heroui/toast";
+import { toast } from "@/lib/toast";
 import { Button } from "@heroui/button";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Input } from "@heroui/input";
@@ -21,7 +21,7 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email || !password) {
-      addToast({ title: "Please fill in all fields", color: "warning" });
+      toast.warning("Please fill in all fields");
       return;
     }
     setLoading(true);
@@ -29,10 +29,10 @@ export default function LoginPage() {
       const res = await authApi.login(email, password);
       const { token, user } = res.data.data as AuthResponse;
       storeAuth(token, user);
-      addToast({ title: `Welcome back, ${user.full_name}!`, color: "success" });
+      toast.success(`Welcome back, ${user.full_name}!`);
       router.push("/dashboard");
     } catch (err) {
-      addToast({ title: "Login failed", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

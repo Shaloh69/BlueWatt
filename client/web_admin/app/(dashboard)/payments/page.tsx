@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { addToast } from "@heroui/toast";
+import { toast } from "@/lib/toast";
+import { modalClassNames } from "@/lib/modal-styles";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
@@ -28,7 +29,7 @@ export default function PaymentsPage() {
       const res = await paymentsApi.all();
       setPayments(res.data.data?.payments ?? []);
     } catch (err) {
-      addToast({ title: "Failed to load payments", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -40,10 +41,10 @@ export default function PaymentsPage() {
     setSaving(true);
     try {
       await paymentsApi.approve(p.id);
-      addToast({ title: "Payment approved", color: "success" });
+      toast.success("Payment approved");
       load(true);
     } catch (err) {
-      addToast({ title: "Approve failed", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -51,16 +52,16 @@ export default function PaymentsPage() {
 
   async function handleReject() {
     if (!rejectTarget) return;
-    if (!rejectReason.trim()) { addToast({ title: "Rejection reason required", color: "warning" }); return; }
+    if (!rejectReason.trim()) { toast.warning("Rejection reason required"); return; }
     setSaving(true);
     try {
       await paymentsApi.reject(rejectTarget.id, rejectReason);
-      addToast({ title: "Payment rejected", color: "default" });
+      toast.info("Payment rejected");
       setRejectTarget(null);
       setRejectReason("");
       load(true);
     } catch (err) {
-      addToast({ title: "Reject failed", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -141,7 +142,7 @@ export default function PaymentsPage() {
         </CardBody>
       </Card>
 
-      <Modal isOpen={!!rejectTarget} onOpenChange={() => setRejectTarget(null)}>
+      <Modal isOpen={!!rejectTarget} onOpenChange={() => setRejectTarget(null)} classNames={modalClassNames}>
         <ModalContent>
           <ModalHeader>Reject Payment</ModalHeader>
           <ModalBody>

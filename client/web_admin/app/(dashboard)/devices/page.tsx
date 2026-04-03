@@ -1,31 +1,48 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { addToast } from "@heroui/toast";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import { Input, Textarea } from "@heroui/input";
-import { Cpu, Plus, RefreshCw, Wifi, WifiOff, ToggleLeft, ToggleRight } from "lucide-react";
-import { devicesApi, getErrorMessage } from "@/lib/api";
-import { Device } from "@/types";
+import { Tooltip } from "@heroui/tooltip";
+import {
+  Cpu, Plus, RefreshCw, Wifi, WifiOff, ToggleLeft, ToggleRight,
+  Pencil, Building2, User, MapPin, Info,
+} from "lucide-react";
+import { devicesApi, padsApi, getErrorMessage } from "@/lib/api";
+import { Device, Pad } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
+import { toast } from "@/lib/toast";
+import { modalClassNames } from "@/lib/modal-styles";
 
 export default function DevicesPage() {
   const [devices, setDevices] = useState<Device[]>([]);
+  const [pads, setPads]       = useState<Pad[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Register modal
   const [showAdd, setShowAdd] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ device_id: "", name: "", description: "" });
+  const [saving, setSaving]   = useState(false);
+  const [form, setForm]       = useState({ device_id: "", device_name: "", location: "", description: "" });
+
+  // Edit modal
+  const [editTarget, setEditTarget] = useState<Device | null>(null);
+  const [editForm, setEditForm]     = useState({ device_name: "", location: "", description: "" });
+  const [editSaving, setEditSaving] = useState(false);
+
+  // Detail modal
+  const [detailDevice, setDetailDevice] = useState<Device | null>(null);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const res = await devicesApi.list();
-      setDevices(res.data.data?.devices ?? []);
+      const [dRes, pRes] = await Promise.all([devicesApi.list(), padsApi.list()]);
+      setDevices(dRes.data.data?.devices ?? []);
+      setPads(pRes.data.data?.pads ?? []);
     } catch (err) {
-      addToast({ title: "Failed to load devices", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -33,42 +50,89 @@ export default function DevicesPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  /** Find pads linked to a device */
+  const linkedPads = (device: Device): Pad[] =>
+    pads.filter(p => p.device_id === device.id);
+
+  const isOnline = (d: Device) =>
+    !!d.last_seen_at && Date.now() - new Date(d.last_seen_at).getTime() < 2 * 60 * 1000;
+
   async function handleRelay(device: Device, command: "on" | "off") {
     try {
       await devicesApi.issueRelayCommand(device.id, command);
-      addToast({ title: `Relay command sent: ${command.toUpperCase()}`, color: "success" });
+      toast.success(`Relay ${command.toUpperCase()} sent to ${device.device_name}`);
       setTimeout(() => load(true), 1500);
     } catch (err) {
-      addToast({ title: "Relay command failed", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     }
   }
 
   async function handleRegister() {
-    if (!form.device_id.trim() || !form.name.trim()) {
-      addToast({ title: "Device ID and name are required", color: "warning" });
+    if (!form.device_id.trim() || !form.device_name.trim()) {
+      toast.warning("Device ID and name are required");
       return;
     }
     setSaving(true);
     try {
-      await devicesApi.register(form);
-      addToast({ title: "Device registered", color: "success" });
+      const res = await devicesApi.register({
+        device_id: form.device_id.trim(),
+        device_name: form.device_name.trim(),
+        location: form.location.trim() || undefined,
+        description: form.description.trim() || undefined,
+      });
+      toast.success(`Device "${form.device_name}" registered`);
+      if (res.data.data?.api_key) {
+        // Show the API key — it won't be shown again
+        const key = res.data.data.api_key as string;
+        setTimeout(() => {
+          window.alert(`Save this API key — it will not be shown again:\n\n${key}`);
+        }, 300);
+      }
       setShowAdd(false);
-      setForm({ device_id: "", name: "", description: "" });
+      setForm({ device_id: "", device_name: "", location: "", description: "" });
       load(true);
     } catch (err) {
-      addToast({ title: "Registration failed", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
     }
   }
 
-  const isOnline = (d: Device) => {
-    if (!d.last_seen_at) return false;
-    return Date.now() - new Date(d.last_seen_at).getTime() < 2 * 60 * 1000;
-  };
+  function openEdit(device: Device) {
+    setEditTarget(device);
+    setEditForm({
+      device_name:  device.device_name,
+      location:     device.location ?? "",
+      description:  device.description ?? "",
+    });
+  }
+
+  async function handleEdit() {
+    if (!editTarget) return;
+    if (!editForm.device_name.trim()) { toast.warning("Name is required"); return; }
+    setEditSaving(true);
+    try {
+      await devicesApi.update(editTarget.id, {
+        device_name:  editForm.device_name.trim(),
+        location:     editForm.location.trim() || null,
+        description:  editForm.description.trim() || null,
+      });
+      toast.success("Device updated");
+      setEditTarget(null);
+      load(true);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setEditSaving(false);
+    }
+  }
+
+  const relayColor = (s?: string) =>
+    s === "on" ? "success" : s === "off" ? "default" : s === "tripped" ? "danger" : "warning";
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Devices</h1>
@@ -84,80 +148,241 @@ export default function DevicesPage() {
         </div>
       </div>
 
-      <Card className="border border-default-200">
-        <CardHeader className="flex items-center gap-2 pb-0">
-          <Cpu className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-foreground">All Devices</h2>
-        </CardHeader>
-        <CardBody>
-          {loading ? <TableSkeleton rows={4} cols={5} /> : devices.length === 0 ? (
-            <div className="flex flex-col items-center py-12 text-center">
-              <Cpu className="w-10 h-10 text-default-300 mb-3" />
-              <p className="text-default-400">No devices registered yet</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-default-200">
-                    {["Device ID", "Name", "Status", "Relay", "Last Seen", "Actions"].map(h => (
-                      <th key={h} className="text-left py-2 px-3 text-default-500 font-medium text-xs uppercase tracking-wide">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {devices.map(d => (
-                    <tr key={d.id} className="border-b border-default-100 hover:bg-default-50">
-                      <td className="py-3 px-3 font-mono text-xs text-default-600">{d.device_id}</td>
-                      <td className="py-3 px-3 font-medium text-foreground">{d.name}</td>
-                      <td className="py-3 px-3">
-                        {isOnline(d)
-                          ? <Chip size="sm" color="success" variant="flat" startContent={<Wifi className="w-3 h-3" />}>Online</Chip>
-                          : <Chip size="sm" color="default" variant="flat" startContent={<WifiOff className="w-3 h-3" />}>Offline</Chip>}
-                      </td>
-                      <td className="py-3 px-3">
-                        <Chip size="sm" variant="flat" color={d.relay_status === "on" ? "success" : d.relay_status === "off" ? "default" : "warning"}>
-                          {d.relay_status ?? "unknown"}
-                        </Chip>
-                      </td>
-                      <td className="py-3 px-3 text-default-400 text-xs">
-                        {d.last_seen_at ? new Date(d.last_seen_at).toLocaleString() : "Never"}
-                      </td>
-                      <td className="py-3 px-3">
-                        <div className="flex gap-1">
-                          <Button size="sm" variant="flat" color="success" isIconOnly title="Relay ON"
-                            onPress={() => handleRelay(d, "on")}>
-                            <ToggleRight className="w-4 h-4" />
-                          </Button>
-                          <Button size="sm" variant="flat" color="default" isIconOnly title="Relay OFF"
-                            onPress={() => handleRelay(d, "off")}>
-                            <ToggleLeft className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardBody>
-      </Card>
+      {/* Device cards */}
+      {loading ? (
+        <Card className="border border-default-200">
+          <CardBody><TableSkeleton rows={4} cols={6} /></CardBody>
+        </Card>
+      ) : devices.length === 0 ? (
+        <Card className="border border-default-200">
+          <CardBody className="flex flex-col items-center py-16 text-center">
+            <Cpu className="w-12 h-12 text-default-300 mb-3" />
+            <p className="text-default-400">No devices registered yet</p>
+          </CardBody>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {devices.map(d => {
+            const online = isOnline(d);
+            const padsForDevice = linkedPads(d);
+            const activePad = padsForDevice[0] ?? null;
+            return (
+              <Card key={d.id} className="border border-default-200 hover:border-primary/40 transition-colors">
+                <CardHeader className="flex items-start justify-between gap-3 pb-2">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${online ? "bg-primary/15" : "bg-default-100"}`}>
+                      <Cpu className={`w-5 h-5 ${online ? "text-primary" : "text-default-400"}`} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-foreground truncate">{d.device_name}</p>
+                      <p className="text-xs font-mono text-default-400">{d.device_id}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Chip size="sm" variant="flat" color={online ? "success" : "default"}
+                      startContent={online ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}>
+                      {online ? "Online" : "Offline"}
+                    </Chip>
+                    <Chip size="sm" variant="flat" color={relayColor(d.relay_status)}>
+                      {d.relay_status ?? "unknown"}
+                    </Chip>
+                  </div>
+                </CardHeader>
 
-      <Modal isOpen={showAdd} onOpenChange={setShowAdd}>
+                <CardBody className="pt-1 space-y-3">
+                  {/* Active pad / module */}
+                  <div className="rounded-xl bg-default-50 border border-default-200 px-3 py-2.5">
+                    <p className="text-xs text-default-400 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                      <Building2 className="w-3 h-3" /> Active Module / Pad
+                    </p>
+                    {activePad ? (
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{activePad.name}</p>
+                          <p className="text-xs text-default-400">₱{Number(activePad.rate_per_kwh).toFixed(2)}/kWh</p>
+                        </div>
+                        <Chip size="sm" variant="flat" color={activePad.is_active ? "success" : "default"}>
+                          {activePad.is_active ? "Active" : "Inactive"}
+                        </Chip>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-default-400 italic">Not assigned to any pad</p>
+                    )}
+                  </div>
+
+                  {/* Linked accounts */}
+                  <div className="rounded-xl bg-default-50 border border-default-200 px-3 py-2.5">
+                    <p className="text-xs text-default-400 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                      <User className="w-3 h-3" /> Connected Accounts
+                    </p>
+                    {padsForDevice.filter(p => p.tenant_name).length > 0 ? (
+                      <div className="space-y-1">
+                        {padsForDevice.filter(p => p.tenant_name).map(p => (
+                          <div key={p.id} className="flex items-center justify-between">
+                            <p className="text-sm text-foreground">{p.tenant_name}</p>
+                            <p className="text-xs text-default-400">{p.name}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-default-400 italic">No tenants linked</p>
+                    )}
+                  </div>
+
+                  {/* Location */}
+                  {d.location && (
+                    <p className="text-xs text-default-400 flex items-center gap-1.5">
+                      <MapPin className="w-3 h-3 shrink-0" /> {d.location}
+                    </p>
+                  )}
+
+                  {/* Last seen + firmware */}
+                  <div className="flex items-center justify-between text-xs text-default-400">
+                    <span>Last seen: {d.last_seen_at ? new Date(d.last_seen_at).toLocaleString() : "Never"}</span>
+                    {d.firmware_version && <span>fw {d.firmware_version}</span>}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-1 border-t border-default-200">
+                    <Tooltip content="Relay ON" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
+                      <Button size="sm" variant="flat" color="success" isIconOnly onPress={() => handleRelay(d, "on")}>
+                        <ToggleRight className="w-4 h-4" />
+                      </Button>
+                    </Tooltip>
+                    <Tooltip content="Relay OFF" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
+                      <Button size="sm" variant="flat" color="default" isIconOnly onPress={() => handleRelay(d, "off")}>
+                        <ToggleLeft className="w-4 h-4" />
+                      </Button>
+                    </Tooltip>
+                    <Tooltip content="Rename / Edit" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
+                      <Button size="sm" variant="flat" color="primary" isIconOnly onPress={() => openEdit(d)}>
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                    </Tooltip>
+                    <Tooltip content="Details" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
+                      <Button size="sm" variant="flat" color="default" isIconOnly onPress={() => setDetailDevice(d)}>
+                        <Info className="w-4 h-4" />
+                      </Button>
+                    </Tooltip>
+                  </div>
+                </CardBody>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Register Modal ── */}
+      <Modal isOpen={showAdd} onOpenChange={setShowAdd} classNames={modalClassNames}>
         <ModalContent>
           <ModalHeader>Register New Device</ModalHeader>
           <ModalBody className="space-y-3">
             <Input label="Device ID" placeholder="bluewatt-001" value={form.device_id}
-              onChange={e => setForm(f => ({ ...f, device_id: e.target.value }))} />
-            <Input label="Name" placeholder="Unit 1A Meter" value={form.name}
-              onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+              onValueChange={v => setForm(f => ({ ...f, device_id: v }))}
+              description="Unique hardware identifier — must match the ESP32 config" />
+            <Input label="Name" placeholder="Unit 1A Meter" value={form.device_name}
+              onValueChange={v => setForm(f => ({ ...f, device_name: v }))} />
+            <Input label="Location (optional)" placeholder="Room 101, Building A" value={form.location}
+              onValueChange={v => setForm(f => ({ ...f, location: v }))} />
             <Textarea label="Description (optional)" value={form.description}
-              onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+              onValueChange={v => setForm(f => ({ ...f, description: v }))} />
           </ModalBody>
           <ModalFooter>
             <Button variant="flat" onPress={() => setShowAdd(false)}>Cancel</Button>
             <Button color="primary" isLoading={saving} onPress={handleRegister}>Register</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* ── Edit / Rename Modal ── */}
+      <Modal isOpen={!!editTarget} onOpenChange={() => setEditTarget(null)} classNames={modalClassNames}>
+        <ModalContent>
+          <ModalHeader>Edit Device — {editTarget?.device_id}</ModalHeader>
+          <ModalBody className="space-y-3">
+            <Input label="Name" value={editForm.device_name}
+              onValueChange={v => setEditForm(f => ({ ...f, device_name: v }))} />
+            <Input label="Location" placeholder="Room 101, Building A" value={editForm.location}
+              onValueChange={v => setEditForm(f => ({ ...f, location: v }))} />
+            <Textarea label="Description" value={editForm.description}
+              onValueChange={v => setEditForm(f => ({ ...f, description: v }))} />
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="flat" onPress={() => setEditTarget(null)}>Cancel</Button>
+            <Button color="primary" isLoading={editSaving} onPress={handleEdit}>Save Changes</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* ── Detail Modal ── */}
+      <Modal isOpen={!!detailDevice} onOpenChange={() => setDetailDevice(null)} classNames={modalClassNames}>
+        <ModalContent>
+          <ModalHeader>Device Details</ModalHeader>
+          <ModalBody className="space-y-4">
+            {detailDevice && (() => {
+              const padsForDevice = linkedPads(detailDevice);
+              return (
+                <>
+                  <div className="space-y-2 text-sm">
+                    {[
+                      ["Device ID",   detailDevice.device_id],
+                      ["Name",        detailDevice.device_name],
+                      ["Location",    detailDevice.location ?? "—"],
+                      ["Firmware",    detailDevice.firmware_version ?? "—"],
+                      ["Relay",       detailDevice.relay_status ?? "unknown"],
+                      ["Status",      detailDevice.is_active ? "Active" : "Inactive"],
+                      ["Last Seen",   detailDevice.last_seen_at ? new Date(detailDevice.last_seen_at).toLocaleString() : "Never"],
+                      ["Registered",  new Date(detailDevice.created_at).toLocaleDateString()],
+                    ].map(([k, v]) => (
+                      <div key={k} className="flex justify-between border-b border-default-100 pb-1.5">
+                        <span className="text-default-400">{k}</span>
+                        <span className="text-foreground font-medium font-mono text-xs text-right max-w-[60%] truncate">{v}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-default-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                      <Building2 className="w-3 h-3" /> Linked Pads ({padsForDevice.length})
+                    </p>
+                    {padsForDevice.length === 0 ? (
+                      <p className="text-sm text-default-400 italic">Not assigned to any pad</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {padsForDevice.map(p => (
+                          <div key={p.id} className="rounded-lg bg-default-50 border border-default-200 px-3 py-2">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="text-sm font-medium text-foreground">{p.name}</p>
+                                <p className="text-xs text-default-400">
+                                  ₱{Number(p.rate_per_kwh).toFixed(2)}/kWh
+                                  {p.description ? ` · ${p.description}` : ""}
+                                </p>
+                              </div>
+                              <Chip size="sm" variant="flat" color={p.is_active ? "success" : "default"}>
+                                {p.is_active ? "Active" : "Inactive"}
+                              </Chip>
+                            </div>
+                            {p.tenant_name && (
+                              <p className="text-xs text-primary mt-1.5 flex items-center gap-1">
+                                <User className="w-3 h-3" /> {p.tenant_name}
+                                {p.tenant_email ? ` · ${p.tenant_email}` : ""}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="flat" onPress={() => setDetailDevice(null)}>Close</Button>
+            <Button color="primary" variant="flat" onPress={() => { openEdit(detailDevice!); setDetailDevice(null); }}
+              startContent={<Pencil className="w-4 h-4" />}>
+              Edit
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

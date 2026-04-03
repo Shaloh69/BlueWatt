@@ -21,11 +21,14 @@ export interface AuthResponse {
 export interface Device {
   id: number;
   device_id: string;
-  name: string;
+  device_name: string;
+  location?: string;
   description?: string;
   owner_id: number;
-  relay_status: "on" | "off" | "unknown";
+  is_active: boolean;
+  relay_status: "on" | "off" | "tripped" | "unknown";
   last_seen_at?: string;
+  firmware_version?: string;
   image_url?: string;
   created_at: string;
   updated_at: string;
@@ -74,6 +77,7 @@ export interface Pad {
   created_at: string;
   updated_at: string;
   tenant_name?: string;
+  tenant_email?: string;
   device_serial?: string;
   relay_status?: string;
   last_seen_at?: string;

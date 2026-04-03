@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { addToast } from "@heroui/toast";
+import { toast } from "@/lib/toast";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Chip } from "@heroui/chip";
 import { Button } from "@heroui/button";
@@ -28,7 +28,7 @@ export default function DashboardPage() {
       setPadSummary(padRes.data.data?.pads ?? []);
       setPendingPayments(payRes.data.data ?? []);
     } catch (err) {
-      addToast({ title: "Failed to load dashboard", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     } finally {
       setLoading(false);
       setRefreshing(false);

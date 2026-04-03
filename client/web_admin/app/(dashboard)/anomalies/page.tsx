@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { addToast } from "@heroui/toast";
+import { toast } from "@/lib/toast";
+import { modalClassNames } from "@/lib/modal-styles";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
@@ -27,7 +28,7 @@ export default function AnomaliesPage() {
       setDevices(d);
       if (d.length > 0) setSelectedDevice(d[0].id);
     }).catch(err => {
-      addToast({ title: "Failed to load devices", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     });
   }, []);
 
@@ -37,7 +38,7 @@ export default function AnomaliesPage() {
       const res = await anomalyApi.list(deviceId);
       setEvents(res.data.data?.events ?? []);
     } catch (err) {
-      addToast({ title: "Failed to load anomalies", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -51,10 +52,10 @@ export default function AnomaliesPage() {
     setResolving(event.id);
     try {
       await anomalyApi.resolve(event.id);
-      addToast({ title: "Anomaly resolved", color: "success" });
+      toast.success("Anomaly resolved");
       if (selectedDevice) load(selectedDevice, true);
     } catch (err) {
-      addToast({ title: "Resolve failed", description: getErrorMessage(err), color: "danger" });
+      toast.error(getErrorMessage(err));
     } finally {
       setResolving(null);
     }
@@ -80,7 +81,7 @@ export default function AnomaliesPage() {
             variant={selectedDevice === d.id ? "solid" : "flat"}
             color={selectedDevice === d.id ? "primary" : "default"}
             onPress={() => setSelectedDevice(d.id)}>
-            {d.name}
+            {d.device_name}
           </Button>
         ))}
       </div>

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Button } from "@heroui/button";
 import { Avatar } from "@heroui/avatar";
 import { Chip } from "@heroui/chip";
-import { addToast } from "@heroui/toast";
+import { toast } from "@/lib/toast";
 import {
   LayoutDashboard, Zap, MonitorDot, Cpu, Building2, Receipt,
   CreditCard, BarChart3, AlertTriangle, LogOut, ChevronLeft,
@@ -43,7 +43,7 @@ export function Sidebar() {
 
   function handleLogout() {
     clearAuth();
-    addToast({ title: "Logged out successfully", color: "default" });
+    toast.info("Logged out successfully");
     router.push("/login");
   }
 
