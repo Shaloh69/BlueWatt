@@ -12,10 +12,18 @@ interface Migration {
 }
 
 async function runStatements(sql: string): Promise<void> {
-  const statements = sql
+  // Strip single-line comments before splitting so semicolons inside
+  // comments don't create false statement boundaries
+  const stripped = sql
+    .split('\n')
+    .filter((line) => !line.trim().startsWith('--'))
+    .join('\n');
+
+  const statements = stripped
     .split(';')
     .map((s) => s.trim())
-    .filter((s) => s.length > 0 && !s.startsWith('--'));
+    .filter((s) => s.length > 0);
+
   for (const statement of statements) {
     await pool.query(statement);
   }

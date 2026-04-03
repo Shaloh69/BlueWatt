@@ -3,7 +3,7 @@
 --               admin verifies and approves or rejects
 
 ALTER TABLE payments
-  -- Remove PayMongo-specific columns (safe to drop; table is new)
+  -- Remove PayMongo-specific columns (safe to drop, table is new)
   DROP COLUMN IF EXISTS paymongo_payment_id,
   DROP COLUMN IF EXISTS paymongo_source_id,
   DROP COLUMN IF EXISTS checkout_url,

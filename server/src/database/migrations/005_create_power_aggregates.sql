@@ -1,5 +1,5 @@
 -- Migration 005: Power aggregate tables (hourly / daily / monthly)
--- Pre-computed for fast report and graph queries; populated by cron jobs
+-- Pre-computed for fast report and graph queries, populated by cron jobs
 
 CREATE TABLE IF NOT EXISTS power_aggregates_hourly (
   id                INT AUTO_INCREMENT PRIMARY KEY,

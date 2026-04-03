@@ -1,5 +1,5 @@
 -- Migration 004: Relay commands table
--- Server-side relay command queue; ESP polls and ACKs commands
+-- Server-side relay command queue, ESP polls and ACKs commands
 
 CREATE TABLE IF NOT EXISTS relay_commands (
   id          INT AUTO_INCREMENT PRIMARY KEY,
