@@ -29,6 +29,7 @@ async function runStatements(sql: string): Promise<void> {
     1050, // ER_TABLE_EXISTS_ERROR     — table already exists
     1060, // ER_DUP_FIELDNAME          — column already exists
     1061, // ER_DUP_KEYNAME            — duplicate key/index name
+    1091, // ER_CANT_DROP_FIELD_OR_KEY — column/key doesn't exist (DROP COLUMN on missing col)
     1826, // ER_FK_DUP_CONSTRAINT_NAME — duplicate FK constraint name
   ]);
 

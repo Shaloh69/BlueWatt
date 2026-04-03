@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS power_aggregates_daily (
 CREATE TABLE IF NOT EXISTS power_aggregates_monthly (
   id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   device_id         INT UNSIGNED NOT NULL,
-  year_month        CHAR(7) NOT NULL,
+  period_month      CHAR(7) NOT NULL,
   total_energy_kwh  DECIMAL(10,4) NOT NULL DEFAULT 0,
   avg_power_real    FLOAT NOT NULL DEFAULT 0,
   max_power_real    FLOAT NOT NULL DEFAULT 0,
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS power_aggregates_monthly (
   anomaly_count     INT NOT NULL DEFAULT 0,
   created_at        DATETIME NOT NULL DEFAULT NOW(),
 
-  UNIQUE KEY uq_dev_month (device_id, year_month),
+  UNIQUE KEY uq_dev_month (device_id, period_month),
   CONSTRAINT fk_magg_device FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE
 );
 
