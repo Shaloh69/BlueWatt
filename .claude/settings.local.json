@@ -46,7 +46,10 @@
       "Bash(mv 002_create_billing_periods.sql 010_create_billing_periods.sql)",
       "Bash(mv 003_create_payments.sql 011_create_payments.sql)",
       "Bash(mv 004_create_relay_commands.sql 012_create_relay_commands.sql)",
-      "Bash(mv 005_create_power_aggregates.sql 013_create_power_aggregates.sql)"
+      "Bash(mv 005_create_power_aggregates.sql 013_create_power_aggregates.sql)",
+      "WebFetch(domain:www.circuitstate.com)",
+      "WebFetch(domain:blog.thefix.it.com)",
+      "Bash(xargs grep:*)"
     ],
     "additionalDirectories": [
       "d:\\Projects-Shem\\Thesis\\2026\\BlueWatt\\server\\src\\database\\migrations"
