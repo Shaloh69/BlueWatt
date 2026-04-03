@@ -74,7 +74,7 @@ async function applyMigration(migration: Migration) {
   const sql = fs.readFileSync(migration.filepath, 'utf-8');
 
   await runStatements(sql);
-  await pool.query('INSERT INTO migrations_log (version, name) VALUES (?, ?)', [
+  await pool.query('INSERT IGNORE INTO migrations_log (version, name) VALUES (?, ?)', [
     migration.version,
     migration.name,
   ]);
