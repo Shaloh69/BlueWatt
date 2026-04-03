@@ -89,5 +89,7 @@ services:
         value: production
       - key: PORT
         value: 10000
+      - key: HOSTNAME
+        value: "0.0.0.0"
       - key: NEXT_PUBLIC_API_URL
         value: https://bluewatt-api.onrender.com/api/v1
