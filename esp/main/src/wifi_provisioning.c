@@ -197,6 +197,10 @@ static const char provisioning_html[] =
 "</div>"
 "<button class='wbtn' onclick='saveWifi()'>&#x1F4BE; Save &amp; Connect</button>"
 "<div class='msg' id='wmsg'></div>"
+"<hr style='border-color:#334155;margin:20px 0'>"
+"<div style='font-size:12px;color:#94a3b8;margin-bottom:10px'>Reset: clears saved WiFi + static IP and restarts into setup mode.</div>"
+"<button class='wbtn' style='background:#7f1d1d;' onclick='resetWifi()'>&#x21BA; Reset WiFi Settings</button>"
+"<div class='msg' id='rmsg2'></div>"
 "</div>"
 
 // ── SERVER SETTINGS PAGE ───────────────────────────────────────────────────────
@@ -397,6 +401,14 @@ static const char provisioning_html[] =
 "}"
 
 // ── WiFi save ─────────────────────────────────────────────────────────────────
+"function resetWifi(){"
+"if(!confirm('Reset WiFi settings and restart into setup mode?'))return;"
+"var msg=document.getElementById('rmsg2');"
+"msg.textContent='Resetting...';msg.className='msg ok';"
+"fetch('/wifi/reset',{method:'POST'})"
+".then(function(){msg.textContent='Restarting — connect to BlueWatt-Setup...';msg.className='msg ok';})"
+".catch(function(e){msg.textContent='Error: '+e.message;msg.className='msg err';});"
+"}"
 "function saveWifi(){"
 "var ssid=document.getElementById('ssid').value.trim(),"
 "pw=document.getElementById('pw').value,"
@@ -620,6 +632,30 @@ static esp_err_t wifi_credentials_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+// POST /wifi/reset — clear credentials + static IP, then restart into AP mode
+static esp_err_t wifi_reset_handler(httpd_req_t *req)
+{
+    ESP_LOGW(TAG_PROV, "WiFi reset requested — clearing NVS and restarting");
+
+    wifi_provisioning_clear_credentials();
+
+    // Also clear static IP
+    nvs_handle_t h;
+    if (nvs_open(PROV_NVS_NAMESPACE, NVS_READWRITE, &h) == ESP_OK) {
+        nvs_erase_key(h, "static_ip");
+        nvs_commit(h);
+        nvs_close(h);
+    }
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, "{\"ok\":true}", HTTPD_RESP_USE_STRLEN);
+
+    // Small delay so the HTTP response is flushed before restart
+    vTaskDelay(pdMS_TO_TICKS(300));
+    esp_restart();
+    return ESP_OK;
+}
+
 // GET /readings — return latest PZEM data + relay state as JSON
 static esp_err_t readings_handler(httpd_req_t *req)
 {
@@ -823,6 +859,13 @@ static esp_err_t start_provisioning_server(void)
         .handler = wifi_credentials_handler,
     };
     httpd_register_uri_handler(provisioning_server, &wifi_uri);
+
+    httpd_uri_t wifi_reset_uri = {
+        .uri     = "/wifi/reset",
+        .method  = HTTP_POST,
+        .handler = wifi_reset_handler,
+    };
+    httpd_register_uri_handler(provisioning_server, &wifi_reset_uri);
 
     httpd_uri_t readings_uri = {
         .uri     = "/readings",
