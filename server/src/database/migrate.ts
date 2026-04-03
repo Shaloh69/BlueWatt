@@ -22,9 +22,24 @@ async function runStatements(sql: string): Promise<void> {
 }
 
 async function ensureMigrationsTable() {
-  const migrationLogPath = path.join(MIGRATIONS_DIR, '000_create_migrations_log.sql');
-  const sql = fs.readFileSync(migrationLogPath, 'utf-8');
-  await runStatements(sql);
+  // Check if table exists with the correct schema first
+  try {
+    await pool.query('SELECT version FROM migrations_log LIMIT 1');
+    console.log('✓ Migrations log table ensured');
+    return;
+  } catch {
+    // Table missing or wrong schema — (re)create it
+  }
+  await pool.query('DROP TABLE IF EXISTS migrations_log');
+  await pool.query(`
+    CREATE TABLE migrations_log (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      version VARCHAR(50) NOT NULL UNIQUE,
+      name VARCHAR(255) NOT NULL,
+      applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_version (version)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
   console.log('✓ Migrations log table ensured');
 }
 
