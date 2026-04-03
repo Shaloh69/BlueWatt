@@ -6,6 +6,7 @@
 #include "http_client.h"
 #include "wifi_manager.h"
 #include "wifi_provisioning.h"
+#include "led_status.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -254,6 +255,7 @@ void app_main(void)
     ESP_ERROR_CHECK(nvs_err);
 
     // ── Module init ────────────────────────────────────────────────────────
+    led_status_init();
     ESP_ERROR_CHECK(pzem_sensor_init());
     ESP_ERROR_CHECK(relay_init());
     anomaly_detector_init();

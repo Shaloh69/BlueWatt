@@ -17,7 +17,8 @@
 #define WIFI_FAIL_BIT       BIT1
 
 static EventGroupHandle_t wifi_event_group;
-static bool               s_wifi_started = false;  // true once esp_wifi_start() succeeds
+static bool               s_wifi_started    = false;  // true once esp_wifi_start() succeeds
+static bool               s_intentional_stop = false; // suppresses reconnect during deliberate stop
 static wifi_context_t wifi_ctx = {
     .state              = WIFI_STATE_DISCONNECTED,
     .retry_count        = 0,
@@ -38,7 +39,12 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         wifi_ctx.state = WIFI_STATE_DISCONNECTED;
 
-        if (wifi_ctx.retry_count < WIFI_MAX_RETRY) {
+        // If we stopped the stack deliberately (e.g. switching to AP provisioning mode),
+        // do NOT attempt to reconnect — that would corrupt the WiFi state.
+        if (s_intentional_stop) {
+            LOG_INFO(TAG_WIFI, "Disconnected (intentional stop) — skipping reconnect");
+
+        } else if (wifi_ctx.retry_count < WIFI_MAX_RETRY) {
             esp_wifi_connect();
             wifi_ctx.retry_count++;
             LOG_WARN(TAG_WIFI, "Retrying (%d/%d)...", wifi_ctx.retry_count, WIFI_MAX_RETRY);
@@ -186,7 +192,9 @@ void wifi_start_provisioning_mode(void)
     LOG_WARN(TAG_WIFI, "Starting provisioning AP: %s", PROV_AP_SSID);
     // Stop the STA stack (if running) before switching to AP mode.
     if (s_wifi_started) {
+        s_intentional_stop = true;   // tell disconnect handler not to reconnect
         esp_wifi_stop();
+        s_intentional_stop = false;
         s_wifi_started = false;
     }
     wifi_ctx.state = WIFI_STATE_DISCONNECTED;

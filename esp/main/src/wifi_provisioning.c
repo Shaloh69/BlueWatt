@@ -15,6 +15,7 @@
 #include "lwip/sockets.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "mdns.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -23,6 +24,7 @@
 static httpd_handle_t       provisioning_server = NULL;
 static provisioning_state_t current_state       = PROV_STATE_IDLE;
 static TaskHandle_t         s_dns_task          = NULL;
+static bool                 s_mdns_started      = false;
 
 // Full BlueWatt dashboard — Readings + Relay Test + WiFi Config
 // Key correctness guarantees:
@@ -961,7 +963,21 @@ esp_err_t wifi_provisioning_start_sta_server(void)
     }
     esp_err_t err = start_provisioning_server();
     if (err == ESP_OK) {
-        ESP_LOGI(TAG_PROV, "Local dashboard available at http://<device-ip>/");
+        ESP_LOGI(TAG_PROV, "Local dashboard available at http://<device-ip>/ or http://bluewatt.local/");
+
+        // Start mDNS so the ESP is always reachable at http://bluewatt.local/
+        // regardless of what IP the router assigns.
+        if (!s_mdns_started) {
+            if (mdns_init() == ESP_OK) {
+                mdns_hostname_set("bluewatt");
+                mdns_instance_name_set("BlueWatt Energy Monitor");
+                mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0);
+                s_mdns_started = true;
+                ESP_LOGI(TAG_PROV, "mDNS started — open http://bluewatt.local/ from any device on the same network");
+            } else {
+                ESP_LOGW(TAG_PROV, "mDNS init failed — use IP address instead");
+            }
+        }
     }
     return err;
 }

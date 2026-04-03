@@ -3,6 +3,7 @@
 #include "logger.h"
 #include "relay_control.h"
 #include "wifi_manager.h"
+#include "led_status.h"
 
 #include "esp_http_client.h"
 #include "esp_log.h"
@@ -57,12 +58,15 @@ static esp_err_t perform_post(const char *url, const char *json_str)
         int status = esp_http_client_get_status_code(client);
         if (status != 200 && status != 201) {
             ESP_LOGW(TAG_HTTP, "POST %s returned HTTP %d", url, status);
+            led_status_set_server(false);
             err = ESP_FAIL;
         } else {
             LOG_DEBUG(TAG_HTTP, "POST %s -> HTTP %d OK", url, status);
+            led_status_set_server(true);
         }
     } else {
         ESP_LOGE(TAG_HTTP, "POST %s failed: %s", url, esp_err_to_name(err));
+        led_status_set_server(false);
     }
 
     esp_http_client_cleanup(client);
