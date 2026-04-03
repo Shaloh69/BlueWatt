@@ -58,5 +58,5 @@ CREATE TABLE IF NOT EXISTS power_aggregates_monthly (
 
 -- Also add energy_kwh and frequency to power_readings if not already present
 ALTER TABLE power_readings
-  ADD COLUMN IF NOT EXISTS energy_kwh DECIMAL(10,4) DEFAULT NULL AFTER power_factor,
-  ADD COLUMN IF NOT EXISTS frequency  FLOAT         DEFAULT NULL AFTER energy_kwh;
+  ADD COLUMN energy_kwh DECIMAL(10,4) DEFAULT NULL AFTER power_factor,
+  ADD COLUMN frequency  FLOAT         DEFAULT NULL AFTER energy_kwh;

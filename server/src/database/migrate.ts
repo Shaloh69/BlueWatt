@@ -24,8 +24,23 @@ async function runStatements(sql: string): Promise<void> {
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
 
+  // MySQL errno values that mean "already applied" — safe to ignore on retry
+  const idempotentErrnos = new Set([
+    1050, // ER_TABLE_EXISTS_ERROR     — table already exists
+    1060, // ER_DUP_FIELDNAME          — column already exists
+    1061, // ER_DUP_KEYNAME            — duplicate key/index name
+    1826, // ER_FK_DUP_CONSTRAINT_NAME — duplicate FK constraint name
+  ]);
+
   for (const statement of statements) {
-    await pool.query(statement);
+    try {
+      await pool.query(statement);
+    } catch (err: any) {
+      if (idempotentErrnos.has(err.errno)) {
+        continue; // already applied — skip silently
+      }
+      throw err;
+    }
   }
 }
 
