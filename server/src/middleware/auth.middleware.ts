@@ -52,10 +52,17 @@ export const authenticateApiKey = async (
     const apiKey = req.headers['x-api-key'] as string;
 
     if (!apiKey) {
+      logger.warn(`[ESP] No X-API-Key header — ${req.method} ${req.path} from ${req.ip}`);
       throw new AppError('No API key provided', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
     }
 
+    const masked = apiKey.length > 12
+      ? `${apiKey.slice(0, 6)}...${apiKey.slice(-4)}`
+      : apiKey;
+    logger.info(`[ESP] Key received: "${masked}"  len=${apiKey.length}  expected=67  ${req.method} ${req.path}`);
+
     if (!ApiKeyService.isValidFormat(apiKey)) {
+      logger.warn(`[ESP] Format check FAILED — len=${apiKey.length} prefix="${apiKey.slice(0, 3)}" key_part_len=${apiKey.length - 3}`);
       throw new AppError('Invalid API key format', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
     }
 
