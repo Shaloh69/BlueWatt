@@ -66,7 +66,7 @@
 // ============================================================
 #define HTTP_SERVER_URL         "https://bluewatt-api.onrender.com"
 #define HTTP_TIMEOUT_MS         30000                // 30s — Render cold starts can be slow
-#define HTTP_API_KEY            "bw_paste-your-key-here"  // ← from Devices → Register
+#define HTTP_API_KEY            "bw_44b3640c88c6a6dd6383488fe25c3b3f401d507c1888d888b2bdb3722cd400b5"
 #define HTTP_POWER_INTERVAL     10                   // POST every N PZEM reads (~10s)
 #define HTTP_DEVICE_ID          "bluewatt-001"     // ← must match Device ID in admin
 
