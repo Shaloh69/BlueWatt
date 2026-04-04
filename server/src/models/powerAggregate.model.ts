@@ -87,11 +87,11 @@ export class PowerAggregateModel {
   static async upsertMonthly(
     deviceId: number,
     yearMonth: string,
-    data: Omit<PowerAggregateMonthly, 'id' | 'device_id' | 'year_month' | 'created_at'>
+    data: Omit<PowerAggregateMonthly, 'id' | 'device_id' | 'period_month' | 'created_at'>
   ): Promise<void> {
     await pool.execute(
       `INSERT INTO power_aggregates_monthly
-         (device_id, year_month, total_energy_kwh, avg_power_real, max_power_real,
+         (device_id, period_month, total_energy_kwh, avg_power_real, max_power_real,
           avg_voltage, avg_current, avg_power_factor, anomaly_count)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE
@@ -107,8 +107,8 @@ export class PowerAggregateModel {
   static async findMonthlyByYear(deviceId: number, year: string): Promise<PowerAggregateMonthly[]> {
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT * FROM power_aggregates_monthly
-       WHERE device_id = ? AND year_month LIKE ?
-       ORDER BY year_month`,
+       WHERE device_id = ? AND period_month LIKE ?
+       ORDER BY period_month`,
       [deviceId, `${year}-%`]
     );
     return rows as PowerAggregateMonthly[];
@@ -116,7 +116,7 @@ export class PowerAggregateModel {
 
   static async findMonthly(deviceId: number, yearMonth: string): Promise<PowerAggregateMonthly | null> {
     const [rows] = await pool.execute<RowDataPacket[]>(
-      `SELECT * FROM power_aggregates_monthly WHERE device_id = ? AND year_month = ?`,
+      `SELECT * FROM power_aggregates_monthly WHERE device_id = ? AND period_month = ?`,
       [deviceId, yearMonth]
     );
     return rows.length > 0 ? (rows[0] as PowerAggregateMonthly) : null;

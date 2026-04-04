@@ -59,7 +59,7 @@ export const getPadSummary = asyncHandler(async (req: Request, res: Response, _n
      FROM pads p
      LEFT JOIN users u ON u.id = p.tenant_id
      LEFT JOIN devices d ON d.id = p.device_id
-     LEFT JOIN power_aggregates_monthly agg ON agg.device_id = p.device_id AND agg.year_month = ?
+     LEFT JOIN power_aggregates_monthly agg ON agg.device_id = p.device_id AND agg.period_month = ?
      LEFT JOIN billing_periods b ON b.pad_id = p.id AND DATE_FORMAT(b.period_start, '%Y-%m') = ?
      WHERE p.is_active = 1
      ORDER BY p.name`,
@@ -129,7 +129,7 @@ export const getAnomalySummary = asyncHandler(async (req: Request, res: Response
             d.device_id AS device_serial, d.relay_status
      FROM pads p
      LEFT JOIN devices d ON d.id = p.device_id
-     LEFT JOIN power_aggregates_monthly agg ON agg.device_id = p.device_id AND agg.year_month = ?
+     LEFT JOIN power_aggregates_monthly agg ON agg.device_id = p.device_id AND agg.period_month = ?
      WHERE p.is_active = 1
      ORDER BY anomaly_count DESC`,
     [yearMonth]

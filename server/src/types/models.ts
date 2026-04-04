@@ -169,7 +169,7 @@ export interface PowerAggregateDaily {
 export interface PowerAggregateMonthly {
   id: number;
   device_id: number;
-  year_month: string;
+  period_month: string;
   total_energy_kwh: number;
   avg_power_real: number;
   max_power_real: number;
