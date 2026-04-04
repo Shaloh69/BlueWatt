@@ -14,7 +14,7 @@ export class DeviceKeyModel {
 
   static async findById(id: number): Promise<DeviceKey | null> {
     const [rows] = await pool.execute<RowDataPacket[]>(
-      `SELECT id, device_id, key_hash, name, is_active, last_used,
+      `SELECT id, device_id, key_hash, name, is_active, last_used_at,
               created_at, updated_at
        FROM device_keys WHERE id = ?`,
       [id]
@@ -29,7 +29,7 @@ export class DeviceKeyModel {
 
   static async findByDeviceId(deviceId: number): Promise<DeviceKey[]> {
     const [rows] = await pool.execute<RowDataPacket[]>(
-      `SELECT id, device_id, key_hash, name, is_active, last_used,
+      `SELECT id, device_id, key_hash, name, is_active, last_used_at,
               created_at, updated_at
        FROM device_keys WHERE device_id = ? ORDER BY created_at DESC`,
       [deviceId]
@@ -40,7 +40,7 @@ export class DeviceKeyModel {
 
   static async findAllActive(): Promise<DeviceKey[]> {
     const [rows] = await pool.execute<RowDataPacket[]>(
-      `SELECT id, device_id, key_hash, name, is_active, last_used,
+      `SELECT id, device_id, key_hash, name, is_active, last_used_at,
               created_at, updated_at
        FROM device_keys WHERE is_active = 1`
     );
@@ -50,7 +50,7 @@ export class DeviceKeyModel {
 
   static async updateLastUsed(id: number): Promise<void> {
     await pool.execute(
-      'UPDATE device_keys SET last_used = CURRENT_TIMESTAMP WHERE id = ?',
+      'UPDATE device_keys SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?',
       [id]
     );
   }
