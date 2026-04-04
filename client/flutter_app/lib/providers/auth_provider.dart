@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../models/user.dart';
 import '../services/api_service.dart';
@@ -51,6 +52,51 @@ class AuthProvider extends ChangeNotifier {
     _token = null;
     _user = null;
     _state = AuthState.unauthenticated;
+    notifyListeners();
+  }
+
+  Future<void> refreshUser() async {
+    final fresh = await ApiService.getMe();
+    _user = fresh;
+    await StorageService.saveUser(jsonEncode({
+      'id': fresh.id,
+      'full_name': fresh.fullName,
+      'email': fresh.email,
+      'role': fresh.role,
+      'profile_image_url': fresh.profileImageUrl,
+    }));
+    notifyListeners();
+  }
+
+  Future<void> updateProfile({String? fullName, String? email}) async {
+    final updated = await ApiService.updateProfile(
+        fullName: fullName, email: email);
+    _user = updated;
+    await StorageService.saveUser(jsonEncode({
+      'id': updated.id,
+      'full_name': updated.fullName,
+      'email': updated.email,
+      'role': updated.role,
+      'profile_image_url': updated.profileImageUrl,
+    }));
+    notifyListeners();
+  }
+
+  Future<void> changePassword(
+      String currentPassword, String newPassword) async {
+    await ApiService.changePassword(currentPassword, newPassword);
+  }
+
+  Future<void> uploadProfileImage(File imageFile) async {
+    final updated = await ApiService.uploadProfileImage(imageFile);
+    _user = updated;
+    await StorageService.saveUser(jsonEncode({
+      'id': updated.id,
+      'full_name': updated.fullName,
+      'email': updated.email,
+      'role': updated.role,
+      'profile_image_url': updated.profileImageUrl,
+    }));
     notifyListeners();
   }
 }

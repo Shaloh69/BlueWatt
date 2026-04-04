@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -6,6 +7,7 @@ import '../models/pad.dart';
 import '../models/power_reading.dart';
 import '../models/billing_period.dart';
 import '../models/payment.dart';
+import '../models/user.dart';
 import 'storage_service.dart';
 
 class ApiException implements Exception {
@@ -17,6 +19,8 @@ class ApiException implements Exception {
 }
 
 class ApiService {
+  static const _timeout = Duration(seconds: 20);
+
   // ── Internals ──────────────────────────────────────────────────────────────
 
   static Future<Map<String, String>> _headers() async {
@@ -51,14 +55,69 @@ class ApiService {
       _uri('/auth/login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'email': email, 'password': password}),
-    );
+    ).timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out. Is the server reachable?'));
     return _body(res);
+  }
+
+  static Future<User> getMe() async {
+    final res = await http.get(_uri('/auth/me'), headers: await _headers())
+        .timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
+    final body = _body(res);
+    return User.fromJson(body['data'] as Map<String, dynamic>);
+  }
+
+  static Future<User> updateProfile({String? fullName, String? email}) async {
+    final res = await http.put(
+      _uri('/auth/profile'),
+      headers: await _headers(),
+      body: jsonEncode({
+        if (fullName != null) 'full_name': fullName,
+        if (email != null) 'email': email,
+      }),
+    ).timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
+    final body = _body(res);
+    return User.fromJson(body['data'] as Map<String, dynamic>);
+  }
+
+  static Future<void> changePassword(
+      String currentPassword, String newPassword) async {
+    final res = await http.put(
+      _uri('/auth/password'),
+      headers: await _headers(),
+      body: jsonEncode({
+        'current_password': currentPassword,
+        'new_password': newPassword,
+      }),
+    ).timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
+    _body(res);
+  }
+
+  static Future<User> uploadProfileImage(File imageFile) async {
+    final token = await StorageService.getToken();
+    final request = http.MultipartRequest('POST', _uri('/upload/profile-image'));
+    if (token != null) request.headers['Authorization'] = 'Bearer $token';
+    request.files.add(
+      await http.MultipartFile.fromPath('image', imageFile.path),
+    );
+    final streamed = await request.send()
+        .timeout(_timeout, onTimeout: () => throw ApiException('Upload timed out'));
+    final res = await http.Response.fromStream(streamed);
+    if (res.statusCode >= 400) {
+      final decoded = jsonDecode(res.body) as Map<String, dynamic>;
+      throw ApiException(
+        decoded['message'] as String? ?? 'Upload failed',
+        res.statusCode,
+      );
+    }
+    // Re-fetch user so profile_image_url is current
+    return getMe();
   }
 
   // ── Pad ────────────────────────────────────────────────────────────────────
 
   static Future<Pad> getMyPad() async {
-    final res = await http.get(_uri('/pads/my'), headers: await _headers());
+    final res = await http.get(_uri('/pads/my'), headers: await _headers())
+        .timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
     final body = _body(res);
     return Pad.fromJson(body['data']['pad'] as Map<String, dynamic>);
   }
@@ -69,7 +128,7 @@ class ApiService {
     final res = await http.get(
       _uri('/power-data/devices/$deviceId/power-data/latest'),
       headers: await _headers(),
-    );
+    ).timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
     if (res.statusCode == 404) return null;
     final body = _body(res);
     final reading = body['data']['reading'];
@@ -80,8 +139,8 @@ class ApiService {
   // ── Billing ────────────────────────────────────────────────────────────────
 
   static Future<List<BillingPeriod>> getMyBills() async {
-    final res =
-        await http.get(_uri('/billing/my'), headers: await _headers());
+    final res = await http.get(_uri('/billing/my'), headers: await _headers())
+        .timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
     final body = _body(res);
     final list = body['data']['bills'] as List<dynamic>? ?? [];
     return list
@@ -90,8 +149,8 @@ class ApiService {
   }
 
   static Future<BillingPeriod> getBill(int id) async {
-    final res =
-        await http.get(_uri('/billing/$id'), headers: await _headers());
+    final res = await http.get(_uri('/billing/$id'), headers: await _headers())
+        .timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
     final body = _body(res);
     return BillingPeriod.fromJson(
         body['data']['bill'] as Map<String, dynamic>);
@@ -100,10 +159,11 @@ class ApiService {
   // ── Payments ───────────────────────────────────────────────────────────────
 
   static Future<List<PaymentQrCode>> getQrCodes() async {
-    final res =
-        await http.get(_uri('/payments/qr-codes'), headers: await _headers());
+    final res = await http.get(_uri('/payments/qr-codes'), headers: await _headers())
+        .timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
     final body = _body(res);
-    final list = body['data'] as List<dynamic>? ?? [];
+    // Server returns { data: { qr_codes: [...] } }
+    final list = body['data']['qr_codes'] as List<dynamic>? ?? [];
     return list
         .map((e) => PaymentQrCode.fromJson(e as Map<String, dynamic>))
         .toList();

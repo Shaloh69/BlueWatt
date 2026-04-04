@@ -13,4 +13,8 @@ router.post('/login', authLimiter, validate(loginValidator), authController.logi
 
 router.get('/me', authenticateJWT, authController.getCurrentUser);
 
+router.put('/profile', authenticateJWT, authController.updateProfile);
+
+router.put('/password', authenticateJWT, authController.changePassword);
+
 export default router;

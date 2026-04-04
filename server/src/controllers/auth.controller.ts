@@ -75,10 +75,73 @@ export const getCurrentUser = asyncHandler(async (req: Request, res: Response, _
     throw new AppError('User not authenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
   }
 
+  // Re-fetch so profile_image_url is always fresh
+  const user = await UserModel.findById(req.user.id);
   sendSuccess(res, {
-    id: req.user.id,
-    email: req.user.email,
-    name: req.user.full_name,
-    role: req.user.role,
+    id: user!.id,
+    email: user!.email,
+    full_name: user!.full_name,
+    role: user!.role,
+    profile_image_url: user!.profile_image_url ?? null,
   });
+});
+
+export const updateProfile = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+  if (!req.user) {
+    throw new AppError('User not authenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+  }
+
+  const { full_name, email } = req.body as { full_name?: string; email?: string };
+
+  if (!full_name?.trim() && !email?.trim()) {
+    throw new AppError('Nothing to update', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+  }
+
+  if (email?.trim() && email !== req.user.email) {
+    const existing = await UserModel.findByEmail(email.trim());
+    if (existing && existing.id !== req.user.id) {
+      throw new AppError('Email already in use', HTTP_STATUS.CONFLICT, ERROR_CODES.DUPLICATE_ENTRY);
+    }
+  }
+
+  await UserModel.update(req.user.id, {
+    ...(full_name?.trim() && { full_name: full_name.trim() }),
+    ...(email?.trim()     && { email: email.trim() }),
+  });
+
+  const updated = await UserModel.findById(req.user.id);
+  sendSuccess(res, {
+    id: updated!.id,
+    email: updated!.email,
+    full_name: updated!.full_name,
+    role: updated!.role,
+    profile_image_url: updated!.profile_image_url ?? null,
+  });
+});
+
+export const changePassword = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+  if (!req.user) {
+    throw new AppError('User not authenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+  }
+
+  const { current_password, new_password } = req.body as { current_password: string; new_password: string };
+
+  if (!current_password || !new_password) {
+    throw new AppError('current_password and new_password are required', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+  }
+
+  if (new_password.length < 8) {
+    throw new AppError('New password must be at least 8 characters', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+  }
+
+  const user = await UserModel.findById(req.user.id);
+  const valid = await HashService.comparePassword(current_password, user!.password_hash);
+  if (!valid) {
+    throw new AppError('Current password is incorrect', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.INVALID_CREDENTIALS);
+  }
+
+  const hash = await HashService.hashPassword(new_password);
+  await UserModel.update(req.user.id, { password_hash: hash });
+
+  sendSuccess(res, { message: 'Password changed successfully' });
 });

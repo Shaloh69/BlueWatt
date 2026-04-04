@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/pad.dart';
 import '../models/power_reading.dart';
 import '../services/api_service.dart';
+import '../services/connectivity_service.dart';
 import '../services/notification_service.dart';
 import '../services/sse_service.dart';
 
@@ -11,18 +12,34 @@ class HomeProvider extends ChangeNotifier {
   PowerReading? _reading;
   bool _loading = true;
   String? _error;
+  bool _isOnline = true;
+  bool _isLive = false; // true once first SSE power_reading arrives
+  DateTime? _lastReadingAt;
+
   final SseService _sse = SseService();
   StreamSubscription<SseEvent>? _sseSub;
+  StreamSubscription<bool>? _connectivitySub;
 
   Pad? get pad => _pad;
   PowerReading? get reading => _reading;
   bool get loading => _loading;
   String? get error => _error;
+  bool get isOnline => _isOnline;
+  bool get isLive => _isLive;
+  DateTime? get lastReadingAt => _lastReadingAt;
   Stream<SseEvent> get sseStream => _sse.stream;
+
+  HomeProvider() {
+    _connectivitySub = ConnectivityService.onConnectivityChanged.listen((online) {
+      _isOnline = online;
+      notifyListeners();
+    });
+  }
 
   Future<void> load() async {
     _loading = true;
     _error = null;
+    _isOnline = await ConnectivityService.isConnected();
     notifyListeners();
     try {
       _pad = await ApiService.getMyPad();
@@ -45,29 +62,22 @@ class HomeProvider extends ChangeNotifier {
   void _handleSseEvent(SseEvent event) {
     switch (event.type) {
       case 'power_reading':
-        // Only update if it's for our device
         final deviceId = event.data['device_id'];
-        if (_pad?.deviceId != null &&
-            deviceId == _pad!.deviceId) {
+        if (_pad?.deviceId != null && deviceId == _pad!.deviceId) {
           _reading = PowerReading(
             id: 0,
             deviceId: _pad!.deviceId!,
             timestamp: DateTime.now().toIso8601String(),
-            voltageRms:
-                (event.data['voltage_rms'] as num?)?.toDouble() ?? 0,
-            currentRms:
-                (event.data['current_rms'] as num?)?.toDouble() ?? 0,
-            powerReal:
-                (event.data['power_real'] as num?)?.toDouble() ?? 0,
-            powerApparent:
-                (event.data['power_apparent'] as num?)?.toDouble() ?? 0,
-            powerFactor:
-                (event.data['power_factor'] as num?)?.toDouble() ?? 0,
-            energyKwh:
-                (event.data['energy_kwh'] as num?)?.toDouble(),
-            frequency:
-                (event.data['frequency'] as num?)?.toDouble(),
+            voltageRms: (event.data['voltage_rms'] as num?)?.toDouble() ?? 0,
+            currentRms: (event.data['current_rms'] as num?)?.toDouble() ?? 0,
+            powerReal: (event.data['power_real'] as num?)?.toDouble() ?? 0,
+            powerApparent: (event.data['power_apparent'] as num?)?.toDouble() ?? 0,
+            powerFactor: (event.data['power_factor'] as num?)?.toDouble() ?? 0,
+            energyKwh: (event.data['energy_kwh'] as num?)?.toDouble(),
+            frequency: (event.data['frequency'] as num?)?.toDouble(),
           );
+          _isLive = true;
+          _lastReadingAt = DateTime.now();
           notifyListeners();
         }
         break;
@@ -111,12 +121,14 @@ class HomeProvider extends ChangeNotifier {
   void disconnectSSE() {
     _sseSub?.cancel();
     _sse.disconnect();
+    _isLive = false;
   }
 
   @override
   void dispose() {
     disconnectSSE();
     _sse.dispose();
+    _connectivitySub?.cancel();
     super.dispose();
   }
 }

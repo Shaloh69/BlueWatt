@@ -47,6 +47,14 @@ export const authApi = {
   login: (email: string, password: string) =>
     api.post("/auth/login", { email, password }),
   me: () => api.get("/auth/me"),
+  updateProfile: (data: { full_name?: string; email?: string }) =>
+    api.put("/auth/profile", data),
+  changePassword: (current_password: string, new_password: string) =>
+    api.put("/auth/password", { current_password, new_password }),
+  uploadProfileImage: (formData: FormData) =>
+    api.post("/upload/profile-image", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    }),
 };
 
 // ── Devices ───────────────────────────────────────────────────────────────────

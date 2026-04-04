@@ -8,6 +8,28 @@ import 'home/home_screen.dart';
 import 'bills/bills_screen.dart';
 import 'profile/profile_screen.dart';
 
+class _OfflineBanner extends StatelessWidget {
+  const _OfflineBanner();
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: kWarning.withOpacity(0.15),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Row(
+        children: [
+          Icon(Icons.wifi_off_rounded, size: 14, color: kWarning),
+          const SizedBox(width: 8),
+          const Text(
+            'No internet connection — showing last known data',
+            style: TextStyle(fontSize: 11, color: kWarning),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -46,10 +68,18 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final isOnline = context.select<HomeProvider, bool>((h) => h.isOnline);
     return Scaffold(
-      body: IndexedStack(
-        index: _tab,
-        children: _screens,
+      body: Column(
+        children: [
+          if (!isOnline) const _OfflineBanner(),
+          Expanded(
+            child: IndexedStack(
+              index: _tab,
+              children: _screens,
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tab,

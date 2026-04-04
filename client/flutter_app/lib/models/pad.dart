@@ -39,4 +39,12 @@ class Pad {
   bool get hasDevice => deviceId != null;
   bool get isRelayOn => relayStatus == 'on';
   bool get isRelayTripped => relayStatus == 'tripped';
+
+  /// Device is considered online if last seen within 2 minutes
+  bool get isDeviceOnline {
+    if (lastSeenAt == null) return false;
+    final last = DateTime.tryParse(lastSeenAt!);
+    if (last == null) return false;
+    return DateTime.now().difference(last).inMinutes < 2;
+  }
 }

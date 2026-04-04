@@ -10,7 +10,7 @@ import { toast } from "@/lib/toast";
 import {
   LayoutDashboard, Zap, MonitorDot, Cpu, Building2, Receipt,
   CreditCard, BarChart3, AlertTriangle, LogOut, ChevronLeft,
-  ChevronRight, Moon, Sun,
+  ChevronRight, Moon, Sun, Settings,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { clearAuth, getStoredUser } from "@/hooks/useAuth";
@@ -26,6 +26,7 @@ const NAV = [
   { href: "/payments",   label: "Payments",      icon: CreditCard },
   { href: "/reports",    label: "Reports",       icon: BarChart3 },
   { href: "/anomalies",  label: "Anomalies",     icon: AlertTriangle },
+  { href: "/settings",   label: "Settings",      icon: Settings },
 ];
 
 export function Sidebar() {
@@ -39,6 +40,12 @@ export function Sidebar() {
   useEffect(() => {
     setMounted(true);
     setUser(getStoredUser());
+
+    function onStorage(e: StorageEvent) {
+      if (e.key === "bw_user") setUser(getStoredUser());
+    }
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
   function handleLogout() {
@@ -127,23 +134,28 @@ export function Sidebar() {
           </button>
         )}
 
-        {/* User */}
+        {/* User — links to settings */}
         {user && (
-          <div className={clsx("flex items-center gap-2.5 px-3 py-2 rounded-xl", collapsed && "justify-center px-0")}>
-            <Avatar
-              name={user.full_name}
-              src={user.profile_image_url}
-              size="sm"
-              className="shrink-0"
-              color="primary"
-            />
-            {!collapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{user.full_name}</p>
-                <p className="text-xs text-default-400 truncate capitalize">{user.role}</p>
-              </div>
-            )}
-          </div>
+          <Link href="/settings">
+            <div className={clsx(
+              "flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-default-100 transition-all cursor-pointer",
+              collapsed && "justify-center px-0",
+            )}>
+              <Avatar
+                name={user.full_name}
+                src={user.profile_image_url ?? undefined}
+                size="sm"
+                className="shrink-0"
+                color="primary"
+              />
+              {!collapsed && (
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{user.full_name}</p>
+                  <p className="text-xs text-default-400 truncate">{user.email}</p>
+                </div>
+              )}
+            </div>
+          </Link>
         )}
 
         {/* Logout */}

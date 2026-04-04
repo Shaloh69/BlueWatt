@@ -10,11 +10,11 @@ ThemeData _buildAppTheme() {
     scaffoldBackgroundColor: kBgDark,
     colorScheme: const ColorScheme.dark(
       primary: kPrimaryBlue,
-      secondary: kPurple,
+      secondary: kNavy600,
       surface: kCardBg,
       error: kDanger,
       onPrimary: Colors.white,
-      onSecondary: Colors.white,
+      onSecondary: kTextBody,
       onSurface: kTextBody,
       onError: Colors.white,
     ),

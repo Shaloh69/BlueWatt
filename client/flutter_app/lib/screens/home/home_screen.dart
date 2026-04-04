@@ -90,7 +90,33 @@ class HomeScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      RelayStatusBadge(status: pad.relayStatus),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          RelayStatusBadge(status: pad.relayStatus),
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6, height: 6,
+                                decoration: BoxDecoration(
+                                  color: pad.isDeviceOnline ? kSuccess : kTextMuted,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                pad.isDeviceOnline ? 'ESP Online' : 'ESP Offline',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: pad.isDeviceOnline ? kSuccess : kTextMuted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -130,15 +156,18 @@ class HomeScreen extends StatelessWidget {
                       Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(
-                          color: kSuccess,
+                        decoration: BoxDecoration(
+                          color: home.isLive ? kSuccess : kTextMuted,
                           shape: BoxShape.circle,
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Text(
-                        'Live',
-                        style: TextStyle(color: kSuccess, fontSize: 12),
+                      Text(
+                        home.isLive ? 'Live' : 'Connecting…',
+                        style: TextStyle(
+                          color: home.isLive ? kSuccess : kTextMuted,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
