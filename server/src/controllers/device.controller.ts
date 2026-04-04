@@ -9,6 +9,7 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
 import { DeviceRegistrationRequest } from '../types/api';
 import { bustCache } from '../middleware/cache.middleware';
+import { logger } from '../utils/logger';
 
 export const registerDevice = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
   if (!req.user) {
@@ -30,6 +31,8 @@ export const registerDevice = asyncHandler(async (req: Request, res: Response, _
   await DeviceKeyModel.create(device.id, apiKeyHash, 'Default Key');
 
   bustCache('devices', req.user!.id);
+
+  logger.info(`[Admin] Device registered — device_id="${device_id}" name="${device_name}" db_id=${device.id} by user=${req.user.id}`);
 
   sendSuccess(
     res,
@@ -101,8 +104,21 @@ export const updateDevice = asyncHandler(async (req: Request, res: Response, _ne
 
   const { device_name, location, description, is_active } = req.body;
 
+  // device_id (hardware identifier) is intentionally immutable — only metadata is editable
+  if ((req.body as any).device_id && (req.body as any).device_id !== device.device_id) {
+    logger.warn(`[Admin] Attempt to change device_id rejected — device_id is immutable (db_id=${deviceId}, current="${device.device_id}", attempted="${(req.body as any).device_id}")`);
+  }
+
+  const changed: Record<string, unknown> = {};
+  if (device_name  !== undefined) changed.device_name  = device_name;
+  if (location     !== undefined) changed.location      = location;
+  if (description  !== undefined) changed.description   = description;
+  if (is_active    !== undefined) changed.is_active     = is_active;
+
   await DeviceModel.update(deviceId, { device_name, location, description, is_active });
   bustCache('devices', req.user!.id);
+
+  logger.info(`[Admin] Device updated — device_id="${device.device_id}" db_id=${deviceId} by user=${req.user!.id}: ${JSON.stringify(changed)}`);
 
   const updatedDevice = await DeviceModel.findById(deviceId);
 
@@ -123,6 +139,7 @@ export const deleteDevice = asyncHandler(async (req: Request, res: Response, _ne
 
   await DeviceModel.delete(deviceId);
   bustCache('devices', req.user!.id);
+  logger.info(`[Admin] Device deleted — device_id="${device.device_id}" db_id=${deviceId} by user=${req.user!.id}`);
   sendSuccess(res, { id: deviceId }, HTTP_STATUS.OK, 'Device deleted');
 });
 
