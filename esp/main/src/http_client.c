@@ -6,6 +6,7 @@
 #include "led_status.h"
 
 #include "esp_http_client.h"
+#include "esp_crt_bundle.h"
 #include "esp_log.h"
 #include "cJSON.h"
 #include "nvs_flash.h"
@@ -38,9 +39,10 @@ void http_client_init(void)
 static esp_err_t perform_post(const char *url, const char *json_str)
 {
     esp_http_client_config_t cfg = {
-        .url        = url,
-        .method     = HTTP_METHOD_POST,
-        .timeout_ms = HTTP_TIMEOUT_MS,
+        .url               = url,
+        .method            = HTTP_METHOD_POST,
+        .timeout_ms        = HTTP_TIMEOUT_MS,
+        .crt_bundle_attach = esp_crt_bundle_attach,  // HTTPS: verify Render's TLS cert
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&cfg);
@@ -143,9 +145,10 @@ bool http_server_available(void)
     snprintf(url, sizeof(url), "%s/api/v1/health", s_server_url);
 
     esp_http_client_config_t cfg = {
-        .url        = url,
-        .method     = HTTP_METHOD_GET,
-        .timeout_ms = HTTP_TIMEOUT_MS,
+        .url               = url,
+        .method            = HTTP_METHOD_GET,
+        .timeout_ms        = HTTP_TIMEOUT_MS,
+        .crt_bundle_attach = esp_crt_bundle_attach,
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&cfg);
@@ -170,10 +173,11 @@ esp_err_t http_poll_relay_command(int *out_command_id, char *out_command, size_t
 
     char resp_buf[256] = {0};
     esp_http_client_config_t cfg = {
-        .url        = url,
-        .method     = HTTP_METHOD_GET,
-        .timeout_ms = HTTP_TIMEOUT_MS,
-        .user_data  = resp_buf,
+        .url               = url,
+        .method            = HTTP_METHOD_GET,
+        .timeout_ms        = HTTP_TIMEOUT_MS,
+        .user_data         = resp_buf,
+        .crt_bundle_attach = esp_crt_bundle_attach,
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&cfg);
@@ -234,9 +238,10 @@ esp_err_t http_ack_relay_command(int command_id, const char *relay_status)
     snprintf(url, sizeof(url), "%s/api/v1/devices/%s/relay-command/ack", s_server_url, s_device_id);
 
     esp_http_client_config_t cfg = {
-        .url        = url,
-        .method     = HTTP_METHOD_PUT,
-        .timeout_ms = HTTP_TIMEOUT_MS,
+        .url               = url,
+        .method            = HTTP_METHOD_PUT,
+        .timeout_ms        = HTTP_TIMEOUT_MS,
+        .crt_bundle_attach = esp_crt_bundle_attach,
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&cfg);

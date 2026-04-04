@@ -33,10 +33,10 @@ export const config = {
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   },
 
-  apiKey: {
-    prefix: process.env.API_KEY_PREFIX || 'bw_',
-    length: parseInt(process.env.API_KEY_LENGTH || '32', 10),
-  },
+apiKey: {
+  prefix: process.env.API_KEY_PREFIX || 'bw_',
+  length: 2, // 2 bytes = 4 hex chars → total ~7 chars
+},
 
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
