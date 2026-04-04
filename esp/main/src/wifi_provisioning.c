@@ -58,7 +58,6 @@ static const char provisioning_html[] =
 ".grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}"
 ".card{background:#1e293b;border-radius:12px;padding:14px;text-align:center}"
 ".clabel{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}"
-// .value color is driven by one of: .ok .warn .bad .stale (mutually exclusive via JS className)
 ".value{font-size:24px;font-weight:700;transition:color .35s,opacity .35s}"
 ".ok{color:#4ade80}"
 ".warn{color:#fbbf24}"
@@ -71,7 +70,7 @@ static const char provisioning_html[] =
 ".spin{display:inline-block;width:22px;height:22px;border:3px solid #334155;"
 "border-top-color:#818cf8;border-radius:50%;animation:sp .8s linear infinite;margin-bottom:10px}"
 "@keyframes sp{to{transform:rotate(360deg)}}"
-// Relay status dot (CSS — no emoji needed)
+// Relay status dot
 ".dot{width:60px;height:60px;border-radius:50%;margin:0 auto 10px;transition:background .4s,box-shadow .4s}"
 ".dot-off{background:#334155}"
 ".dot-on{background:#15803d;box-shadow:0 0 20px #4ade8055}"
@@ -84,7 +83,6 @@ static const char provisioning_html[] =
 ".b-on{background:#14532d;color:#4ade80;border:1px solid #166534}"
 ".b-off{background:#1e293b;color:#64748b;border:1px solid #334155}"
 ".b-trip{background:#450a0a;color:#f87171;border:1px solid #7f1d1d}"
-// Relay info line
 ".rinfo{font-size:11px;color:#64748b;margin-top:8px;min-height:16px;line-height:1.5}"
 // Buttons
 ".brow{display:flex;gap:8px;margin-bottom:10px}"
@@ -96,6 +94,19 @@ static const char provisioning_html[] =
 ".b-off-btn{background:#1e293b;color:#94a3b8;border:1px solid #334155}"
 ".b-trip-btn{background:#450a0a;color:#f87171;border:1px solid #7f1d1d}"
 ".b-rst-btn{background:#0c1a2e;color:#60a5fa;border:1px solid #1e3a5f}"
+// Setup wizard
+".setup-wrap{padding:16px;max-width:440px;margin:0 auto}"
+".step{display:none}"
+".step.active{display:block}"
+".step-hdr{display:flex;align-items:center;gap:10px;margin-bottom:20px}"
+".step-num{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);"
+"display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}"
+".step-title{font-size:16px;font-weight:700;color:#e2e8f0}"
+".step-sub{font-size:12px;color:#64748b;margin-top:1px}"
+// Progress bar
+".prog{display:flex;gap:6px;margin-bottom:24px}"
+".prog-dot{flex:1;height:4px;border-radius:2px;background:#1e293b;transition:background .3s}"
+".prog-dot.done{background:#667eea}"
 // Form
 ".fg{margin-bottom:16px}"
 ".flbl{display:block;margin-bottom:6px;color:#94a3b8;font-size:12px;font-weight:600}"
@@ -110,12 +121,28 @@ static const char provisioning_html[] =
 "color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;"
 "cursor:pointer;touch-action:manipulation}"
 ".wbtn:active{opacity:.8}"
+".wbtn.sec{background:#1e293b;border:2px solid #334155;color:#94a3b8}"
+".wbtn:disabled{opacity:.4;cursor:default}"
 // Toast messages
 ".msg{margin-top:12px;padding:11px;border-radius:9px;text-align:center;font-size:13px;display:none}"
 ".msg.ok{display:block;background:#14532d;color:#4ade80;border:1px solid #166534}"
 ".msg.err{display:block;background:#450a0a;color:#f87171;border:1px solid #7f1d1d}"
 // Timestamp bar
 "#upd{text-align:center;font-size:10px;color:#475569;margin-top:10px;min-height:14px}"
+// Network scan list
+".net-item{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:8px;"
+"margin-bottom:6px}"
+".net-24{background:#1e293b;border:1px solid #334155;cursor:pointer}"
+".net-24:active{background:#263548}"
+".net-5{background:#1a0a0a;border:1px solid #7f1d1d;cursor:not-allowed;opacity:.55}"
+".net-ssid{flex:1;font-size:13px;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}"
+".band-24{font-size:10px;font-weight:700;color:#4ade80;white-space:nowrap}"
+".band-5{font-size:10px;font-weight:700;color:#f87171;white-space:nowrap}"
+".net-sig{font-size:11px;color:#64748b;white-space:nowrap;letter-spacing:-1px}"
+".scan-btn{background:none;border:1px solid #334155;color:#818cf8;border-radius:6px;"
+"padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer}"
+".scan-btn:active{background:#1e293b}"
+".scan-btn:disabled{opacity:.4;cursor:default}"
 "</style></head><body>"
 
 // ── Header ───────────────────────────────────────────────────────────────────
@@ -125,15 +152,12 @@ static const char provisioning_html[] =
 "<div class='tabs'>"
 "<div class='tab active' onclick='showTab(0)'>&#x1F4CA; Readings</div>"
 "<div class='tab' onclick='showTab(1)'>&#x1F50C; Relay</div>"
-"<div class='tab' onclick='showTab(2)'>&#x1F4F6; WiFi</div>"
-"<div class='tab' onclick='showTab(3)'>&#x2699; Server</div>"
+"<div class='tab' onclick='showTab(2)'>&#x2699; Setup</div>"
 "</div>"
 
 // ── READINGS PAGE ─────────────────────────────────────────────────────────────
 "<div class='page active' id='p0'>"
-// Spinner shown until sensor sends first valid data
 "<div class='cstate' id='cstate'><div class='spin'></div><div id='ctext'>Connecting to sensor...</div></div>"
-// Grid — hidden until first valid reading received
 "<div id='rdata' style='display:none'>"
 "<div class='grid'>"
 "<div class='card'><div class='clabel'>Voltage</div>"
@@ -177,42 +201,30 @@ static const char provisioning_html[] =
 "<div class='msg' id='rmsg'></div>"
 "</div>"
 
-// ── WIFI PAGE ─────────────────────────────────────────────────────────────────
+// ── SETUP WIZARD PAGE ─────────────────────────────────────────────────────────
 "<div class='page' id='p2'>"
-"<div class='fg'>"
-"<label class='flbl'>WiFi Network (SSID)</label>"
-"<input type='text' id='ssid' placeholder='Enter network name' autocomplete='off'>"
-"</div>"
-"<div class='fg'>"
-"<label class='flbl'>Password</label>"
-"<div class='pw-wrap'>"
-"<input type='password' id='pw' placeholder='Enter password'>"
-"<button class='pw-eye' onclick='togglePw()' title='Show/hide'>&#x1F441;</button>"
-"</div>"
-"</div>"
-"<div class='fg'>"
-"<label class='flbl'>Static IP (optional — blank = DHCP)</label>"
-"<input type='text' id='sip' placeholder='e.g. 192.168.1.100' autocomplete='off'>"
-"<div style='font-size:11px;color:#64748b;margin-top:4px'>Set a fixed address so you can always reach the device at http://&lt;IP&gt;/</div>"
-"</div>"
-"<button class='wbtn' onclick='saveWifi()'>&#x1F4BE; Save &amp; Connect</button>"
-"<div class='msg' id='wmsg'></div>"
-"<hr style='border-color:#334155;margin:20px 0'>"
-"<div style='font-size:12px;color:#94a3b8;margin-bottom:10px'>Reset: clears saved WiFi + static IP and restarts into setup mode.</div>"
-"<button class='wbtn' style='background:#7f1d1d;' onclick='resetWifi()'>&#x21BA; Reset WiFi Settings</button>"
-"<div class='msg' id='rmsg2'></div>"
+"<div class='setup-wrap'>"
+// Progress dots
+"<div class='prog'>"
+"<div class='prog-dot done' id='pd0'></div>"
+"<div class='prog-dot' id='pd1'></div>"
 "</div>"
 
-// ── SERVER SETTINGS PAGE ───────────────────────────────────────────────────────
-"<div class='page' id='p3'>"
+// ── Step 1: Server credentials ────────────────────────────────────────────────
+"<div class='step active' id='s1'>"
+"<div class='step-hdr'>"
+"<div class='step-num'>1</div>"
+"<div><div class='step-title'>Server Credentials</div>"
+"<div class='step-sub'>Enter your BlueWatt server details</div></div>"
+"</div>"
 "<div class='fg'>"
 "<label class='flbl'>Server URL</label>"
-"<input type='url' id='svr_url' placeholder='http://192.168.1.100:3000' autocomplete='off'>"
+"<input type='url' id='svr_url' placeholder='https://bluewatt-api.onrender.com' autocomplete='off'>"
 "</div>"
 "<div class='fg'>"
 "<label class='flbl'>API Key</label>"
 "<div class='pw-wrap'>"
-"<input type='password' id='svr_key' placeholder='bluewatt-api-key'>"
+"<input type='password' id='svr_key' placeholder='bw_xxxxxxxx...'>"
 "<button class='pw-eye' onclick='toggleKey()' title='Show/hide'>&#x1F441;</button>"
 "</div>"
 "</div>"
@@ -220,9 +232,60 @@ static const char provisioning_html[] =
 "<label class='flbl'>Device ID</label>"
 "<input type='text' id='svr_did' placeholder='bluewatt-001' autocomplete='off'>"
 "</div>"
-"<button class='wbtn' onclick='saveServer()'>&#x1F4BE; Save Server Settings</button>"
+"<button class='wbtn' onclick='goStep2()'>Next &rarr; WiFi</button>"
 "<div class='msg' id='smsg'></div>"
 "</div>"
+
+// ── Step 2: WiFi credentials ──────────────────────────────────────────────────
+"<div class='step' id='s2'>"
+"<div class='step-hdr'>"
+"<div class='step-num'>2</div>"
+"<div><div class='step-title'>WiFi Network</div>"
+"<div class='step-sub'>Select or enter your 2.4 GHz network</div></div>"
+"</div>"
+// 2.4 GHz notice
+"<div style='background:#1a1200;border:1px solid #78350f;border-radius:9px;padding:10px 12px;"
+"margin-bottom:14px;font-size:12px;color:#fbbf24;line-height:1.6'>"
+"&#x26A0; <strong>ESP32 only supports 2.4 GHz WiFi.</strong> "
+"5 GHz networks are shown but cannot be selected."
+"</div>"
+// SSID row: label + scan button
+"<div class='fg'>"
+"<div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:6px'>"
+"<label class='flbl' style='margin:0'>WiFi Network (SSID)</label>"
+"<button id='scanbtn' class='scan-btn' onclick='scanNetworks()'>&#x21BB; Scan</button>"
+"</div>"
+"<input type='text' id='ssid' placeholder='Tap Scan or enter manually' autocomplete='off'>"
+// Scan results list
+"<div id='scanout' style='margin-top:8px;max-height:200px;overflow-y:auto'></div>"
+"</div>"
+// Password
+"<div class='fg'>"
+"<label class='flbl'>Password</label>"
+"<div class='pw-wrap'>"
+"<input type='password' id='pw' placeholder='Enter password'>"
+"<button class='pw-eye' onclick='togglePw()' title='Show/hide'>&#x1F441;</button>"
+"</div>"
+"</div>"
+// Static IP
+"<div class='fg'>"
+"<label class='flbl'>Static IP (optional — blank = DHCP)</label>"
+"<input type='text' id='sip' placeholder='e.g. 192.168.1.100' autocomplete='off'>"
+"<div style='font-size:11px;color:#64748b;margin-top:4px'>Leave blank unless you need a fixed address.</div>"
+"</div>"
+"<div style='display:flex;gap:10px'>"
+"<button class='wbtn sec' style='flex:0 0 80px' onclick='goStep1()'>&larr; Back</button>"
+"<button class='wbtn' id='sbtn' onclick='saveAll()'>&#x1F4BE; Save &amp; Connect</button>"
+"</div>"
+"<div class='msg' id='wmsg'></div>"
+"<hr style='border-color:#334155;margin:20px 0'>"
+"<div style='font-size:12px;color:#94a3b8;margin-bottom:10px'>Reset: clears saved settings and restarts into setup mode.</div>"
+"<button class='wbtn' style='background:#7f1d1d;' onclick='resetWifi()'>&#x21BA; Reset All Settings</button>"
+"<div class='msg' id='rmsg2'></div>"
+"</div>"
+
+"</div>"  // .setup-wrap
+"</div>"  // #p2
 
 // ── SCRIPT ───────────────────────────────────────────────────────────────────
 "<script>"
@@ -233,22 +296,74 @@ static const char provisioning_html[] =
 "pages.forEach(function(p,i){p.classList.toggle('active',i===n);});"
 "}"
 
+// ── Wizard step navigation ────────────────────────────────────────────────────
+"function goStep2(){"
+"var url=document.getElementById('svr_url').value.trim(),"
+"did=document.getElementById('svr_did').value.trim(),"
+"msg=document.getElementById('smsg');"
+"if(!url){msg.textContent='Server URL is required';msg.className='msg err';return;}"
+"if(!did){msg.textContent='Device ID is required';msg.className='msg err';return;}"
+"msg.className='msg';"
+"document.getElementById('s1').classList.remove('active');"
+"document.getElementById('s2').classList.add('active');"
+"document.getElementById('pd1').classList.add('done');"
+"}"
+"function goStep1(){"
+"document.getElementById('s2').classList.remove('active');"
+"document.getElementById('s1').classList.add('active');"
+"document.getElementById('pd1').classList.remove('done');"
+"}"
+
+// ── Save both server + WiFi in sequence ───────────────────────────────────────
+"function saveAll(){"
+"var ssid=document.getElementById('ssid').value.trim(),"
+"pw=document.getElementById('pw').value,"
+"sip=document.getElementById('sip').value.trim(),"
+"url=document.getElementById('svr_url').value.trim(),"
+"key=document.getElementById('svr_key').value.trim(),"
+"did=document.getElementById('svr_did').value.trim(),"
+"wmsg=document.getElementById('wmsg'),"
+"sbtn=document.getElementById('sbtn');"
+"if(!ssid){wmsg.textContent='Network name is required';wmsg.className='msg err';return;}"
+"wmsg.textContent='Saving server settings...';wmsg.className='msg ok';"
+"sbtn.disabled=true;"
+// Step A: save server settings
+"fetch('/settings',{"
+"method:'POST',"
+"headers:{'Content-Type':'application/x-www-form-urlencoded'},"
+"body:'url='+encodeURIComponent(url)+'&key='+encodeURIComponent(key)+'&did='+encodeURIComponent(did)})"
+".then(function(r){return r.json();})"
+".then(function(d){"
+"if(!d.success){wmsg.textContent='Server save failed: '+d.message;wmsg.className='msg err';sbtn.disabled=false;return;}"
+// Step B: save WiFi credentials — device restarts after this
+"wmsg.textContent='Server saved. Saving WiFi...';wmsg.className='msg ok';"
+"return fetch('/wifi',{"
+"method:'POST',"
+"headers:{'Content-Type':'application/x-www-form-urlencoded'},"
+"body:'ssid='+encodeURIComponent(ssid)+'&password='+encodeURIComponent(pw)+'&sip='+encodeURIComponent(sip)})"
+".then(function(r){return r.json();})"
+".then(function(d2){"
+"if(d2.success){"
+"wmsg.textContent='Done! Device is connecting to '+ssid+'...';"
+"wmsg.className='msg ok';"
+"}else{"
+"wmsg.textContent='WiFi save failed: '+d2.message;wmsg.className='msg err';sbtn.disabled=false;"
+"}"
+"});"
+"})"
+".catch(function(e){wmsg.textContent='Error: '+e.message;wmsg.className='msg err';sbtn.disabled=false;});"
+"}"
+
 // ── Value color helpers (Philippines 220 V / 60 Hz) ───────────────────────────
-// Voltage: OK 195-240 V, WARN 180-195 or 240-250 V, BAD outside that
 "function vc(v){return(v<180||v>250)?'bad':(v<195||v>240)?'warn':'ok';}"
-// Current: OK 0-12 A, WARN 12-15 A, BAD >15 A
 "function ic(a){return a>15?'bad':a>12?'warn':a>0?'ok':'neutral';}"
-// Power factor: OK >0.85, WARN 0.70-0.85, BAD <0.70
 "function pfc(pf){return pf<0.70?'bad':pf<0.85?'warn':'ok';}"
-// Frequency: OK 59-61 Hz (tight), WARN 58-62 Hz, BAD outside
 "function fc(f){return(f<58||f>62)?'bad':(f<59||f>61)?'warn':'ok';}"
 
-// ── Set a value card (id, display text, CSS color class) ──────────────────────
-// A single className write ensures previous color/stale classes are always cleared.
 "function sv(id,txt,cls){"
 "var el=document.getElementById(id);"
 "el.textContent=txt;"
-"el.className='value '+cls;"  // replaces ANY prior class — no stale state possible
+"el.className='value '+cls;"
 "}"
 
 // ── Update relay UI ───────────────────────────────────────────────────────────
@@ -266,13 +381,11 @@ static const char provisioning_html[] =
 "else{"
 "dot.className='dot dot-off';"
 "badge.innerHTML=\"<span class='badge b-off'>OFF</span>\";}"
-// Info line — trip count, last reason, cooldown countdown
 "var parts=[];"
 "if(trips>0)parts.push('Trips: '+trips);"
 "if(reason&&reason!=='NONE')parts.push('Last: '+reason);"
 "if(cdms>0&&state!=='TRIPPED')parts.push('Cooldown: '+Math.ceil(cdms/1000)+'s');"
 "info.textContent=parts.join(' \u2022 ');"
-// ON button disabled when tripped or in cooldown
 "bon.disabled=(state==='TRIPPED')||(cdms>0);"
 "}"
 
@@ -280,13 +393,12 @@ static const char provisioning_html[] =
 "var ctrl=null,tid=null,gotData=false,errCount=0;"
 
 "function poll(){"
-"if(ctrl)ctrl.abort();"  // cancel any in-flight request before firing new one
+"if(ctrl)ctrl.abort();"
 "ctrl=new AbortController();"
 "fetch('/readings',{signal:ctrl.signal,cache:'no-store'})"
 ".then(function(r){return r.json();})"
 ".then(function(d){"
 "errCount=0;"
-// Reveal grid on first valid reading, update spinner text while waiting
 "if(d.valid&&!gotData){"
 "gotData=true;"
 "document.getElementById('cstate').style.display='none';"
@@ -295,7 +407,6 @@ static const char provisioning_html[] =
 "if(!d.valid&&!gotData){"
 "document.getElementById('ctext').textContent='Waiting for sensor data...';"
 "}"
-// Color-code each value; when invalid, .stale class dims all cards uniformly
 "var ok=d.valid;"
 "sv('v', ok?d.v.toFixed(1):'--',  ok?vc(d.v):'stale');"
 "sv('i', ok?d.i.toFixed(3):'--',  ok?ic(d.i):'stale');"
@@ -305,7 +416,6 @@ static const char provisioning_html[] =
 "sv('fr',ok?d.f.toFixed(1):'--',  ok?fc(d.f):'stale');"
 "sv('e', ok?d.e.toFixed(0):'--',  ok?'neutral':'stale');"
 "setRelay(d.relay,d.trip_count||0,d.cooldown_ms||0,d.last_reason||'NONE');"
-// Timestamp
 "var t=new Date();"
 "document.getElementById('upd').textContent="
 "(ok?'Updated ':'Sensor offline \u2014 ')"
@@ -314,15 +424,13 @@ static const char provisioning_html[] =
 "+t.getSeconds().toString().padStart(2,'0');"
 "})"
 ".catch(function(e){"
-"if(e.name==='AbortError')return;"  // intentional abort — not an error
+"if(e.name==='AbortError')return;"
 "errCount++;"
 "if(errCount>=3)"
 "document.getElementById('upd').textContent='Connection lost \u2014 retrying...';"
 "});"
 "}"
 
-// ── Page Visibility API — pause polling when screen/tab is hidden ─────────────
-// Prevents wasted fetches when the phone screen turns off
 "document.addEventListener('visibilitychange',function(){"
 "if(document.hidden){"
 "clearInterval(tid);tid=null;"
@@ -341,8 +449,7 @@ static const char provisioning_html[] =
 "if(rPending)return;"
 "rPending=true;"
 "var msg=document.getElementById('rmsg');"
-"msg.className='msg';"  // hide feedback while request is in flight
-// Disable all relay buttons to prevent double-tap
+"msg.className='msg';"
 "document.querySelectorAll('#p1 .btn').forEach(function(b){b.disabled=true;});"
 "fetch('/relay',{"
 "method:'POST',"
@@ -353,78 +460,79 @@ static const char provisioning_html[] =
 "msg.textContent=d.message;"
 "msg.className='msg '+(d.ok?'ok':'err');"
 "rPending=false;"
-// Re-enable all buttons except ON (setRelay inside poll will handle ON)
 "['boff','btrip','brst'].forEach(function(id){"
 "document.getElementById(id).disabled=false;});"
-"poll();"  // immediate state sync — setRelay will update bon.disabled correctly
+"poll();"
 "})"
 ".catch(function(e){"
 "msg.textContent='Error: '+e.message;"
 "msg.className='msg err';"
 "rPending=false;"
-// Network error — re-enable all buttons
 "document.querySelectorAll('#p1 .btn').forEach(function(b){b.disabled=false;});"
 "});"
 "}"
 
-// ── Password show/hide ────────────────────────────────────────────────────────
+// ── Show/hide helpers ─────────────────────────────────────────────────────────
 "function togglePw(){"
 "var i=document.getElementById('pw');"
 "i.type=i.type==='password'?'text':'password';"
 "}"
-
-// ── API key show/hide ─────────────────────────────────────────────────────────
 "function toggleKey(){"
 "var i=document.getElementById('svr_key');"
 "i.type=i.type==='password'?'text':'password';"
 "}"
 
-// ── Server settings save ──────────────────────────────────────────────────────
-"function saveServer(){"
-"var url=document.getElementById('svr_url').value.trim(),"
-"key=document.getElementById('svr_key').value.trim(),"
-"did=document.getElementById('svr_did').value.trim(),"
-"msg=document.getElementById('smsg');"
-"if(!url){msg.textContent='Server URL is required';msg.className='msg err';return;}"
-"if(!did){msg.textContent='Device ID is required';msg.className='msg err';return;}"
-"msg.textContent='Saving...';msg.className='msg ok';"
-"fetch('/settings',{"
-"method:'POST',"
-"headers:{'Content-Type':'application/x-www-form-urlencoded'},"
-"body:'url='+encodeURIComponent(url)+'&key='+encodeURIComponent(key)+'&did='+encodeURIComponent(did)})"
+// ── WiFi scan ─────────────────────────────────────────────────────────────────
+// _nets stores the last scan result so pickNet(i) can read the SSID safely.
+"var _nets=[];"
+"function escHtml(s){"
+"return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');"
+"}"
+"function sigBars(rssi){"
+"return rssi>-60?'\u2588\u2588\u2588':rssi>-75?'\u2588\u2588\u2591':'\u2588\u2591\u2591';"
+"}"
+"function scanNetworks(){"
+"var btn=document.getElementById('scanbtn'),"
+"out=document.getElementById('scanout');"
+"btn.disabled=true;"
+"out.innerHTML='<div style=\"color:#64748b;font-size:12px;text-align:center;padding:10px\">Scanning...</div>';"
+"fetch('/scan',{cache:'no-store'})"
 ".then(function(r){return r.json();})"
-".then(function(d){"
-"msg.textContent=d.success?'Saved! Takes effect on next boot.':'Failed: '+d.message;"
-"msg.className='msg '+(d.success?'ok':'err');"
+".then(function(nets){"
+"_nets=nets;"
+"if(!nets.length){"
+"out.innerHTML='<div style=\"color:#64748b;font-size:12px;text-align:center;padding:10px\">No networks found</div>';"
+"btn.disabled=false;return;"
+"}"
+"var html='';"
+"for(var i=0;i<nets.length;i++){"
+"var n=nets[i],is24=n.band==='2.4';"
+"html+='<div class=\"net-item '+(is24?'net-24':'net-5')+'\"'"
+"+(is24?' onclick=\"pickNet('+i+')\"':'')+'>'"
+"+'<span class=\"net-ssid\">'+escHtml(n.ssid||'(hidden)')+'</span>'"
+"+'<span class=\"'+(is24?'band-24':'band-5')+'\">'+n.band+' GHz</span>'"
+"+'<span class=\"net-sig\">'+sigBars(n.rssi)+'</span>'"
+"+'</div>';"
+"}"
+"out.innerHTML=html;"
+"btn.disabled=false;"
 "})"
-".catch(function(e){msg.textContent='Error: '+e.message;msg.className='msg err';});"
+".catch(function(){"
+"out.innerHTML='<div style=\"color:#f87171;font-size:12px;text-align:center;padding:10px\">Scan failed</div>';"
+"btn.disabled=false;"
+"});"
+"}"
+"function pickNet(i){"
+"if(_nets[i])document.getElementById('ssid').value=_nets[i].ssid;"
 "}"
 
-// ── WiFi save ─────────────────────────────────────────────────────────────────
+// ── Reset all settings ────────────────────────────────────────────────────────
 "function resetWifi(){"
-"if(!confirm('Reset WiFi settings and restart into setup mode?'))return;"
+"if(!confirm('Reset all settings and restart into setup mode?'))return;"
 "var msg=document.getElementById('rmsg2');"
 "msg.textContent='Resetting...';msg.className='msg ok';"
 "fetch('/wifi/reset',{method:'POST'})"
-".then(function(){msg.textContent='Restarting — connect to BlueWatt-Setup...';msg.className='msg ok';})"
-".catch(function(e){msg.textContent='Error: '+e.message;msg.className='msg err';});"
-"}"
-"function saveWifi(){"
-"var ssid=document.getElementById('ssid').value.trim(),"
-"pw=document.getElementById('pw').value,"
-"sip=document.getElementById('sip').value.trim(),"
-"msg=document.getElementById('wmsg');"
-"if(!ssid){msg.textContent='Network name is required';msg.className='msg err';return;}"
-"msg.textContent='Saving credentials...';msg.className='msg ok';"
-"fetch('/wifi',{"
-"method:'POST',"
-"headers:{'Content-Type':'application/x-www-form-urlencoded'},"
-"body:'ssid='+encodeURIComponent(ssid)+'&password='+encodeURIComponent(pw)+'&sip='+encodeURIComponent(sip)})"
-".then(function(r){return r.json();})"
-".then(function(d){"
-"msg.textContent=d.success?'Saved! Connecting and restarting...':'Failed: '+d.message;"
-"msg.className='msg '+(d.success?'ok':'err');"
-"})"
+".then(function(){msg.textContent='Restarting \u2014 connect to BlueWatt-Setup...';msg.className='msg ok';})"
 ".catch(function(e){msg.textContent='Error: '+e.message;msg.className='msg err';});"
 "}"
 "</script></body></html>";
@@ -830,6 +938,97 @@ static esp_err_t settings_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+// GET /scan — scan visible WiFi APs and return JSON array.
+// Each entry: {"ssid":"...","rssi":-60,"ch":6,"band":"2.4"} or "5" for 5 GHz.
+// Channel ≤ 13 → 2.4 GHz.  Channel ≥ 36 → 5 GHz.
+// Results sorted strongest-first (up to 20 APs).
+static esp_err_t scan_handler(httpd_req_t *req)
+{
+    wifi_scan_config_t scan_cfg = {
+        .ssid        = NULL,
+        .bssid       = NULL,
+        .channel     = 0,
+        .show_hidden = false,
+        .scan_type   = WIFI_SCAN_TYPE_ACTIVE,
+        .scan_time.active.min = 100,
+        .scan_time.active.max = 300,
+    };
+
+    esp_err_t err = esp_wifi_scan_start(&scan_cfg, true /* blocking */);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG_PROV, "Scan failed: %s", esp_err_to_name(err));
+        httpd_resp_set_type(req, "application/json");
+        httpd_resp_send(req, "[]", 2);
+        return ESP_OK;
+    }
+
+    uint16_t ap_count = 0;
+    esp_wifi_scan_get_ap_num(&ap_count);
+    if (ap_count > 20) ap_count = 20;
+
+    if (ap_count == 0) {
+        httpd_resp_set_type(req, "application/json");
+        httpd_resp_send(req, "[]", 2);
+        return ESP_OK;
+    }
+
+    wifi_ap_record_t *records = (wifi_ap_record_t *)malloc(sizeof(wifi_ap_record_t) * ap_count);
+    if (!records) {
+        httpd_resp_set_type(req, "application/json");
+        httpd_resp_send(req, "[]", 2);
+        return ESP_OK;
+    }
+    esp_wifi_scan_get_ap_records(&ap_count, records);
+
+    // Sort by RSSI descending (strongest first) — bubble sort, n ≤ 20
+    for (int i = 0; i < (int)ap_count - 1; i++) {
+        for (int j = 0; j < (int)ap_count - i - 1; j++) {
+            if (records[j].rssi < records[j + 1].rssi) {
+                wifi_ap_record_t tmp = records[j];
+                records[j]          = records[j + 1];
+                records[j + 1]      = tmp;
+            }
+        }
+    }
+
+    // Build JSON: each entry ≤ ~120 chars (SSID 32 bytes + escaping + metadata)
+    char *json = (char *)malloc(ap_count * 120 + 8);
+    if (!json) { free(records); httpd_resp_set_type(req, "application/json"); httpd_resp_send(req, "[]", 2); return ESP_OK; }
+
+    int pos = 0;
+    json[pos++] = '[';
+
+    for (int i = 0; i < (int)ap_count; i++) {
+        // Escape SSID for JSON: replace \ with \\ and " with \"
+        char ssid_safe[70] = {0};
+        int si = 0;
+        for (int j = 0; j < 32 && records[i].ssid[j] && si < 66; j++) {
+            char c = (char)records[i].ssid[j];
+            if (c == '\\' || c == '"') ssid_safe[si++] = '\\';
+            ssid_safe[si++] = c;
+        }
+
+        const char *band = (records[i].primary <= 13) ? "2.4" : "5";
+
+        pos += snprintf(json + pos, 120,
+            "%s{\"ssid\":\"%s\",\"rssi\":%d,\"ch\":%d,\"band\":\"%s\"}",
+            i > 0 ? "," : "",
+            ssid_safe, records[i].rssi, records[i].primary, band);
+    }
+
+    json[pos++] = ']';
+    json[pos]   = '\0';
+
+    ESP_LOGI(TAG_PROV, "Scan: %d APs found", ap_count);
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+    httpd_resp_send(req, json, pos);
+
+    free(records);
+    free(json);
+    return ESP_OK;
+}
+
 static esp_err_t start_provisioning_server(void)
 {
     httpd_config_t config   = HTTPD_DEFAULT_CONFIG();
@@ -888,6 +1087,13 @@ static esp_err_t start_provisioning_server(void)
     };
     httpd_register_uri_handler(provisioning_server, &settings_uri);
 
+    httpd_uri_t scan_uri = {
+        .uri     = "/scan",
+        .method  = HTTP_GET,
+        .handler = scan_handler,
+    };
+    httpd_register_uri_handler(provisioning_server, &scan_uri);
+
     // ── Captive-portal handlers ───────────────────────────────────────────────
     // Android: expects HTTP 204 from /generate_204
     httpd_uri_t gen204_uri = {
@@ -939,7 +1145,8 @@ esp_err_t wifi_provisioning_start_ap(void)
         },
     };
 
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+    // APSTA mode lets us scan for nearby networks while the setup AP is active.
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
 

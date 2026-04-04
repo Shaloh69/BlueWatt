@@ -99,9 +99,9 @@ export const updateDevice = asyncHandler(async (req: Request, res: Response, _ne
     throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
   }
 
-  const { device_name, location, is_active } = req.body;
+  const { device_name, location, description, is_active } = req.body;
 
-  await DeviceModel.update(deviceId, { device_name, location, is_active });
+  await DeviceModel.update(deviceId, { device_name, location, description, is_active });
   bustCache('devices', req.user!.id);
 
   const updatedDevice = await DeviceModel.findById(deviceId);

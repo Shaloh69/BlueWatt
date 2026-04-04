@@ -7,6 +7,7 @@ import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
 import { UserModel } from '../models/user.model';
 import { DeviceKeyModel } from '../models/deviceKey.model';
 import { DeviceModel } from '../models/device.model';
+import { logger } from '../utils/logger';
 
 export const authenticateJWT = async (
   req: Request,
@@ -72,18 +73,23 @@ export const authenticateApiKey = async (
     }
 
     if (!matchedDeviceId) {
+      logger.warn(`[ESP] API key rejected — no matching device key (IP: ${req.ip})`);
       throw new AppError('Invalid API key', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
     }
 
     const device = await DeviceModel.findById(matchedDeviceId);
 
     if (!device) {
+      logger.warn(`[ESP] API key matched but device ID ${matchedDeviceId} not found in DB`);
       throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
     }
 
     if (!device.is_active) {
+      logger.warn(`[ESP] Device "${device.device_id}" authenticated but is inactive — rejecting`);
       throw new AppError('Device is not active', HTTP_STATUS.FORBIDDEN, ERROR_CODES.DEVICE_INACTIVE);
     }
+
+    logger.info(`[ESP] Device "${device.device_id}" connected (ID: ${device.id}, IP: ${req.ip}) → ${req.method} ${req.path}`);
 
     req.device = device;
     req.deviceId = device.id;

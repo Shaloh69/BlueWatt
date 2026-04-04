@@ -11,7 +11,8 @@ import { toast } from "@/lib/toast";
 
 function SSEListener() {
   useSSE({
-    relay_state: () => { reloadDevices(); },
+    relay_state:       () => { reloadDevices(); },
+    device_heartbeat:  () => { reloadDevices(); },
     anomaly: (d) => {
       const type = (d.anomaly_type as string ?? "anomaly").replace(/_/g, " ");
       toast.warning(`Anomaly: ${type} on device ${d.device_id}`);

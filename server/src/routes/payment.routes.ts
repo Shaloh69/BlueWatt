@@ -43,7 +43,7 @@ router.get('/admin/all', authenticateJWT, requireAdmin, getAllPayments);
 router.get('/qr-codes',              authenticateJWT, getActiveQrCodes);
 
 // Admin: upload a new QR code
-router.post('/qr-codes',             authenticateJWT, requireAdmin, upload.single('qr_image'), uploadQrCode);
+router.post('/qr-codes',             authenticateJWT, requireAdmin, upload.single('image'), uploadQrCode);
 
 // Admin: manage existing QR codes
 router.get('/qr-codes/all',          authenticateJWT, requireAdmin, getAllQrCodes);

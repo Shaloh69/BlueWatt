@@ -39,10 +39,15 @@ export const updateDeviceValidator = [
     .trim()
     .isLength({ max: 200 })
     .withMessage('Location must be less than 200 characters'),
-  body('status')
+  body('description')
+    .optional({ nullable: true })
+    .trim()
+    .isLength({ max: 500 })
+    .withMessage('Description must be less than 500 characters'),
+  body('is_active')
     .optional()
-    .isIn(['active', 'inactive'])
-    .withMessage('Status must be either active or inactive'),
+    .isBoolean()
+    .withMessage('is_active must be a boolean'),
 ];
 
 export const updateRelayValidator = [

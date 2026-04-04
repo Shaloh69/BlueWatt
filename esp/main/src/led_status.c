@@ -43,9 +43,9 @@ static void led_task(void *pvParam)
             vTaskDelay(pdMS_TO_TICKS(2000));
 
         } else if (wifi_ok && server_ok) {
-            // Both connected — 3 blinks
-            blink_n(3);
-            vTaskDelay(pdMS_TO_TICKS(2000 - 3 * 200));
+            // Both connected — 2 blinks every 2 s
+            blink_n(2);
+            vTaskDelay(pdMS_TO_TICKS(2000 - 2 * 200));
 
         } else if (wifi_ok) {
             // WiFi only — 1 blink

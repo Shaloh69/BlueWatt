@@ -64,7 +64,7 @@
 // ============================================================
 // HTTP Server
 // ============================================================
-#define HTTP_SERVER_URL         "https://bluewatt-api.onrender.com/api/v1/power-data/"
+#define HTTP_SERVER_URL         "https://bluewatt-api.onrender.com"
 #define HTTP_TIMEOUT_MS         30000                // 30s — Render cold starts can be slow
 #define HTTP_API_KEY            "bw_paste-your-key-here"  // ← from Devices → Register
 #define HTTP_POWER_INTERVAL     10                   // POST every N PZEM reads (~10s)

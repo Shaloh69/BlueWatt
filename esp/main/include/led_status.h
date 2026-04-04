@@ -6,9 +6,9 @@
 // LED Status — GPIO2 (built-in LED)
 //
 // Blink pattern (repeating ~2-second cycle):
-//   Both WiFi + Server connected : 3 blinks
+//   Both WiFi + Server connected : 2 blinks  ← fully operational
 //   WiFi only                    : 1 blink
-//   Server only                  : 2 blinks
+//   Server only (edge case)      : 2 blinks fast (unlikely)
 //   Nothing connected            : solid on
 // ============================================================
 

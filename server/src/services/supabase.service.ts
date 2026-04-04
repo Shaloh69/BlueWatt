@@ -42,8 +42,12 @@ class SupabaseService {
       });
 
     if (error) {
-      logger.error('Supabase upload error:', error);
-      throw new AppError('Failed to upload image', HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_CODES.INTERNAL_ERROR);
+      logger.error(`Supabase upload error (bucket: ${config.supabase.storageBucket}):`, error.message ?? error);
+      throw new AppError(
+        `Image upload failed: ${error.message ?? 'Supabase unreachable — check SUPABASE_URL and bucket name in Render env vars'}`,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        ERROR_CODES.INTERNAL_ERROR
+      );
     }
 
     const { data: urlData } = this.client.storage
@@ -55,7 +59,7 @@ class SupabaseService {
 
   async uploadDeviceImage(file: Buffer, fileName: string, contentType: string, deviceId: number): Promise<string> {
     if (!this.client) {
-      throw new AppError('Supabase not configured', HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_CODES.INTERNAL_ERROR);
+      throw new AppError('Image upload not available — SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set in environment', HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_CODES.INTERNAL_ERROR);
     }
 
     const filePath = `devices/${deviceId}/${Date.now()}-${fileName}`;
@@ -68,8 +72,12 @@ class SupabaseService {
       });
 
     if (error) {
-      logger.error('Supabase upload error:', error);
-      throw new AppError('Failed to upload image', HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_CODES.INTERNAL_ERROR);
+      logger.error(`Supabase upload error (bucket: ${config.supabase.storageBucket}):`, error.message ?? error);
+      throw new AppError(
+        `Image upload failed: ${error.message ?? 'Supabase unreachable — check SUPABASE_URL and bucket name in Render env vars'}`,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        ERROR_CODES.INTERNAL_ERROR
+      );
     }
 
     const { data: urlData } = this.client.storage
@@ -91,8 +99,12 @@ class SupabaseService {
       .upload(filePath, file, { contentType, upsert: false });
 
     if (error) {
-      logger.error('Supabase QR upload error:', error);
-      throw new AppError('Failed to upload QR code', HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_CODES.INTERNAL_ERROR);
+      logger.error(`Supabase QR upload error (bucket: ${config.supabase.storageBucket}):`, error.message ?? error);
+      throw new AppError(
+        `QR upload failed: ${error.message ?? 'Supabase unreachable — check SUPABASE_URL and bucket name in Render env vars'}`,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        ERROR_CODES.INTERNAL_ERROR
+      );
     }
 
     const { data: urlData } = this.client.storage
@@ -117,8 +129,12 @@ class SupabaseService {
       });
 
     if (error) {
-      logger.error('Supabase receipt upload error:', error);
-      throw new AppError('Failed to upload receipt image', HTTP_STATUS.INTERNAL_SERVER_ERROR, ERROR_CODES.INTERNAL_ERROR);
+      logger.error(`Supabase receipt upload error (bucket: ${config.supabase.storageBucket}):`, error.message ?? error);
+      throw new AppError(
+        `Receipt upload failed: ${error.message ?? 'Supabase unreachable — check SUPABASE_URL and bucket name in Render env vars'}`,
+        HTTP_STATUS.INTERNAL_SERVER_ERROR,
+        ERROR_CODES.INTERNAL_ERROR
+      );
     }
 
     const { data: urlData } = this.client.storage

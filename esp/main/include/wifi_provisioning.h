@@ -4,7 +4,7 @@
 #include "esp_err.h"
 
 // Provisioning AP settings
-#define PROV_AP_SSID        "BlueWatt-Setup"
+#define PROV_AP_SSID        "BlueWatt-Setup PAD 2"
 #define PROV_AP_PASSWORD    "bluewatt2024"
 #define PROV_AP_CHANNEL     1
 #define PROV_AP_MAX_CONN    4

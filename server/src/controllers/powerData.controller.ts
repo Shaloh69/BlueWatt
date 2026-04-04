@@ -7,18 +7,23 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
 import { PowerDataRequest } from '../types/api';
 import { sseService } from '../services/sse.service';
+import { logger } from '../utils/logger';
 
 export const submitPowerData = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
   const { device_id, timestamp, voltage_rms, current_rms, power_apparent, power_real, power_factor, energy_kwh, frequency } =
     req.body as PowerDataRequest & { energy_kwh?: number; frequency?: number };
 
+  logger.info(`[ESP] Power data received from "${device_id}" — ${voltage_rms?.toFixed(1)} V, ${current_rms?.toFixed(3)} A, ${power_real?.toFixed(1)} W`);
+
   const device = await DeviceModel.findByDeviceId(device_id);
 
   if (!device) {
+    logger.warn(`[ESP] Power data rejected — unknown device_id "${device_id}"`);
     throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
   }
 
   if (!device.is_active) {
+    logger.warn(`[ESP] Power data rejected — device "${device_id}" is inactive`);
     throw new AppError('Device is not active', HTTP_STATUS.FORBIDDEN, ERROR_CODES.DEVICE_INACTIVE);
   }
 
@@ -37,6 +42,9 @@ export const submitPowerData = asyncHandler(async (req: Request, res: Response, 
   );
 
   await DeviceModel.updateLastSeen(device.id);
+
+  // Notify all admin clients so the device card flips from Offline → Online in real time
+  sseService.broadcastToAll('device_heartbeat', { device_id: device.id });
 
   // Forward live reading to SSE subscribers of this device
   sseService.sendToDevice(device.id, 'power_reading', {
