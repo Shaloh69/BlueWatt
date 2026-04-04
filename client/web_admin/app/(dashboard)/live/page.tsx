@@ -134,7 +134,7 @@ export default function LivePage() {
           <CardBody className="flex flex-row items-center justify-between">
             <div className="flex items-center gap-3">
               <Zap className="w-5 h-5 text-primary" />
-              <span className="font-medium text-foreground">Relay — {device.name}</span>
+              <span className="font-medium text-foreground">Relay — {device.device_name}</span>
               <Chip size="sm" variant="flat"
                 color={device.relay_status === "on" ? "success" : device.relay_status === "off" ? "default" : "warning"}>
                 {device.relay_status ?? "unknown"}

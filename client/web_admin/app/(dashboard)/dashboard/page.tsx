@@ -26,7 +26,7 @@ export default function DashboardPage() {
         paymentsApi.pendingVerification(),
       ]);
       setPadSummary(padRes.data.data?.pads ?? []);
-      setPendingPayments(payRes.data.data ?? []);
+      setPendingPayments(payRes.data.data?.payments ?? []);
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -39,7 +39,7 @@ export default function DashboardPage() {
 
   const activePads = padSummary.filter((p) => p.device_serial).length;
   const totalAnomaly = padSummary.reduce((s, p) => s + (p.anomaly_count ?? 0), 0);
-  const totalEnergy = padSummary.reduce((s, p) => s + (p.energy_kwh ?? 0), 0);
+  const totalEnergy = padSummary.reduce((s, p) => s + Number(p.energy_kwh ?? 0), 0);
 
   const billStatusColor = (s?: string) =>
     s === "paid" ? "success" : s === "overdue" ? "danger" : s === "waived" ? "default" : "warning";
@@ -118,7 +118,7 @@ export default function DashboardPage() {
                             <Chip size="sm" variant="flat" color="success">{p.device_serial}</Chip>
                           ) : <span className="text-default-400">—</span>}
                         </td>
-                        <td className="py-3 px-3 text-default-600 font-mono">{p.energy_kwh.toFixed(2)} kWh</td>
+                        <td className="py-3 px-3 text-default-600 font-mono">{Number(p.energy_kwh).toFixed(2)} kWh</td>
                         <td className="py-3 px-3">
                           <Chip size="sm" variant="flat" color={billStatusColor(p.bill_status)}>
                             {p.bill_status ?? "no bill"}
