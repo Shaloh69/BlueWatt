@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import '../models/billing_period.dart';
 import '../models/payment.dart';
 import '../services/api_service.dart';
+import '../services/app_cache.dart';
 import '../services/notification_service.dart';
 import '../services/sse_service.dart';
 
@@ -29,13 +30,34 @@ class BillingProvider extends ChangeNotifier {
   StreamSubscription<SseEvent>? _sseSub;
 
   Future<void> load() async {
-    _loading = true;
+    // Show cached bills immediately
+    final cached = AppCache.getStale('billing:my');
+    if (cached != null && _bills.isEmpty) {
+      try {
+        final list = (cached['bills'] as List?)
+            ?.map((e) => BillingPeriod.fromJson(e as Map<String, dynamic>))
+            .toList() ?? [];
+        if (list.isNotEmpty) {
+          _bills = list;
+          _loading = false;
+          notifyListeners();
+        }
+      } catch (_) {}
+    }
+
+    if (_bills.isEmpty) {
+      _loading = true;
+      notifyListeners();
+    }
+
     _error = null;
-    notifyListeners();
     try {
       _bills = await ApiService.getMyBills();
+      await AppCache.set('billing:my', {
+        'bills': _bills.map((b) => b.toJson()).toList(),
+      });
     } catch (e) {
-      _error = e.toString();
+      if (_bills.isEmpty) _error = e.toString();
     } finally {
       _loading = false;
       notifyListeners();

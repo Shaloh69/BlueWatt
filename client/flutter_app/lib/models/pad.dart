@@ -36,6 +36,19 @@ class Pad {
         lastSeenAt: j['last_seen_at'] as String?,
       );
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'description': description,
+        'device_id': deviceId,
+        'tenant_id': tenantId,
+        'rate_per_kwh': ratePerKwh,
+        'is_active': isActive,
+        'device_serial': deviceSerial,
+        'relay_status': relayStatus,
+        'last_seen_at': lastSeenAt,
+      };
+
   bool get hasDevice => deviceId != null;
   bool get isRelayOn => relayStatus == 'on';
   bool get isRelayTripped => relayStatus == 'tripped';

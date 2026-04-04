@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/pad.dart';
 import '../models/power_reading.dart';
 import '../services/api_service.dart';
+import '../services/app_cache.dart';
 import '../services/connectivity_service.dart';
 import '../services/notification_service.dart';
 import '../services/sse_service.dart';
@@ -37,17 +38,31 @@ class HomeProvider extends ChangeNotifier {
   }
 
   Future<void> load() async {
-    _loading = true;
-    _error = null;
     _isOnline = await ConnectivityService.isConnected();
-    notifyListeners();
+
+    // Show cached data immediately so the screen isn't blank while fetching
+    final cachedPadJson = AppCache.getStale('home:pad');
+    if (cachedPadJson != null && _pad == null) {
+      try {
+        _pad = Pad.fromJson(cachedPadJson);
+        _loading = false; // show content while refreshing in background
+        notifyListeners();
+      } catch (_) {}
+    } else {
+      _loading = true;
+      notifyListeners();
+    }
+
+    _error = null;
     try {
       _pad = await ApiService.getMyPad();
+      await AppCache.set('home:pad', _pad!.toJson());
       if (_pad!.hasDevice) {
         _reading = await ApiService.getLatestReading(_pad!.deviceId!);
       }
     } catch (e) {
-      _error = e.toString();
+      if (_pad == null) _error = e.toString();
+      // If we have stale data, silently fail so the cached view stays up
     } finally {
       _loading = false;
       notifyListeners();

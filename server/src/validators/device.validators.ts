@@ -10,7 +10,7 @@ export const registerDeviceValidator = [
     .withMessage('Device ID can only contain letters, numbers, underscores, and hyphens')
     .isLength({ min: 3, max: 50 })
     .withMessage('Device ID must be between 3 and 50 characters'),
-  body('name')
+  body('device_name')
     .trim()
     .notEmpty()
     .withMessage('Device name is required')
@@ -27,7 +27,7 @@ export const updateDeviceValidator = [
   param('id')
     .isInt({ min: 1 })
     .withMessage('Valid device ID is required'),
-  body('name')
+  body('device_name')
     .optional()
     .trim()
     .notEmpty()

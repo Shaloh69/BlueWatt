@@ -126,9 +126,9 @@
 // ============================================================================
 
 // Server Configuration
-#define HTTP_SERVER_URL         "http://192.168.1.100:3000"  // Change to your server
+#define HTTP_SERVER_URL         "http://192.168.1.100:3000"  // Change to your servers
 #define API_KEY                 "your-api-key-here"          // Device API key
-#define DEVICE_ID               "ESP32_001"                  // Unique device ID
+#define DEVICE_ID               "PAD-001"                  // Unique device ID
 
 // HTTP Settings
 #define HTTP_TIMEOUT_MS         5000      // Request timeout

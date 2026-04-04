@@ -44,6 +44,9 @@ dependencies:
   # Connectivity / offline detection
   connectivity_plus: ^6.1.1
 
+  # API response caching (stale-while-revalidate)
+  shared_preferences: ^2.3.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

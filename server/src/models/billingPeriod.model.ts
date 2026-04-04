@@ -33,8 +33,8 @@ export class BillingPeriodModel {
   static async findByPad(padId: number, limit: number = 24): Promise<BillingPeriod[]> {
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT * FROM billing_periods WHERE pad_id = ?
-       ORDER BY period_start DESC LIMIT ?`,
-      [padId, limit]
+       ORDER BY period_start DESC LIMIT ${Math.floor(limit)}`,
+      [padId]
     );
     return rows as BillingPeriod[];
   }
@@ -45,8 +45,8 @@ export class BillingPeriodModel {
        FROM billing_periods b
        JOIN pads p ON p.id = b.pad_id
        WHERE b.tenant_id = ?
-       ORDER BY b.period_start DESC LIMIT ?`,
-      [tenantId, limit]
+       ORDER BY b.period_start DESC LIMIT ${Math.floor(limit)}`,
+      [tenantId]
     );
     return rows;
   }

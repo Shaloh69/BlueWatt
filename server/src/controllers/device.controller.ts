@@ -8,6 +8,7 @@ import { sendSuccess } from '../utils/apiResponse';
 import { asyncHandler } from '../utils/asyncHandler';
 import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
 import { DeviceRegistrationRequest } from '../types/api';
+import { bustCache } from '../middleware/cache.middleware';
 
 export const registerDevice = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
   if (!req.user) {
@@ -27,6 +28,8 @@ export const registerDevice = asyncHandler(async (req: Request, res: Response, _
   const apiKeyHash = await HashService.hashApiKey(apiKey);
 
   await DeviceKeyModel.create(device.id, apiKeyHash, 'Default Key');
+
+  bustCache('devices', req.user!.id);
 
   sendSuccess(
     res,
@@ -99,10 +102,28 @@ export const updateDevice = asyncHandler(async (req: Request, res: Response, _ne
   const { device_name, location, is_active } = req.body;
 
   await DeviceModel.update(deviceId, { device_name, location, is_active });
+  bustCache('devices', req.user!.id);
 
   const updatedDevice = await DeviceModel.findById(deviceId);
 
   sendSuccess(res, { device: updatedDevice }, HTTP_STATUS.OK, 'Device updated successfully');
+});
+
+export const deleteDevice = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+  if (!req.user) throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+
+  const deviceId = parseInt(req.params.id, 10);
+  const device = await DeviceModel.findById(deviceId);
+  if (!device) throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
+
+  const isOwner = await DeviceModel.isOwnedByUser(deviceId, req.user.id);
+  if (!isOwner && req.user.role !== 'admin') {
+    throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
+  }
+
+  await DeviceModel.delete(deviceId);
+  bustCache('devices', req.user!.id);
+  sendSuccess(res, { id: deviceId }, HTTP_STATUS.OK, 'Device deleted');
 });
 
 export const updateRelay = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
@@ -127,6 +148,7 @@ export const updateRelay = asyncHandler(async (req: Request, res: Response, _nex
   const { relay_status } = req.body;
 
   await DeviceModel.update(deviceId, { relay_status });
+  bustCache('devices', req.user!.id);
 
   const updatedDevice = await DeviceModel.findById(deviceId);
 

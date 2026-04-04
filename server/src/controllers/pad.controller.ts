@@ -6,12 +6,14 @@ import { AppError } from '../utils/AppError';
 import { sendSuccess } from '../utils/apiResponse';
 import { asyncHandler } from '../utils/asyncHandler';
 import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
+import { bustCache } from '../middleware/cache.middleware';
 
 /** POST /pads — admin creates a pad */
 export const createPad = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
   if (!req.user) throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
   const { name, description, rate_per_kwh } = req.body;
   const pad = await PadModel.create(req.user.id, name, description, rate_per_kwh);
+  bustCache('pads', req.user.id);
   sendSuccess(res, { pad }, HTTP_STATUS.CREATED);
 });
 
@@ -51,6 +53,7 @@ export const updatePad = asyncHandler(async (req: Request, res: Response, _next:
   if (!pad) throw new AppError('Pad not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
   const { name, description, rate_per_kwh } = req.body;
   await PadModel.update(padId, { name, description, rate_per_kwh });
+  bustCache('pads', req.user!.id);
   sendSuccess(res, { pad: await PadModel.findById(padId) });
 });
 
@@ -60,6 +63,7 @@ export const deletePad = asyncHandler(async (req: Request, res: Response, _next:
   const pad = await PadModel.findById(padId);
   if (!pad) throw new AppError('Pad not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
   await PadModel.delete(padId);
+  bustCache('pads', req.user!.id);
   sendSuccess(res, { message: 'Pad deactivated' });
 });
 
@@ -87,6 +91,7 @@ export const assignPad = asyncHandler(async (req: Request, res: Response, _next:
     await PadModel.assignDevice(padId, device_id);
   }
 
+  bustCache('pads', req.user!.id);
   sendSuccess(res, { pad: await PadModel.findById(padId) });
 });
 
@@ -96,5 +101,6 @@ export const unassignPad = asyncHandler(async (req: Request, res: Response, _nex
   const pad = await PadModel.findById(padId);
   if (!pad) throw new AppError('Pad not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
   await PadModel.assignTenant(padId, null);
+  bustCache('pads', req.user!.id);
   sendSuccess(res, { message: 'Tenant removed from pad' });
 });

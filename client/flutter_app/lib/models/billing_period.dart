@@ -42,6 +42,21 @@ class BillingPeriod {
         padName: j['pad_name'] as String?,
       );
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'pad_id': padId,
+        'tenant_id': tenantId,
+        'period_start': periodStart,
+        'period_end': periodEnd,
+        'energy_kwh': energyKwh,
+        'rate_per_kwh': ratePerKwh,
+        'amount_due': amountDue,
+        'status': status,
+        'due_date': dueDate,
+        'paid_at': paidAt,
+        'pad_name': padName,
+      };
+
   bool get isPaid => status == 'paid';
   bool get isOverdue => status == 'overdue';
   bool get isWaived => status == 'waived';

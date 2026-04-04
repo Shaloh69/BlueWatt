@@ -9,20 +9,21 @@ import {
   getAnomalySummary,
   exportCsv,
 } from '../controllers/reports.controller';
+import { cacheFor } from '../middleware/cache.middleware';
 
 const router = Router();
 
-// Power reports
-router.get('/hourly/:deviceId',    authenticateJWT, getHourlyReport);
-router.get('/daily/:deviceId',     authenticateJWT, getDailyReport);
-router.get('/monthly/:deviceId',   authenticateJWT, getMonthlyReport);
-router.get('/pad-summary',         authenticateJWT, requireAdmin, getPadSummary);
+// Power reports — cache for 5 min (historical data doesn't change frequently)
+router.get('/hourly/:deviceId',    authenticateJWT, cacheFor(300, 'reports'), getHourlyReport);
+router.get('/daily/:deviceId',     authenticateJWT, cacheFor(300, 'reports'), getDailyReport);
+router.get('/monthly/:deviceId',   authenticateJWT, cacheFor(300, 'reports'), getMonthlyReport);
+router.get('/pad-summary',         authenticateJWT, requireAdmin, cacheFor(300, 'reports'), getPadSummary);
 
 // Anomaly reports
-router.get('/anomalies/summary',         authenticateJWT, requireAdmin, getAnomalySummary);
-router.get('/anomalies/:deviceId',       authenticateJWT, getAnomalyReport);
+router.get('/anomalies/summary',         authenticateJWT, requireAdmin, cacheFor(120, 'reports'), getAnomalySummary);
+router.get('/anomalies/:deviceId',       authenticateJWT, cacheFor(120, 'reports'), getAnomalyReport);
 
-// CSV export
+// CSV export — no cache (blob response)
 router.get('/export/:deviceId',    authenticateJWT, exportCsv);
 
 export default router;

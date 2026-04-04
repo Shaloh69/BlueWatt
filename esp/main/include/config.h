@@ -56,19 +56,19 @@
 // ============================================================
 // WiFi Configuration
 // ============================================================
-#define WIFI_DEFAULT_SSID       "YourSSID"
-#define WIFI_DEFAULT_PASSWORD   "YourPassword"
+#define WIFI_DEFAULT_SSID       "YourWiFiName"       // ← your WiFi name
+#define WIFI_DEFAULT_PASSWORD   "YourWiFiPassword"   // ← your WiFi password
 #define WIFI_MAX_RETRY          5
 #define WIFI_RECONNECT_MS       10000
 
 // ============================================================
 // HTTP Server
 // ============================================================
-#define HTTP_SERVER_URL         "http://192.168.1.100:3000"
-#define HTTP_TIMEOUT_MS         5000
-#define HTTP_API_KEY            "bluewatt-api-key"
-#define HTTP_POWER_INTERVAL     10           // POST every N PZEM reads (~10s)
-#define HTTP_DEVICE_ID          "bluewatt-001"
+#define HTTP_SERVER_URL         "https://bluewatt-api.onrender.com/api/v1/power-data/"
+#define HTTP_TIMEOUT_MS         30000                // 30s — Render cold starts can be slow
+#define HTTP_API_KEY            "bw_paste-your-key-here"  // ← from Devices → Register
+#define HTTP_POWER_INTERVAL     10                   // POST every N PZEM reads (~10s)
+#define HTTP_DEVICE_ID          "bluewatt-001"     // ← must match Device ID in admin
 
 // ============================================================
 // NVS

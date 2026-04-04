@@ -73,6 +73,7 @@ export const devicesApi = {
     api.post(`/upload/device/${id}/image`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
+  delete: (id: number) => api.delete(`/devices/${id}`),
 };
 
 // ── Pads ──────────────────────────────────────────────────────────────────────

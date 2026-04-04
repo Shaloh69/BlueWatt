@@ -9,7 +9,7 @@ import { Input, Textarea } from "@heroui/input";
 import { Tooltip } from "@heroui/tooltip";
 import {
   Cpu, Plus, RefreshCw, Wifi, WifiOff, ToggleLeft, ToggleRight,
-  Pencil, Building2, User, MapPin, Info,
+  Pencil, Building2, User, MapPin, Info, Trash2,
 } from "lucide-react";
 import { devicesApi, padsApi, getErrorMessage } from "@/lib/api";
 import { Device, Pad } from "@/types";
@@ -34,6 +34,10 @@ export default function DevicesPage() {
 
   // Detail modal
   const [detailDevice, setDetailDevice] = useState<Device | null>(null);
+
+  // Delete confirm
+  const [confirmDelete, setConfirmDelete] = useState<Device | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -124,6 +128,21 @@ export default function DevicesPage() {
       toast.error(getErrorMessage(err));
     } finally {
       setEditSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!confirmDelete) return;
+    setDeleting(true);
+    try {
+      await devicesApi.delete(confirmDelete.id);
+      toast.success(`Device "${confirmDelete.device_name}" deleted`);
+      setConfirmDelete(null);
+      load(true);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -264,6 +283,11 @@ export default function DevicesPage() {
                         <Info className="w-4 h-4" />
                       </Button>
                     </Tooltip>
+                    <Tooltip content="Delete Device" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
+                      <Button size="sm" variant="flat" color="danger" isIconOnly onPress={() => setConfirmDelete(d)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </Tooltip>
                   </div>
                 </CardBody>
               </Card>
@@ -383,6 +407,24 @@ export default function DevicesPage() {
               startContent={<Pencil className="w-4 h-4" />}>
               Edit
             </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+      {/* ── Delete Confirm Modal ── */}
+      <Modal isOpen={!!confirmDelete} onOpenChange={() => setConfirmDelete(null)} classNames={modalClassNames}>
+        <ModalContent>
+          <ModalHeader>Delete Device</ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-default-600">
+              Are you sure you want to delete <span className="font-semibold text-foreground">{confirmDelete?.device_name}</span>?
+            </p>
+            <p className="text-xs text-warning mt-1">
+              This will permanently remove the device and all associated data. This action cannot be undone.
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="flat" onPress={() => setConfirmDelete(null)}>Cancel</Button>
+            <Button color="danger" isLoading={deleting} onPress={handleDelete}>Delete</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

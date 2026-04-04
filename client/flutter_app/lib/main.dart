@@ -8,11 +8,13 @@ import 'providers/home_provider.dart';
 import 'screens/login/login_screen.dart';
 import 'screens/main_shell.dart';
 import 'services/notification_service.dart';
+import 'services/app_cache.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService.init();
   await NotificationService.requestPermission();
+  await AppCache.init();
   runApp(const BlueWattApp());
 }
 
