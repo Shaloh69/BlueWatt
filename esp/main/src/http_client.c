@@ -33,7 +33,8 @@ void http_client_init(void)
         nvs_get_str(handle, "device_id",  s_device_id,  &id_len);
         nvs_close(handle);
     }
-    ESP_LOGI(TAG_HTTP, "HTTP client initialized, server: %s  device: %s", s_server_url, s_device_id);
+    ESP_LOGI(TAG_HTTP, "HTTP client initialized, server: %s  device: %s  key_len: %d  key_prefix: %.8s",
+             s_server_url, s_device_id, (int)strlen(s_api_key), s_api_key);
 }
 
 static esp_err_t perform_post(const char *url, const char *json_str)

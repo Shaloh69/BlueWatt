@@ -9,7 +9,7 @@ import { Input, Textarea } from "@heroui/input";
 import { Tooltip } from "@heroui/tooltip";
 import {
   Cpu, Plus, RefreshCw, Wifi, WifiOff, ToggleLeft, ToggleRight,
-  Pencil, Building2, User, MapPin, Info, Trash2,
+  Pencil, Building2, User, MapPin, Info, Trash2, Copy, Check,
 } from "lucide-react";
 import { devicesApi, getErrorMessage } from "@/lib/api";
 import { useDevices, usePads, reloadDevices, reloadPads } from "@/lib/use-api";
@@ -37,6 +37,10 @@ export default function DevicesPage() {
 
   // Detail modal
   const [detailDevice, setDetailDevice] = useState<Device | null>(null);
+
+  // API key reveal modal
+  const [revealKey, setRevealKey] = useState<string | null>(null);
+  const [keyCopied, setKeyCopied] = useState(false);
 
   // Delete confirm
   const [confirmDelete, setConfirmDelete] = useState<Device | null>(null);
@@ -74,11 +78,7 @@ export default function DevicesPage() {
       });
       toast.success(`Device "${form.device_name}" registered`);
       if (res.data.data?.api_key) {
-        // Show the API key — it won't be shown again
-        const key = res.data.data.api_key as string;
-        setTimeout(() => {
-          window.alert(`Save this API key — it will not be shown again:\n\n${key}`);
-        }, 300);
+        setRevealKey(res.data.data.api_key as string);
       }
       setShowAdd(false);
       setForm({ device_id: "", device_name: "", location: "", description: "" });
@@ -398,6 +398,36 @@ export default function DevicesPage() {
           </ModalFooter>
         </ModalContent>
       </Modal>
+      {/* ── API Key Reveal Modal ── */}
+      <Modal isOpen={!!revealKey} onOpenChange={() => { setRevealKey(null); setKeyCopied(false); }}
+        isDismissable={false} classNames={modalClassNames}>
+        <ModalContent>
+          <ModalHeader>Save Your API Key</ModalHeader>
+          <ModalBody className="space-y-3">
+            <p className="text-sm text-warning font-medium">
+              This key will <span className="underline">not</span> be shown again. Copy it now and paste it into the ESP32 provisioning wizard (Step 1 → API Key field).
+            </p>
+            <div className="flex items-center gap-2 rounded-xl bg-default-50 border border-default-200 px-3 py-2.5">
+              <code className="flex-1 text-xs font-mono text-foreground break-all select-all">{revealKey}</code>
+              <Button size="sm" isIconOnly variant="flat" color={keyCopied ? "success" : "primary"}
+                onPress={() => {
+                  navigator.clipboard.writeText(revealKey ?? "");
+                  setKeyCopied(true);
+                  toast.success("API key copied to clipboard");
+                  setTimeout(() => setKeyCopied(false), 3000);
+                }}>
+                {keyCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              </Button>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button color="primary" onPress={() => { setRevealKey(null); setKeyCopied(false); }}>
+              I&apos;ve saved it — Done
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
       {/* ── Delete Confirm Modal ── */}
       <Modal isOpen={!!confirmDelete} onOpenChange={() => setConfirmDelete(null)} classNames={modalClassNames}>
         <ModalContent>

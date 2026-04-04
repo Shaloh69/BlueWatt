@@ -922,7 +922,8 @@ static esp_err_t settings_handler(httpd_req_t *req)
         nvs_close(handle);
     }
 
-    ESP_LOGI(TAG_PROV, "Server settings saved: url=%s  device=%s", server_url, device_id);
+    ESP_LOGI(TAG_PROV, "Server settings saved: url=%s  device=%s  key_len=%d  key_prefix=%.8s",
+             server_url, device_id, (int)strlen(api_key), api_key);
 
     char response[128];
     if (err == ESP_OK) {
