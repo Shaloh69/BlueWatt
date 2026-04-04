@@ -27,8 +27,10 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const res = await authApi.login(email, password);
-      const { token, user } = res.data.data as AuthResponse;
-      storeAuth(token, user);
+      const data = res.data.data as { accessToken: string; user: { id: number; email: string; name?: string; full_name?: string; role: string } };
+      const token = data.accessToken;
+      const user = { ...data.user, full_name: data.user.full_name ?? data.user.name ?? "" };
+      storeAuth(token, user as AuthResponse["user"]);
       toast.success(`Welcome back, ${user.full_name}!`);
       router.push("/dashboard");
     } catch (err) {
