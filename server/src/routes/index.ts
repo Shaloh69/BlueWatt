@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import authRoutes from './auth.routes';
+import adminRoutes from './admin.routes';
 import deviceRoutes from './device.routes';
 import powerDataRoutes from './powerData.routes';
 import anomalyEventRoutes from './anomalyEvent.routes';
@@ -14,6 +15,7 @@ import relayCommandRoutes from './relayCommand.routes';
 const router = Router();
 
 router.use('/auth',           authRoutes);
+router.use('/admin',          adminRoutes);
 router.use('/devices',        deviceRoutes);
 router.use('/devices',        relayCommandRoutes);   // /:id/relay-command
 router.use('/power-data',     powerDataRoutes);

@@ -17,6 +17,27 @@ export interface AuthResponse {
   user: User;
 }
 
+// ── Tenant (admin view) ───────────────────────────────────────────────────────
+export interface Tenant {
+  id: number;
+  email: string;
+  full_name: string;
+  role: string;
+  is_active: boolean;
+  profile_image_url?: string;
+  created_at: string;
+  last_login_at?: string;
+  // pad join
+  pad_id?: number;
+  pad_name?: string;
+  rate_per_kwh?: number;
+  // device join
+  device_db_id?: number;
+  device_serial?: string;
+  device_name?: string;
+  device_location?: string;
+}
+
 // ── Device ───────────────────────────────────────────────────────────────────
 export interface Device {
   id: number;

@@ -10,7 +10,7 @@ import { toast } from "@/lib/toast";
 import {
   LayoutDashboard, Zap, MonitorDot, Cpu, Building2, Receipt,
   CreditCard, BarChart3, AlertTriangle, LogOut, ChevronLeft,
-  ChevronRight, Moon, Sun, Settings,
+  ChevronRight, Moon, Sun, Settings, Users,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { clearAuth, getStoredUser } from "@/hooks/useAuth";
@@ -21,6 +21,7 @@ const NAV = [
   { href: "/dashboard",  label: "Dashboard",     icon: LayoutDashboard },
   { href: "/live",       label: "Live Monitor",  icon: MonitorDot,  badge: "LIVE" },
   { href: "/devices",    label: "Devices",       icon: Cpu },
+  { href: "/tenants",    label: "Tenants",       icon: Users },
   { href: "/pads",       label: "Pads",          icon: Building2 },
   { href: "/billing",    label: "Billing",       icon: Receipt },
   { href: "/payments",   label: "Payments",      icon: CreditCard },

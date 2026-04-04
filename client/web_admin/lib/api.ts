@@ -143,6 +143,20 @@ export const anomalyApi = {
     api.put(`/anomaly-events/anomaly-events/${id}/resolve`, {}),
 };
 
+// ── Admin ─────────────────────────────────────────────────────────────────────
+export const adminApi = {
+  listTenants: () => api.get("/admin/tenants"),
+  createTenant: (data: {
+    email: string;
+    full_name: string;
+    password: string;
+    pad_name?: string;
+    rate_per_kwh?: number;
+    device_id?: number;
+  }) => api.post("/admin/tenants", data),
+  deleteTenant: (id: number) => api.delete(`/admin/tenants/${id}`),
+};
+
 // ── Power Data ────────────────────────────────────────────────────────────────
 export const powerApi = {
   latest: (deviceId: number) =>
