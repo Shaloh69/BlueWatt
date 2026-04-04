@@ -6,7 +6,7 @@ import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import { Input, Textarea } from "@heroui/input";
-import { Building2, Plus, RefreshCw, UserPlus, UserMinus } from "lucide-react";
+import { Building2, Plus, RefreshCw, UserPlus, UserMinus, Pencil } from "lucide-react";
 import { padsApi, getErrorMessage } from "@/lib/api";
 import { Pad } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
@@ -18,9 +18,11 @@ export default function PadsPage() {
   const { data: pads = [], isLoading: loading } = usePads();
   const [showAdd, setShowAdd] = useState(false);
   const [showAssign, setShowAssign] = useState<Pad | null>(null);
+  const [editTarget, setEditTarget] = useState<Pad | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: "", description: "", rate_per_kwh: "8.50" });
   const [assignForm, setAssignForm] = useState({ tenant_id: "", device_id: "" });
+  const [editForm, setEditForm] = useState({ name: "", description: "", rate_per_kwh: "" });
 
   async function handleCreate() {
     if (!form.name.trim()) { toast.warning("Name is required"); return; }
@@ -30,6 +32,37 @@ export default function PadsPage() {
       toast.success("Pad created");
       setShowAdd(false);
       setForm({ name: "", description: "", rate_per_kwh: "8.50" });
+      reloadPads();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function openEdit(pad: Pad) {
+    setEditTarget(pad);
+    setEditForm({
+      name: pad.name,
+      description: pad.description ?? "",
+      rate_per_kwh: String(pad.rate_per_kwh),
+    });
+  }
+
+  async function handleEdit() {
+    if (!editTarget) return;
+    if (!editForm.name.trim()) { toast.warning("Name is required"); return; }
+    const rate = parseFloat(editForm.rate_per_kwh);
+    if (isNaN(rate) || rate <= 0) { toast.warning("Enter a valid rate"); return; }
+    setSaving(true);
+    try {
+      await padsApi.update(editTarget.id, {
+        name: editForm.name.trim(),
+        description: editForm.description.trim() || null,
+        rate_per_kwh: rate,
+      });
+      toast.success("Pad updated");
+      setEditTarget(null);
       reloadPads();
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -86,7 +119,7 @@ export default function PadsPage() {
           <h2 className="font-semibold text-foreground">All Pads</h2>
         </CardHeader>
         <CardBody>
-          {loading ? <TableSkeleton rows={4} cols={6} /> : pads.length === 0 ? (
+          {loading ? <TableSkeleton rows={4} cols={7} /> : pads.length === 0 ? (
             <div className="flex flex-col items-center py-12 text-center">
               <Building2 className="w-10 h-10 text-default-300 mb-3" />
               <p className="text-default-400">No pads yet</p>
@@ -119,7 +152,11 @@ export default function PadsPage() {
                       </td>
                       <td className="py-3 px-3">
                         <div className="flex gap-1">
-                          <Button size="sm" variant="flat" color="primary" isIconOnly title="Assign"
+                          <Button size="sm" variant="flat" color="default" isIconOnly title="Edit rate / name"
+                            onPress={() => openEdit(p)}>
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="flat" color="primary" isIconOnly title="Assign tenant/device"
                             onPress={() => { setShowAssign(p); setAssignForm({ tenant_id: String(p.tenant_id ?? ""), device_id: String(p.device_id ?? "") }); }}>
                             <UserPlus className="w-4 h-4" />
                           </Button>
@@ -158,6 +195,26 @@ export default function PadsPage() {
         </ModalContent>
       </Modal>
 
+      {/* Edit Pad */}
+      <Modal isOpen={!!editTarget} onOpenChange={() => setEditTarget(null)} classNames={modalClassNames}>
+        <ModalContent>
+          <ModalHeader>Edit — {editTarget?.name}</ModalHeader>
+          <ModalBody className="space-y-3">
+            <Input label="Pad Name" value={editForm.name}
+              onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} />
+            <Textarea label="Description (optional)" value={editForm.description}
+              onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} />
+            <Input label="Rate per kWh (₱)" type="number" step="0.01" value={editForm.rate_per_kwh}
+              onChange={e => setEditForm(f => ({ ...f, rate_per_kwh: e.target.value }))}
+              description="Changing the rate only affects future billing calculations" />
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="flat" onPress={() => setEditTarget(null)}>Cancel</Button>
+            <Button color="primary" isLoading={saving} onPress={handleEdit}>Save Changes</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
       {/* Assign */}
       <Modal isOpen={!!showAssign} onOpenChange={() => setShowAssign(null)} classNames={modalClassNames}>
         <ModalContent>
@@ -165,7 +222,7 @@ export default function PadsPage() {
           <ModalBody className="space-y-3">
             <Input label="Tenant ID" type="number" placeholder="Leave blank to keep current"
               value={assignForm.tenant_id} onChange={e => setAssignForm(f => ({ ...f, tenant_id: e.target.value }))} />
-            <Input label="Device ID" type="number" placeholder="Leave blank to keep current"
+            <Input label="Device ID (integer)" type="number" placeholder="Leave blank to keep current"
               value={assignForm.device_id} onChange={e => setAssignForm(f => ({ ...f, device_id: e.target.value }))} />
           </ModalBody>
           <ModalFooter>

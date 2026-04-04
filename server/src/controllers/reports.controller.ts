@@ -50,6 +50,7 @@ export const getPadSummary = asyncHandler(async (req: Request, res: Response, _n
   const [rows] = await pool.execute<RowDataPacket[]>(
     `SELECT p.id, p.name, p.rate_per_kwh,
             u.full_name AS tenant_name,
+            d.id AS device_id_int,
             d.device_id AS device_serial,
             d.relay_status, d.last_seen_at,
             COALESCE(agg.total_energy_kwh, 0) AS energy_kwh,

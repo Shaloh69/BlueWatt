@@ -201,6 +201,7 @@ export interface PadSummaryRow {
   name: string;
   rate_per_kwh: number;
   tenant_name?: string;
+  device_id_int?: number;
   device_serial?: string;
   relay_status?: string;
   energy_kwh: number;

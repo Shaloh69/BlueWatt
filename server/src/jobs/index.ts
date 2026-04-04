@@ -1,4 +1,6 @@
 import cron from 'node-cron';
+import https from 'https';
+import http from 'http';
 import { AggregationService } from '../services/aggregation.service';
 import { BillingService } from '../services/billing.service';
 import { PowerAggregateModel } from '../models/powerAggregate.model';
@@ -52,5 +54,21 @@ export function startCronJobs(): void {
     } catch (e) { logger.error('[cron] Cleanup failed:', e); }
   });
 
-  logger.info('Cron jobs registered: hourly-agg, daily-agg, monthly-agg, billing, overdue, cleanup');
+  // ── Every 14 min: self-ping to prevent Render free tier from sleeping ────────
+  const selfUrl = process.env.RENDER_EXTERNAL_URL
+    ? `${process.env.RENDER_EXTERNAL_URL}/api/v1/health`
+    : null;
+
+  if (selfUrl) {
+    cron.schedule('*/14 * * * *', () => {
+      const mod = selfUrl.startsWith('https') ? https : http;
+      mod.get(selfUrl, (res) => {
+        logger.debug(`[keep-alive] ping → ${res.statusCode}`);
+        res.resume(); // drain response
+      }).on('error', (e) => logger.warn(`[keep-alive] ping failed: ${e.message}`));
+    });
+    logger.info(`[keep-alive] Pinging ${selfUrl} every 14 min`);
+  }
+
+  logger.info('Cron jobs registered: hourly-agg, daily-agg, monthly-agg, billing, overdue, cleanup, keep-alive');
 }
