@@ -33,6 +33,7 @@ export const registerDevice = asyncHandler(async (req: Request, res: Response, _
   bustCache('devices', req.user!.id);
 
   logger.info(`[Admin] Device registered — device_id="${device_id}" name="${device_name}" db_id=${device.id} by user=${req.user.id}`);
+  logger.info(`[Auth]  Key hash stored for device#${device.id} — key starts with "${apiKey.slice(0, 8)}..." (len=${apiKey.length}). Save this key — it will not be shown again.`);
 
   sendSuccess(
     res,

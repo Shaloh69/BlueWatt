@@ -68,10 +68,18 @@ export const authenticateApiKey = async (
 
     const deviceKeys = await DeviceKeyModel.findAllActive();
 
+    if (deviceKeys.length === 0) {
+      logger.warn(`[Auth] No active device keys in DB — register a device first`);
+    } else {
+      const summary = deviceKeys.map(k => `key#${k.id}→device#${k.device_id}`).join(', ');
+      logger.info(`[Auth] ${deviceKeys.length} active key(s) found: [${summary}]`);
+    }
+
     let matchedDeviceId: number | null = null;
 
     for (const deviceKey of deviceKeys) {
       const isMatch = await HashService.compareApiKey(apiKey, deviceKey.key_hash);
+      logger.info(`[Auth] Comparing against key#${deviceKey.id} (device#${deviceKey.device_id}): ${isMatch ? 'MATCH ✓' : 'no match'}`);
       if (isMatch) {
         matchedDeviceId = deviceKey.device_id;
         await DeviceKeyModel.updateLastUsed(deviceKey.id);
