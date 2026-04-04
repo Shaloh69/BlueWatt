@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { toast } from "@/lib/toast";
 import { modalClassNames } from "@/lib/modal-styles";
 import { Card, CardBody, CardHeader } from "@heroui/card";
@@ -12,37 +12,23 @@ import { CreditCard, RefreshCw, CheckCircle, XCircle, ExternalLink } from "lucid
 import { paymentsApi, getErrorMessage } from "@/lib/api";
 import { Payment } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
+import { useAllPayments, reloadPayments } from "@/lib/use-api";
 
 const statusColor = (s: string) =>
   s === "paid" ? "success" : s === "failed" ? "danger" : s === "refunded" ? "secondary" : "warning";
 
 export default function PaymentsPage() {
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: payments = [], isLoading: loading } = useAllPayments();
   const [rejectTarget, setRejectTarget] = useState<Payment | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [saving, setSaving] = useState(false);
-
-  const load = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const res = await paymentsApi.all();
-      setPayments(res.data.data?.payments ?? []);
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
 
   async function handleApprove(p: Payment) {
     setSaving(true);
     try {
       await paymentsApi.approve(p.id);
       toast.success("Payment approved");
-      load(true);
+      reloadPayments();
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -59,7 +45,7 @@ export default function PaymentsPage() {
       toast.info("Payment rejected");
       setRejectTarget(null);
       setRejectReason("");
-      load(true);
+      reloadPayments();
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -76,7 +62,7 @@ export default function PaymentsPage() {
           <h1 className="text-2xl font-bold text-foreground">Payments</h1>
           <p className="text-default-500 text-sm mt-0.5">{pending.length} pending verification</p>
         </div>
-        <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => load(true)}>Refresh</Button>
+        <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => reloadPayments()}>Refresh</Button>
       </div>
 
       <Card className="border border-default-200">

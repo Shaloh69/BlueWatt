@@ -1,59 +1,35 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "@/lib/toast";
-import { modalClassNames } from "@/lib/modal-styles";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
-import { Input } from "@heroui/input";
 import { AlertTriangle, RefreshCw, CheckCircle } from "lucide-react";
-import { anomalyApi, devicesApi, getErrorMessage } from "@/lib/api";
-import { AnomalyEvent, Device } from "@/types";
+import { anomalyApi, getErrorMessage } from "@/lib/api";
+import { AnomalyEvent } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
+import { useDevices, useAnomalyEvents, reloadAnomalyEvents } from "@/lib/use-api";
 
 const severityColor = (s: string) =>
   s === "critical" ? "danger" : s === "high" ? "warning" : s === "medium" ? "secondary" : "default";
 
 export default function AnomaliesPage() {
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [events, setEvents] = useState<AnomalyEvent[]>([]);
+  const { data: devices = [] } = useDevices();
   const [selectedDevice, setSelectedDevice] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
   const [resolving, setResolving] = useState<number | null>(null);
+  const { data: events = [], isLoading: loading } = useAnomalyEvents(selectedDevice);
 
   useEffect(() => {
-    devicesApi.list().then(r => {
-      const d = r.data.data?.devices ?? [];
-      setDevices(d);
-      if (d.length > 0) setSelectedDevice(d[0].id);
-    }).catch(err => {
-      toast.error(getErrorMessage(err));
-    });
-  }, []);
-
-  const load = useCallback(async (deviceId: number, silent = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const res = await anomalyApi.list(deviceId);
-      setEvents(res.data.data?.events ?? []);
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (selectedDevice) load(selectedDevice);
-  }, [selectedDevice, load]);
+    if (devices.length > 0 && !selectedDevice) setSelectedDevice(devices[0].id);
+  }, [devices, selectedDevice]);
 
   async function handleResolve(event: AnomalyEvent) {
     setResolving(event.id);
     try {
       await anomalyApi.resolve(event.id);
       toast.success("Anomaly resolved");
-      if (selectedDevice) load(selectedDevice, true);
+      if (selectedDevice) reloadAnomalyEvents(selectedDevice);
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -71,7 +47,7 @@ export default function AnomaliesPage() {
           <p className="text-default-500 text-sm mt-0.5">{unresolved} unresolved</p>
         </div>
         <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />}
-          onPress={() => selectedDevice && load(selectedDevice, true)}>Refresh</Button>
+          onPress={() => selectedDevice && reloadAnomalyEvents(selectedDevice)}>Refresh</Button>
       </div>
 
       {/* Device selector */}

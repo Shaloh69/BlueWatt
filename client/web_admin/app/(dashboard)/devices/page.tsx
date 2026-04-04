@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
@@ -11,16 +11,19 @@ import {
   Cpu, Plus, RefreshCw, Wifi, WifiOff, ToggleLeft, ToggleRight,
   Pencil, Building2, User, MapPin, Info, Trash2,
 } from "lucide-react";
-import { devicesApi, padsApi, getErrorMessage } from "@/lib/api";
+import { devicesApi, getErrorMessage } from "@/lib/api";
+import { useDevices, usePads, reloadDevices, reloadPads } from "@/lib/use-api";
 import { Device, Pad } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
 import { toast } from "@/lib/toast";
 import { modalClassNames } from "@/lib/modal-styles";
 
 export default function DevicesPage() {
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [pads, setPads]       = useState<Pad[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: devices = [], isLoading: devLoading, mutate: mutateDevices } = useDevices();
+  const { data: pads = [],    isLoading: padLoading,  mutate: mutatePads   } = usePads();
+  const loading = devLoading || padLoading;
+
+  function load() { mutateDevices(); mutatePads(); }
 
   // Register modal
   const [showAdd, setShowAdd] = useState(false);
@@ -39,21 +42,6 @@ export default function DevicesPage() {
   const [confirmDelete, setConfirmDelete] = useState<Device | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const load = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const [dRes, pRes] = await Promise.all([devicesApi.list(), padsApi.list()]);
-      setDevices(dRes.data.data?.devices ?? []);
-      setPads(pRes.data.data?.pads ?? []);
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
   /** Find pads linked to a device */
   const linkedPads = (device: Device): Pad[] =>
     pads.filter(p => p.device_id === device.id);
@@ -65,7 +53,7 @@ export default function DevicesPage() {
     try {
       await devicesApi.issueRelayCommand(device.id, command);
       toast.success(`Relay ${command.toUpperCase()} sent to ${device.device_name}`);
-      setTimeout(() => load(true), 1500);
+      setTimeout(() => load(), 1500);
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
@@ -94,7 +82,7 @@ export default function DevicesPage() {
       }
       setShowAdd(false);
       setForm({ device_id: "", device_name: "", location: "", description: "" });
-      load(true);
+      load();
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -123,7 +111,7 @@ export default function DevicesPage() {
       });
       toast.success("Device updated");
       setEditTarget(null);
-      load(true);
+      load();
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -138,7 +126,7 @@ export default function DevicesPage() {
       await devicesApi.delete(confirmDelete.id);
       toast.success(`Device "${confirmDelete.device_name}" deleted`);
       setConfirmDelete(null);
-      load(true);
+      load();
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -158,7 +146,7 @@ export default function DevicesPage() {
           <p className="text-default-500 text-sm mt-0.5">{devices.length} registered</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => load(true)}>
+          <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => load()}>
             Refresh
           </Button>
           <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />} onPress={() => setShowAdd(true)}>

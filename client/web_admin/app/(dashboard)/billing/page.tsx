@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { toast } from "@/lib/toast";
 import { modalClassNames } from "@/lib/modal-styles";
 import { Card, CardBody, CardHeader } from "@heroui/card";
@@ -12,30 +12,16 @@ import { Receipt, Plus, RefreshCw } from "lucide-react";
 import { billingApi, getErrorMessage } from "@/lib/api";
 import { BillingPeriod } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
+import { useBilling, reloadBilling } from "@/lib/use-api";
 
 const statusColor = (s: string) =>
   s === "paid" ? "success" : s === "overdue" ? "danger" : s === "waived" ? "default" : "warning";
 
 export default function BillingPage() {
-  const [bills, setBills] = useState<BillingPeriod[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: bills = [], isLoading: loading } = useBilling();
   const [showGen, setShowGen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ pad_id: "", period_start: "", period_end: "", due_date: "" });
-
-  const load = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const res = await billingApi.list();
-      setBills(res.data.data?.bills ?? []);
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
 
   async function handleGenerate() {
     if (!form.pad_id || !form.period_start || !form.period_end) {
@@ -48,7 +34,7 @@ export default function BillingPage() {
       toast.success("Billing period generated");
       setShowGen(false);
       setForm({ pad_id: "", period_start: "", period_end: "", due_date: "" });
-      load(true);
+      reloadBilling();
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -60,7 +46,7 @@ export default function BillingPage() {
     try {
       await billingApi.waive(bill.id);
       toast.info("Bill waived");
-      load(true);
+      reloadBilling();
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
@@ -74,7 +60,7 @@ export default function BillingPage() {
           <p className="text-default-500 text-sm mt-0.5">{bills.length} billing periods</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => load(true)}>Refresh</Button>
+          <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => reloadBilling()}>Refresh</Button>
           <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />} onPress={() => setShowGen(true)}>Generate Bill</Button>
         </div>
       </div>

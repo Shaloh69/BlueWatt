@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
@@ -12,29 +12,15 @@ import { Pad } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
 import { toast } from "@/lib/toast";
 import { modalClassNames } from "@/lib/modal-styles";
+import { usePads, reloadPads } from "@/lib/use-api";
 
 export default function PadsPage() {
-  const [pads, setPads] = useState<Pad[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: pads = [], isLoading: loading } = usePads();
   const [showAdd, setShowAdd] = useState(false);
   const [showAssign, setShowAssign] = useState<Pad | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: "", description: "", rate_per_kwh: "8.50" });
   const [assignForm, setAssignForm] = useState({ tenant_id: "", device_id: "" });
-
-  const load = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const res = await padsApi.list();
-      setPads(res.data.data?.pads ?? []);
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
 
   async function handleCreate() {
     if (!form.name.trim()) { toast.warning("Name is required"); return; }
@@ -44,7 +30,7 @@ export default function PadsPage() {
       toast.success("Pad created");
       setShowAdd(false);
       setForm({ name: "", description: "", rate_per_kwh: "8.50" });
-      load(true);
+      reloadPads();
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -63,7 +49,7 @@ export default function PadsPage() {
       toast.success("Pad assigned");
       setShowAssign(null);
       setAssignForm({ tenant_id: "", device_id: "" });
-      load(true);
+      reloadPads();
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -75,7 +61,7 @@ export default function PadsPage() {
     try {
       await padsApi.unassign(pad.id);
       toast.info("Pad unassigned");
-      load(true);
+      reloadPads();
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
@@ -89,7 +75,7 @@ export default function PadsPage() {
           <p className="text-default-500 text-sm mt-0.5">{pads.length} total</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => load(true)}>Refresh</Button>
+          <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => reloadPads()}>Refresh</Button>
           <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />} onPress={() => setShowAdd(true)}>Add Pad</Button>
         </div>
       </div>

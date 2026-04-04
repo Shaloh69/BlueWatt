@@ -1,45 +1,25 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { toast } from "@/lib/toast";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Chip } from "@heroui/chip";
 import { Button } from "@heroui/button";
 import { Building2, CreditCard, AlertTriangle, Cpu, RefreshCw, TrendingUp } from "lucide-react";
 import { StatCard } from "@/components/shared/StatCard";
 import { TableSkeleton } from "@/components/shared/PageLoader";
-import { padsApi, paymentsApi, reportsApi, getErrorMessage } from "@/lib/api";
-import { PadSummaryRow, Payment } from "@/types";
+import { usePadSummary, usePendingPayments, reloadPendingPayments } from "@/lib/use-api";
 
 export default function DashboardPage() {
-  const [padSummary, setPadSummary] = useState<PadSummaryRow[]>([]);
-  const [pendingPayments, setPendingPayments] = useState<Payment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const { data: padSummary = [], isLoading: padLoading, isValidating: padValidating, mutate: reloadPad } = usePadSummary();
+  const { data: pendingPayments = [], isLoading: payLoading, isValidating: payValidating } = usePendingPayments();
 
-  const load = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    else setRefreshing(true);
-    try {
-      const [padRes, payRes] = await Promise.all([
-        reportsApi.padSummary(),
-        paymentsApi.pendingVerification(),
-      ]);
-      setPadSummary(padRes.data.data?.pads ?? []);
-      setPendingPayments(payRes.data.data?.payments ?? []);
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+  const loading = padLoading || payLoading;
+  const refreshing = padValidating || payValidating;
 
-  useEffect(() => { load(); }, [load]);
+  function load() { reloadPad(); reloadPendingPayments(); }
 
-  const activePads = padSummary.filter((p) => p.device_serial).length;
-  const totalAnomaly = padSummary.reduce((s, p) => s + (p.anomaly_count ?? 0), 0);
-  const totalEnergy = padSummary.reduce((s, p) => s + Number(p.energy_kwh ?? 0), 0);
+  const activePads = padSummary.filter((p: { device_serial?: string }) => p.device_serial).length;
+  const totalAnomaly = padSummary.reduce((s: number, p: { anomaly_count?: number }) => s + (p.anomaly_count ?? 0), 0);
+  const totalEnergy = padSummary.reduce((s: number, p: { energy_kwh?: unknown }) => s + Number(p.energy_kwh ?? 0), 0);
 
   const billStatusColor = (s?: string) =>
     s === "paid" ? "success" : s === "overdue" ? "danger" : s === "waived" ? "default" : "warning";
@@ -56,7 +36,7 @@ export default function DashboardPage() {
           variant="flat"
           size="sm"
           startContent={<RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />}
-          onPress={() => load(true)}
+          onPress={() => load()}
           isDisabled={refreshing}
         >
           Refresh

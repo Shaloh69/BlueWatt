@@ -1,46 +1,25 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "@/lib/toast";
-import { modalClassNames } from "@/lib/modal-styles";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { BarChart3, RefreshCw, Download } from "lucide-react";
-import { reportsApi, devicesApi, getErrorMessage } from "@/lib/api";
-import { Device, DailyAggregate } from "@/types";
+import { reportsApi, getErrorMessage } from "@/lib/api";
+import { DailyAggregate } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { useDevices, useDailyReport } from "@/lib/use-api";
 
 export default function ReportsPage() {
-  const [devices, setDevices] = useState<Device[]>([]);
+  const { data: devices = [] } = useDevices();
   const [selectedDevice, setSelectedDevice] = useState<number | null>(null);
-  const [daily, setDaily] = useState<DailyAggregate[]>([]);
-  const [loading, setLoading] = useState(false);
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const { data: daily = [], isLoading: loading, mutate: reloadDaily } = useDailyReport(selectedDevice, month);
 
   useEffect(() => {
-    devicesApi.list().then(r => {
-      const d = r.data.data?.devices ?? [];
-      setDevices(d);
-      if (d.length > 0) setSelectedDevice(d[0].id);
-    }).catch(() => {});
-  }, []);
-
-  const load = useCallback(async (deviceId: number, silent = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const res = await reportsApi.daily(deviceId, month);
-      setDaily(res.data.data?.days ?? []);
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }, [month]);
-
-  useEffect(() => {
-    if (selectedDevice) load(selectedDevice);
-  }, [selectedDevice, load]);
+    if (devices.length > 0 && !selectedDevice) setSelectedDevice(devices[0].id);
+  }, [devices, selectedDevice]);
 
   async function handleExport() {
     if (!selectedDevice) return;
@@ -71,7 +50,7 @@ export default function ReportsPage() {
             className="px-3 py-2 rounded-xl bg-content2 border border-default-200 text-sm text-foreground focus:outline-none focus:border-primary" />
           <Button variant="flat" size="sm" startContent={<Download className="w-4 h-4" />} onPress={handleExport}>Export CSV</Button>
           <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />}
-            onPress={() => selectedDevice && load(selectedDevice, true)}>Refresh</Button>
+            onPress={() => reloadDaily()}>Refresh</Button>
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { Avatar } from "@heroui/avatar";
 import { Button } from "@heroui/button";
 import { Card, CardBody, CardHeader } from "@heroui/card";
@@ -11,7 +11,8 @@ import {
   Users, Plus, RefreshCw, Cpu, Trash2, MapPin,
   Wifi, WifiOff, ChevronRight,
 } from "lucide-react";
-import { adminApi, devicesApi, getErrorMessage } from "@/lib/api";
+import { adminApi, getErrorMessage } from "@/lib/api";
+import { useTenants, useDevices, reloadTenants, reloadDevices } from "@/lib/use-api";
 import { Tenant, Device } from "@/types";
 import { toast } from "@/lib/toast";
 import { modalClassNames } from "@/lib/modal-styles";
@@ -103,9 +104,8 @@ function DeviceCard({
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function TenantsPage() {
-  const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: tenants = [], isLoading: loading } = useTenants();
+  const { data: devices = [] } = useDevices();
   const [showCreate, setShowCreate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<Tenant | null>(null);
@@ -121,23 +121,8 @@ export default function TenantsPage() {
   const [selectedDeviceId, setSelectedDeviceId] = useState<number | null>(null);
   const [step, setStep] = useState<1 | 2>(1);
 
-  const load = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    try {
-      const [tRes, dRes] = await Promise.all([
-        adminApi.listTenants(),
-        devicesApi.list(),
-      ]);
-      setTenants(tRes.data.data?.tenants ?? []);
-      setDevices(dRes.data.data?.devices ?? []);
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  function load() { reloadTenants(); reloadDevices(); }
 
-  useEffect(() => { load(); }, [load]);
 
   function resetCreate() {
     setForm({ email: "", full_name: "", password: "", pad_name: "", rate_per_kwh: "11.50" });
@@ -172,7 +157,7 @@ export default function TenantsPage() {
       });
       toast.success(`Tenant "${form.full_name}" created`);
       resetCreate();
-      load(true);
+      load();
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -185,7 +170,7 @@ export default function TenantsPage() {
       await adminApi.deleteTenant(tenant.id);
       toast.info(`${tenant.full_name} removed`);
       setConfirmDelete(null);
-      load(true);
+      load();
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
@@ -203,7 +188,7 @@ export default function TenantsPage() {
           <p className="text-default-500 text-sm mt-0.5">{tenants.length} account{tenants.length !== 1 ? "s" : ""}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => load(true)}>
+          <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => load()}>
             Refresh
           </Button>
           <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />} onPress={() => setShowCreate(true)}>

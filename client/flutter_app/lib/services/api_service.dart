@@ -19,7 +19,7 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  static const _timeout = Duration(seconds: 20);
+  static const _timeout = Duration(seconds: 60); // Render free tier cold-start can take 30-50 s
 
   // ── Internals ──────────────────────────────────────────────────────────────
 
