@@ -33,16 +33,8 @@ class AuthProvider extends ChangeNotifier {
   Future<void> login(String email, String password) async {
     final body = await ApiService.login(email, password);
     final data = body['data'] as Map<String, dynamic>? ?? body;
-    // Server returns accessToken (not token)
-    final token = data['accessToken'] as String? ??
-        data['token'] as String? ??
-        '';
-    final rawUser = data['user'] as Map<String, dynamic>? ?? {};
-    // Server login returns name, not full_name — normalise
-    final userMap = {
-      ...rawUser,
-      'full_name': rawUser['full_name'] ?? rawUser['name'] ?? '',
-    };
+    final token = data['accessToken'] as String? ?? '';
+    final userMap = data['user'] as Map<String, dynamic>? ?? {};
     _token = token;
     _user = User.fromJson(userMap);
     await StorageService.saveToken(token);

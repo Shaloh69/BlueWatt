@@ -28,7 +28,7 @@ export class PowerReadingModel {
   static async findLatestByDevice(deviceId: number): Promise<PowerReading | null> {
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT id, device_id, timestamp, voltage_rms, current_rms,
-              power_apparent, power_real, power_factor, created_at
+              power_apparent, power_real, power_factor, energy_kwh, frequency, created_at
        FROM power_readings
        WHERE device_id = ?
        ORDER BY timestamp DESC
@@ -51,7 +51,7 @@ export class PowerReadingModel {
   ): Promise<PowerReading[]> {
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT id, device_id, timestamp, voltage_rms, current_rms,
-              power_apparent, power_real, power_factor, created_at
+              power_apparent, power_real, power_factor, energy_kwh, frequency, created_at
        FROM power_readings
        WHERE device_id = ? AND timestamp BETWEEN ? AND ?
        ORDER BY timestamp DESC

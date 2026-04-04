@@ -13,7 +13,8 @@ export interface User {
 }
 
 export interface AuthResponse {
-  token: string;
+  accessToken: string;
+  refreshToken: string;
   user: User;
 }
 
@@ -75,14 +76,14 @@ export interface AnomalyEvent {
   device_id: number;
   anomaly_type: string;
   severity: "low" | "medium" | "high" | "critical";
-  description: string;
-  value_at_detection?: number;
-  threshold_exceeded?: number;
+  current_value?: number;
+  voltage_value?: number;
+  power_value?: number;
   relay_tripped: boolean | number;
   is_resolved: boolean | number;
   timestamp: string;
   resolved_at?: string;
-  device_serial?: string;
+  notes?: string;
 }
 
 // ── Pad ───────────────────────────────────────────────────────────────────────

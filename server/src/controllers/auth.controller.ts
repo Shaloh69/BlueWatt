@@ -29,7 +29,7 @@ export const register = asyncHandler(async (req: Request, res: Response, _next: 
       user: {
         id: user.id,
         email: user.email,
-        name: user.full_name,
+        full_name: user.full_name,
         role: user.role,
       },
       accessToken,
@@ -62,7 +62,7 @@ export const login = asyncHandler(async (req: Request, res: Response, _next: Nex
     user: {
       id: user.id,
       email: user.email,
-      name: user.full_name,
+      full_name: user.full_name,
       role: user.role,
     },
     accessToken,
