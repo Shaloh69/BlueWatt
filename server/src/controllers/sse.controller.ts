@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { sseService } from '../services/sse.service';
 import { DeviceModel } from '../models/device.model';
+import { PadModel } from '../models/pad.model';
 import { AppError } from '../utils/AppError';
 import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
 import { v4 as uuidv4 } from 'uuid';
@@ -17,8 +18,16 @@ export const streamEvents = async (req: Request, res: Response): Promise<void> =
 
   const clientId = uuidv4();
 
-  const devices = await DeviceModel.findByUserId(req.user.id);
-  const deviceIds = devices.map((d) => d.id);
+  // Admin: devices they own. Tenant: device linked to their pad.
+  const ownedDevices = await DeviceModel.findByUserId(req.user.id);
+  const deviceIds = ownedDevices.map((d) => d.id);
+
+  if (req.user.role !== 'admin') {
+    const pad = await PadModel.findByTenantId(req.user.id);
+    if (pad?.device_id && !deviceIds.includes(pad.device_id)) {
+      deviceIds.push(pad.device_id);
+    }
+  }
 
   sseService.addClient(clientId, req.user.id, res, deviceIds);
 

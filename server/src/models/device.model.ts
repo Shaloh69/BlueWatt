@@ -114,6 +114,18 @@ export class DeviceModel {
     return rows.length > 0;
   }
 
+  /** Returns true if the user owns the device OR is a tenant on a pad assigned to it. */
+  static async isAccessibleByUser(deviceId: number, userId: number): Promise<boolean> {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT 1 FROM devices WHERE id = ? AND owner_id = ?
+       UNION
+       SELECT 1 FROM pads WHERE device_id = ? AND tenant_id = ? AND is_active = 1
+       LIMIT 1`,
+      [deviceId, userId, deviceId, userId]
+    );
+    return rows.length > 0;
+  }
+
   static async updateDeviceImage(id: number, imageUrl: string): Promise<void> {
     await pool.execute(
       'UPDATE devices SET device_image_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',

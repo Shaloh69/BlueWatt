@@ -6,6 +6,7 @@ import { sendSuccess } from '../utils/apiResponse';
 import { asyncHandler } from '../utils/asyncHandler';
 import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
 import { sseService } from '../services/sse.service';
+import { logger } from '../utils/logger';
 
 /** POST /devices/:id/relay-command — admin issues a command */
 export const issueRelayCommand = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
@@ -24,6 +25,7 @@ export const issueRelayCommand = asyncHandler(async (req: Request, res: Response
   if (!device.is_active) throw new AppError('Device is not active', HTTP_STATUS.FORBIDDEN, ERROR_CODES.DEVICE_INACTIVE);
 
   const cmd = await RelayCommandModel.create(deviceId, command, req.user.id);
+  logger.info(`[Relay] Command "${command}" queued for device "${device.device_id}" (db#${deviceId}) cmd_id=${cmd.id} by user=${req.user.id}`);
 
   sseService.sendToDevice(deviceId, 'relay_command_issued', { command, deviceId });
 
@@ -56,6 +58,7 @@ export const ackRelayCommand = asyncHandler(async (req: Request, res: Response, 
   }
 
   await RelayCommandModel.acknowledge(command_id);
+  logger.info(`[Relay] cmd_id=${command_id} ACKed by device#${deviceId} — relay is now "${relay_status}"`);
 
   // Sync relay_status on device record
   if (relay_status && ['on', 'off', 'tripped'].includes(relay_status)) {

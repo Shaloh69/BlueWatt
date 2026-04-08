@@ -23,13 +23,16 @@ class Pad {
     this.lastSeenAt,
   });
 
+  static double _d(dynamic v) =>
+      v == null ? 0.0 : (v is num ? v.toDouble() : double.tryParse(v.toString()) ?? 0.0);
+
   factory Pad.fromJson(Map<String, dynamic> j) => Pad(
         id: j['id'] as int,
         name: j['name'] as String? ?? '',
         description: j['description'] as String?,
         deviceId: j['device_id'] as int?,
         tenantId: j['tenant_id'] as int?,
-        ratePerKwh: (j['rate_per_kwh'] as num?)?.toDouble() ?? 0.0,
+        ratePerKwh: _d(j['rate_per_kwh']),
         isActive: (j['is_active'] == true || j['is_active'] == 1),
         deviceSerial: j['device_serial'] as String?,
         relayStatus: j['relay_status'] as String?,

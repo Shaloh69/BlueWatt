@@ -217,7 +217,7 @@ static void task_http_client(void *pvParam)
             if (http_poll_relay_command(&cmd_id, cmd, sizeof(cmd)) == ESP_OK && cmd_id >= 0) {
                 ESP_LOGI(TAG_MAIN, "Server relay command: %s (id=%d)", cmd, cmd_id);
 
-                esp_err_t relay_err = ESP_OK;
+                esp_err_t relay_err = ESP_ERR_NOT_SUPPORTED;
                 if (strcmp(cmd, "on") == 0) {
                     relay_err = relay_set_state(RELAY_STATE_ON);
                 } else if (strcmp(cmd, "off") == 0) {
@@ -227,11 +227,17 @@ static void task_http_client(void *pvParam)
                     if (relay_err == ESP_OK) anomaly_detector_reset();
                 }
 
-                // ACK with resulting relay state
-                relay_state_t rs    = relay_get_state();
-                const char   *rs_str = (rs == RELAY_STATE_ON)     ? "on"      :
-                                       (rs == RELAY_STATE_TRIPPED) ? "tripped" : "off";
-                http_ack_relay_command(cmd_id, rs_str);
+                if (relay_err != ESP_OK) {
+                    ESP_LOGW(TAG_MAIN, "relay_set_state failed for cmd '%s': %s — will retry next poll",
+                             cmd, esp_err_to_name(relay_err));
+                    // Do NOT ACK — leave command pending so it retries in 5 s
+                } else {
+                    relay_state_t rs     = relay_get_state();
+                    const char   *rs_str = (rs == RELAY_STATE_ON)     ? "on"      :
+                                           (rs == RELAY_STATE_TRIPPED) ? "tripped" : "off";
+                    ESP_LOGI(TAG_MAIN, "Relay is now %s — ACKing command %d", rs_str, cmd_id);
+                    http_ack_relay_command(cmd_id, rs_str);
+                }
             }
         }
     }
@@ -248,11 +254,12 @@ void app_main(void)
     // ── NVS flash ──────────────────────────────────────────────────────────
     esp_err_t nvs_err = nvs_flash_init();
     if (nvs_err == ESP_ERR_NVS_NO_FREE_PAGES || nvs_err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_LOGW(TAG_MAIN, "NVS issue — erasing");
+        ESP_LOGW(TAG_MAIN, "NVS: erasing all stored settings (provisioned key/WiFi/device-id will be lost — re-provision after boot)");
         ESP_ERROR_CHECK(nvs_flash_erase());
         nvs_err = nvs_flash_init();
     }
     ESP_ERROR_CHECK(nvs_err);
+    ESP_LOGI(TAG_MAIN, "NVS init OK");
 
     // ── Module init ────────────────────────────────────────────────────────
     led_status_init();

@@ -75,7 +75,7 @@ export const getPowerData = asyncHandler(async (req: Request, res: Response, _ne
     throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
   }
 
-  const isOwner = await DeviceModel.isOwnedByUser(deviceId, req.user.id);
+  const isOwner = await DeviceModel.isAccessibleByUser(deviceId, req.user.id);
 
   if (!isOwner) {
     throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
@@ -103,7 +103,7 @@ export const getLatestPowerData = asyncHandler(async (req: Request, res: Respons
     throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
   }
 
-  const isOwner = await DeviceModel.isOwnedByUser(deviceId, req.user.id);
+  const isOwner = await DeviceModel.isAccessibleByUser(deviceId, req.user.id);
 
   if (!isOwner) {
     throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
@@ -131,7 +131,7 @@ export const getPowerStats = asyncHandler(async (req: Request, res: Response, _n
     throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
   }
 
-  const isOwner = await DeviceModel.isOwnedByUser(deviceId, req.user.id);
+  const isOwner = await DeviceModel.isAccessibleByUser(deviceId, req.user.id);
 
   if (!isOwner) {
     throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);

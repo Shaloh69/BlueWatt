@@ -163,6 +163,28 @@ bool http_server_available(void)
 
 // ── Relay command polling ─────────────────────────────────────────────────────
 
+// Event handler accumulates chunked/non-chunked body into user_data buffer.
+// user_data points to a relay_poll_ctx_t (see below).
+typedef struct {
+    char  buf[256];
+    int   len;
+} relay_poll_ctx_t;
+
+static esp_err_t relay_poll_event_handler(esp_http_client_event_t *evt)
+{
+    relay_poll_ctx_t *ctx = (relay_poll_ctx_t *)evt->user_data;
+    if (evt->event_id == HTTP_EVENT_ON_DATA && ctx) {
+        int copy = evt->data_len;
+        if (ctx->len + copy >= (int)sizeof(ctx->buf) - 1)
+            copy = (int)sizeof(ctx->buf) - 1 - ctx->len;
+        if (copy > 0) {
+            memcpy(ctx->buf + ctx->len, evt->data, copy);
+            ctx->len += copy;
+        }
+    }
+    return ESP_OK;
+}
+
 esp_err_t http_poll_relay_command(int *out_command_id, char *out_command, size_t cmd_len)
 {
     if (!wifi_is_connected()) return ESP_ERR_INVALID_STATE;
@@ -172,12 +194,14 @@ esp_err_t http_poll_relay_command(int *out_command_id, char *out_command, size_t
     char url[320];
     snprintf(url, sizeof(url), "%s/api/v1/devices/%s/relay-command", s_server_url, s_device_id);
 
-    char resp_buf[256] = {0};
+    relay_poll_ctx_t ctx = { .buf = {0}, .len = 0 };
+
     esp_http_client_config_t cfg = {
         .url               = url,
         .method            = HTTP_METHOD_GET,
         .timeout_ms        = HTTP_TIMEOUT_MS,
-        .user_data         = resp_buf,
+        .event_handler     = relay_poll_event_handler,
+        .user_data         = &ctx,
         .crt_bundle_attach = esp_crt_bundle_attach,
     };
 
@@ -186,26 +210,31 @@ esp_err_t http_poll_relay_command(int *out_command_id, char *out_command, size_t
 
     esp_http_client_set_header(client, "X-API-Key", s_api_key);
 
-    // Use event-based approach: open + read manually
-    esp_err_t err = esp_http_client_open(client, 0);
-    if (err != ESP_OK) {
-        esp_http_client_cleanup(client);
-        return err;
-    }
-
-    int content_len = esp_http_client_fetch_headers(client);
-    if (content_len < 0) content_len = 255;
-
-    int read_len = esp_http_client_read(client, resp_buf, content_len < 255 ? content_len : 255);
-    esp_http_client_close(client);
+    esp_err_t err = esp_http_client_perform(client);
+    int status    = esp_http_client_get_status_code(client);
     esp_http_client_cleanup(client);
 
-    if (read_len <= 0) return ESP_FAIL;
-    resp_buf[read_len] = '\0';
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG_HTTP, "Relay poll failed: %s", esp_err_to_name(err));
+        return err;
+    }
+    if (status != 200) {
+        ESP_LOGW(TAG_HTTP, "Relay poll HTTP %d", status);
+        return ESP_FAIL;
+    }
+    if (ctx.len == 0) {
+        ESP_LOGW(TAG_HTTP, "Relay poll: empty response body");
+        return ESP_FAIL;
+    }
+    ctx.buf[ctx.len] = '\0';
 
-    // Parse: {"data":{"command":"off","command_id":42}} or {"data":{"command":null,"command_id":null}}
-    cJSON *root = cJSON_Parse(resp_buf);
-    if (!root) return ESP_FAIL;
+    // Parse: {"success":true,"data":{"command":"on","command_id":42}}
+    //     or {"success":true,"data":{"command":null,"command_id":null}}
+    cJSON *root = cJSON_Parse(ctx.buf);
+    if (!root) {
+        ESP_LOGW(TAG_HTTP, "Relay poll: JSON parse failed — raw: %.80s", ctx.buf);
+        return ESP_FAIL;
+    }
 
     cJSON *data    = cJSON_GetObjectItem(root, "data");
     cJSON *cmd_obj = data ? cJSON_GetObjectItem(data, "command")    : NULL;

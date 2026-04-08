@@ -24,6 +24,7 @@ const Color kTextBody      = Color(0xFFCCD6F6);
 const Color kSuccess       = Color(0xFF17C964);
 const Color kWarning       = Color(0xFFF5A524);
 const Color kDanger        = Color(0xFFF31260);
+const Color kPurple        = Color(0xFFA855F7); // purple-500 — pending status
 const Color kSkyAccent     = Color(0xFF38BDF8); // sky-300
 const Color kGradientStart = Color(0xFF0EA5E9);
 const Color kGradientEnd   = Color(0xFF1D4ED8);
