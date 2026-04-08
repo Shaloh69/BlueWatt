@@ -116,12 +116,10 @@ export class DeviceModel {
 
   /** Returns true if the user owns the device OR is a tenant on a pad assigned to it. */
   static async isAccessibleByUser(deviceId: number, userId: number): Promise<boolean> {
+    if (await DeviceModel.isOwnedByUser(deviceId, userId)) return true;
     const [rows] = await pool.execute<RowDataPacket[]>(
-      `SELECT 1 FROM devices WHERE id = ? AND owner_id = ?
-       UNION
-       SELECT 1 FROM pads WHERE device_id = ? AND tenant_id = ? AND is_active = 1
-       LIMIT 1`,
-      [deviceId, userId, deviceId, userId]
+      `SELECT 1 FROM pads WHERE device_id = ? AND tenant_id = ? AND is_active = 1 LIMIT 1`,
+      [deviceId, userId]
     );
     return rows.length > 0;
   }
