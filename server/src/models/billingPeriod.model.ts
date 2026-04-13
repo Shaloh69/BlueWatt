@@ -100,4 +100,8 @@ export class BillingPeriodModel {
       [id]
     );
   }
+
+  static async delete(id: number): Promise<void> {
+    await pool.execute(`DELETE FROM billing_periods WHERE id = ?`, [id]);
+  }
 }

@@ -7,6 +7,7 @@ import {
   getBillingById,
   generateBilling,
   waiveBilling,
+  deleteBilling,
 } from '../controllers/billing.controller';
 import { cacheFor } from '../middleware/cache.middleware';
 
@@ -18,5 +19,6 @@ router.get('/pad/:padId',          authenticateJWT, cacheFor(60, 'billing'), get
 router.get('/:id',                 authenticateJWT, cacheFor(60, 'billing'), getBillingById);
 router.post('/generate',           authenticateJWT, requireAdmin, generateBilling);
 router.put('/:id/waive',           authenticateJWT, requireAdmin, waiveBilling);
+router.delete('/:id',              authenticateJWT, requireAdmin, deleteBilling);
 
 export default router;

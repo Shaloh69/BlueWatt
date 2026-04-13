@@ -69,3 +69,11 @@ export const waiveBilling = asyncHandler(async (req: Request, res: Response, _ne
   await BillingPeriodModel.waive(bill.id);
   sendSuccess(res, { message: 'Bill waived' });
 });
+
+/** DELETE /billing/:id — admin: permanently delete a billing period */
+export const deleteBilling = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+  const bill = await BillingPeriodModel.findById(parseInt(req.params.id, 10));
+  if (!bill) throw new AppError('Billing period not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
+  await BillingPeriodModel.delete(bill.id);
+  sendSuccess(res, { id: bill.id }, HTTP_STATUS.OK, 'Bill deleted');
+});

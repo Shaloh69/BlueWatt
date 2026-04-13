@@ -12,10 +12,12 @@ import { Pad } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
 import { toast } from "@/lib/toast";
 import { modalClassNames } from "@/lib/modal-styles";
-import { usePads, reloadPads } from "@/lib/use-api";
+import { usePads, reloadPads, useDevices, useTenants } from "@/lib/use-api";
 
 export default function PadsPage() {
   const { data: pads = [], isLoading: loading } = usePads();
+  const { data: devices = [] } = useDevices();
+  const { data: tenants = [] } = useTenants();
   const [showAdd, setShowAdd] = useState(false);
   const [showAssign, setShowAssign] = useState<Pad | null>(null);
   const [editTarget, setEditTarget] = useState<Pad | null>(null);
@@ -261,11 +263,40 @@ export default function PadsPage() {
       <Modal isOpen={!!showAssign} onOpenChange={() => setShowAssign(null)} classNames={modalClassNames}>
         <ModalContent>
           <ModalHeader>Assign — {showAssign?.name}</ModalHeader>
-          <ModalBody className="space-y-3">
-            <Input label="Tenant ID" type="number" placeholder="Leave blank to keep current"
-              value={assignForm.tenant_id} onChange={e => setAssignForm(f => ({ ...f, tenant_id: e.target.value }))} />
-            <Input label="Device ID (integer)" type="number" placeholder="Leave blank to keep current"
-              value={assignForm.device_id} onChange={e => setAssignForm(f => ({ ...f, device_id: e.target.value }))} />
+          <ModalBody className="space-y-4">
+            {/* Tenant dropdown */}
+            <div className="space-y-1.5">
+              <label className="text-xs text-default-500 font-medium uppercase tracking-wide">Tenant</label>
+              <select
+                value={assignForm.tenant_id}
+                onChange={e => setAssignForm(f => ({ ...f, tenant_id: e.target.value }))}
+                className="w-full rounded-xl border border-default-200 bg-default-100 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
+              >
+                <option value="">— No tenant —</option>
+                {tenants.map((t: any) => (
+                  <option key={t.id} value={String(t.id)}>
+                    {t.full_name} ({t.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Device dropdown */}
+            <div className="space-y-1.5">
+              <label className="text-xs text-default-500 font-medium uppercase tracking-wide">Device</label>
+              <select
+                value={assignForm.device_id}
+                onChange={e => setAssignForm(f => ({ ...f, device_id: e.target.value }))}
+                className="w-full rounded-xl border border-default-200 bg-default-100 px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-primary"
+              >
+                <option value="">— No device —</option>
+                {devices.map((d: any) => (
+                  <option key={d.id} value={String(d.id)}>
+                    {d.device_id}{d.device_name ? ` — ${d.device_name}` : ""}{d.location ? ` (${d.location})` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
           </ModalBody>
           <ModalFooter>
             <Button variant="flat" onPress={() => setShowAssign(null)}>Cancel</Button>

@@ -94,6 +94,7 @@ export const billingApi = {
   get: (id: number) => api.get(`/billing/${id}`),
   generate: (data: object) => api.post("/billing/generate", data),
   waive: (id: number) => api.put(`/billing/${id}/waive`, {}),
+  delete: (id: number) => api.delete(`/billing/${id}`),
 };
 
 // ── Payments ──────────────────────────────────────────────────────────────────

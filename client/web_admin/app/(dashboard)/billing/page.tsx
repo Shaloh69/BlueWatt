@@ -8,7 +8,7 @@ import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import { Input } from "@heroui/input";
-import { Receipt, Plus, RefreshCw } from "lucide-react";
+import { Receipt, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { billingApi, getErrorMessage } from "@/lib/api";
 import { BillingPeriod } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
@@ -20,6 +20,7 @@ const statusColor = (s: string) =>
 export default function BillingPage() {
   const { data: bills = [], isLoading: loading } = useBilling();
   const [showGen, setShowGen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<BillingPeriod | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ pad_id: "", period_start: "", period_end: "", due_date: "" });
 
@@ -34,6 +35,21 @@ export default function BillingPage() {
       toast.success("Billing period generated");
       setShowGen(false);
       setForm({ pad_id: "", period_start: "", period_end: "", due_date: "" });
+      reloadBilling();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setSaving(true);
+    try {
+      await billingApi.delete(deleteTarget.id);
+      toast.success("Bill deleted");
+      setDeleteTarget(null);
       reloadBilling();
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -102,9 +118,15 @@ export default function BillingPage() {
                         </Chip>
                       </td>
                       <td className="py-3 px-3">
-                        {b.status === "unpaid" && (
-                          <Button size="sm" variant="flat" color="default" onPress={() => handleWaive(b)}>Waive</Button>
-                        )}
+                        <div className="flex gap-1">
+                          {b.status === "unpaid" && (
+                            <Button size="sm" variant="flat" color="default" onPress={() => handleWaive(b)}>Waive</Button>
+                          )}
+                          <Button size="sm" variant="flat" color="danger" isIconOnly title="Delete bill"
+                            onPress={() => setDeleteTarget(b)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -114,6 +136,27 @@ export default function BillingPage() {
           )}
         </CardBody>
       </Card>
+
+      {/* Delete Confirmation */}
+      <Modal isOpen={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)} classNames={modalClassNames}>
+        <ModalContent>
+          <ModalHeader>Delete Bill</ModalHeader>
+          <ModalBody>
+            <p className="text-default-600">
+              Delete the bill for <span className="font-semibold text-foreground">{deleteTarget?.pad_name ?? `#${deleteTarget?.pad_id}`}</span>
+              {deleteTarget?.tenant_name && <> — tenant <span className="font-semibold text-foreground">{deleteTarget.tenant_name}</span></>}?
+            </p>
+            {deleteTarget?.status === "paid" && (
+              <p className="text-sm text-warning mt-1">This bill is already paid. Deleting it will remove the payment record.</p>
+            )}
+            <p className="text-xs text-default-400 mt-1">This action cannot be undone.</p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="flat" onPress={() => setDeleteTarget(null)}>Cancel</Button>
+            <Button color="danger" isLoading={saving} onPress={handleDelete}>Delete</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       <Modal isOpen={showGen} onOpenChange={setShowGen} classNames={modalClassNames}>
         <ModalContent>
