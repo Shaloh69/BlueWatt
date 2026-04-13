@@ -86,8 +86,8 @@
 // ============================================================================
 
 // Current Thresholds
-#define CURRENT_NORMAL_MAX      10.0f     // Normal maximum current (A) - adjust per installation
-#define CURRENT_OVERCURRENT     15.0f     // Overcurrent threshold (A)
+#define CURRENT_NORMAL_MAX      15.0f     // Normal maximum current (A)
+#define CURRENT_OVERCURRENT     28.0f     // Overcurrent threshold (A) — relay rated 30A
 #define CURRENT_SHORT_CIRCUIT   50.0f     // Short circuit threshold (A)
 
 // Power Thresholds
@@ -126,9 +126,9 @@
 // ============================================================================
 
 // Server Configuration
-#define HTTP_SERVER_URL         "http://192.168.1.100:3000"  // Change to your servers
-#define API_KEY                 "your-api-key-here"          // Device API key
-#define DEVICE_ID               "PAD-001"                  // Unique device ID
+#define HTTP_SERVER_URL         "https://bluewatt-api.onrender.com"
+#define API_KEY                 "bw_2ac21f488a4a94f9a259d0e1d87471cf3d2f79dc8248271e1cd875de8d2c94c7"
+#define DEVICE_ID               "bluewatt-001"
 
 // HTTP Settings
 #define HTTP_TIMEOUT_MS         5000      // Request timeout

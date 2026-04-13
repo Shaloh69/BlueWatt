@@ -39,11 +39,20 @@ class _PayBillScreenState extends State<PayBillScreen> {
   }
 
   Future<void> _loadQrCodes() async {
+    // Show cached QR codes immediately (stale-while-revalidate)
+    final stale = ApiService.getQrCodesFromCache();
+    if (stale.isNotEmpty && mounted) {
+      setState(() {
+        _qrCodes = stale;
+        _loadingQr = false;
+      });
+    }
+
     try {
       final codes = await ApiService.getQrCodes();
       if (mounted) setState(() => _qrCodes = codes);
     } catch (_) {
-      // Non-fatal
+      // Network failed — stale data already shown, nothing more to do
     } finally {
       if (mounted) setState(() => _loadingQr = false);
     }

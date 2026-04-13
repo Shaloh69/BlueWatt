@@ -164,9 +164,27 @@ class ApiService {
     final body = _body(res);
     // Server returns { data: { qr_codes: [...] } }
     final list = body['data']['qr_codes'] as List<dynamic>? ?? [];
-    return list
+    final codes = list
         .map((e) => PaymentQrCode.fromJson(e as Map<String, dynamic>))
         .toList();
+    // Cache for offline use
+    await AppCache.set('payment:qr_codes', {
+      'list': list,
+    });
+    return codes;
+  }
+
+  static List<PaymentQrCode> getQrCodesFromCache() {
+    final cached = AppCache.getStale('payment:qr_codes');
+    if (cached == null) return [];
+    final list = cached['list'] as List<dynamic>? ?? [];
+    try {
+      return list
+          .map((e) => PaymentQrCode.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   static Future<void> submitPayment({

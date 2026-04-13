@@ -45,7 +45,7 @@
 // ============================================================
 // Anomaly Detection Thresholds
 // ============================================================
-#define OVERCURRENT_THRESHOLD_A     15.0f
+#define OVERCURRENT_THRESHOLD_A     28.0f  // Relay rated 30A — 2A safety margin
 #define SHORT_CIRCUIT_THRESHOLD_A   50.0f
 #define MAX_POWER_W                 3000.0f
 #define WIRE_FIRE_POWER_RATIO       1.5f
@@ -66,9 +66,9 @@
 // ============================================================
 #define HTTP_SERVER_URL         "https://bluewatt-api.onrender.com"
 #define HTTP_TIMEOUT_MS         30000                // 30s — Render cold starts can be slow
-#define HTTP_API_KEY            "bw_fefa19ea8f06e25acfb548d5a1316e2e83585ecdd3d84304def6fdfbd784bb04"
+#define HTTP_API_KEY            "bw_b6df9322b27769a46bb4119a08de053e671b392497d008365a622f1c2f1bd71e"
 #define HTTP_POWER_INTERVAL     10
-#define HTTP_DEVICE_ID          "bluewatt-002"
+#define HTTP_DEVICE_ID          "bluewatt-003"
 
 // ============================================================
 // NVS

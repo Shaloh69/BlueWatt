@@ -63,7 +63,7 @@ export const ackRelayCommand = asyncHandler(async (req: Request, res: Response, 
   // Sync relay_status on device record
   if (relay_status && ['on', 'off', 'tripped'].includes(relay_status)) {
     await DeviceModel.update(deviceId, { relay_status });
-    sseService.sendToDevice(deviceId, 'relay_state', { deviceId, relay_status });
+    sseService.sendToDevice(deviceId, 'relay_state', { device_id: deviceId, relay_status });
   }
 
   sendSuccess(res, { message: 'Acknowledged' });

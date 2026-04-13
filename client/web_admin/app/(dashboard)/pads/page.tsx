@@ -6,7 +6,7 @@ import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import { Input, Textarea } from "@heroui/input";
-import { Building2, Plus, RefreshCw, UserPlus, UserMinus, Pencil } from "lucide-react";
+import { Building2, Plus, RefreshCw, UserPlus, UserMinus, Pencil, Trash2 } from "lucide-react";
 import { padsApi, getErrorMessage } from "@/lib/api";
 import { Pad } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
@@ -19,6 +19,7 @@ export default function PadsPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [showAssign, setShowAssign] = useState<Pad | null>(null);
   const [editTarget, setEditTarget] = useState<Pad | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Pad | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ name: "", description: "", rate_per_kwh: "8.50" });
   const [assignForm, setAssignForm] = useState({ tenant_id: "", device_id: "" });
@@ -82,6 +83,21 @@ export default function PadsPage() {
       toast.success("Pad assigned");
       setShowAssign(null);
       setAssignForm({ tenant_id: "", device_id: "" });
+      reloadPads();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setSaving(true);
+    try {
+      await padsApi.delete(deleteTarget.id);
+      toast.success(`"${deleteTarget.name}" deleted`);
+      setDeleteTarget(null);
       reloadPads();
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -165,6 +181,10 @@ export default function PadsPage() {
                               <UserMinus className="w-4 h-4" />
                             </Button>
                           )}
+                          <Button size="sm" variant="flat" color="danger" isIconOnly title="Delete pad"
+                            onPress={() => setDeleteTarget(p)}>
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
                       </td>
                     </tr>
@@ -211,6 +231,28 @@ export default function PadsPage() {
           <ModalFooter>
             <Button variant="flat" onPress={() => setEditTarget(null)}>Cancel</Button>
             <Button color="primary" isLoading={saving} onPress={handleEdit}>Save Changes</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Delete Confirmation */}
+      <Modal isOpen={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)} classNames={modalClassNames}>
+        <ModalContent>
+          <ModalHeader>Delete Pad</ModalHeader>
+          <ModalBody>
+            <p className="text-default-600">
+              Are you sure you want to delete <span className="font-semibold text-foreground">{deleteTarget?.name}</span>?
+            </p>
+            {(deleteTarget?.tenant_id || deleteTarget?.device_id) && (
+              <p className="text-sm text-warning mt-1">
+                This pad has an active assignment. Deleting it will unlink the tenant and device.
+              </p>
+            )}
+            <p className="text-xs text-default-400 mt-1">This action cannot be undone.</p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="flat" onPress={() => setDeleteTarget(null)}>Cancel</Button>
+            <Button color="danger" isLoading={saving} onPress={handleDelete}>Delete</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

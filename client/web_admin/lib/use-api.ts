@@ -101,10 +101,16 @@ export function usePadSummary(month?: string) {
 }
 
 export function useDailyReport(deviceId: number | null, month: string) {
+  const currentMonth = new Date().toISOString().slice(0, 7);
   return useSWR(
     deviceId ? ["reports:daily", deviceId, month] : null,
     () => reportsApi.daily(deviceId!, month).then((r) => r.data.data?.days ?? []),
-    { dedupingInterval: DEDUPE_MS, revalidateOnFocus: false }
+    {
+      dedupingInterval: DEDUPE_MS,
+      revalidateOnFocus: false,
+      // Auto-refresh only for the current month (live data may change as ESP sends readings)
+      refreshInterval: month === currentMonth ? 60_000 : 0,
+    }
   );
 }
 

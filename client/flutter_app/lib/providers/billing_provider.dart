@@ -72,11 +72,7 @@ class BillingProvider extends ChangeNotifier {
   void _handleSseEvent(SseEvent event) {
     switch (event.type) {
       case 'payment_received':
-        // Refresh bills so status updates
-        load();
-        break;
-
-      case 'payment_approved':
+        // Admin approved payment — show notification and refresh
         NotificationService.showPaymentApproved();
         load();
         break;
