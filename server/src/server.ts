@@ -3,6 +3,7 @@ import { config } from './config/environment';
 import { logger } from './utils/logger';
 import { testConnection } from './database/connection';
 import { supabaseService } from './services/supabase.service';
+import { emailService } from './services/email.service';
 
 const startServer = async (): Promise<void> => {
   try {
@@ -11,6 +12,7 @@ const startServer = async (): Promise<void> => {
     await testConnection();
 
     supabaseService.initialize();
+    emailService.initialize();
 
     const server = app.listen(config.port, () => {
       logger.info(`Server running on port ${config.port}`);

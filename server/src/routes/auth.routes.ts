@@ -17,4 +17,8 @@ router.put('/profile', authenticateJWT, authController.updateProfile);
 
 router.put('/password', authenticateJWT, authController.changePassword);
 
+router.post('/forgot-password', authLimiter, authController.forgotPassword);
+
+router.post('/reset-password', authLimiter, authController.resetPassword);
+
 export default router;

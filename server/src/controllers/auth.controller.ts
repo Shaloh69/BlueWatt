@@ -2,11 +2,20 @@ import { Request, Response, NextFunction } from 'express';
 import { UserModel } from '../models/user.model';
 import { HashService } from '../services/hash.service';
 import { AuthService } from '../services/auth.service';
+import { emailService } from '../services/email.service';
 import { AppError } from '../utils/AppError';
 import { sendSuccess } from '../utils/apiResponse';
 import { asyncHandler } from '../utils/asyncHandler';
 import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
 import { RegisterRequest, LoginRequest } from '../types/api';
+
+// ── In-memory OTP store (15-minute expiry) ───────────────────────────────────
+interface OtpEntry { otp: string; expiresAt: number; }
+const otpStore = new Map<string, OtpEntry>();
+
+function generateOtp(): string {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
 
 export const register = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
   const { email, password, full_name } = req.body as RegisterRequest;
@@ -144,4 +153,68 @@ export const changePassword = asyncHandler(async (req: Request, res: Response, _
   await UserModel.update(req.user.id, { password_hash: hash });
 
   sendSuccess(res, { message: 'Password changed successfully' });
+});
+
+export const forgotPassword = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+  const { email } = req.body as { email: string };
+
+  if (!email?.trim()) {
+    throw new AppError('Email is required', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+  }
+
+  // Always respond 200 to prevent email enumeration
+  const user = await UserModel.findByEmail(email.trim().toLowerCase());
+  if (user) {
+    const otp = generateOtp();
+    otpStore.set(email.trim().toLowerCase(), {
+      otp,
+      expiresAt: Date.now() + 15 * 60 * 1000, // 15 minutes
+    });
+    await emailService.sendPasswordResetOtp(email.trim(), otp);
+  }
+
+  sendSuccess(res, { message: 'If that email is registered, a reset code has been sent.' });
+});
+
+export const resetPassword = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+  const { email, otp, new_password } = req.body as {
+    email: string;
+    otp: string;
+    new_password: string;
+  };
+
+  if (!email?.trim() || !otp?.trim() || !new_password) {
+    throw new AppError('email, otp and new_password are required', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+  }
+
+  if (new_password.length < 8) {
+    throw new AppError('Password must be at least 8 characters', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+  }
+
+  const key = email.trim().toLowerCase();
+  const entry = otpStore.get(key);
+
+  if (!entry) {
+    throw new AppError('Invalid or expired reset code', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+  }
+
+  if (Date.now() > entry.expiresAt) {
+    otpStore.delete(key);
+    throw new AppError('Reset code has expired. Please request a new one.', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+  }
+
+  if (entry.otp !== otp.trim()) {
+    throw new AppError('Invalid reset code', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+  }
+
+  const user = await UserModel.findByEmail(key);
+  if (!user) {
+    throw new AppError('User not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
+  }
+
+  const hash = await HashService.hashPassword(new_password);
+  await UserModel.update(user.id, { password_hash: hash });
+  otpStore.delete(key);
+
+  sendSuccess(res, { message: 'Password reset successfully' });
 });

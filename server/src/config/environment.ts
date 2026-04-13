@@ -64,4 +64,12 @@ export const config = {
     aggregatedDays: parseInt(process.env.AGGREGATED_DATA_RETENTION_DAYS || '365', 10),
   },
 
+  email: {
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT || '587', 10),
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || '',
+    from: process.env.EMAIL_FROM || 'BlueWatt <noreply@bluewatt.app>',
+  },
+
 };

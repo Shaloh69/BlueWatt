@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:toastification/toastification.dart';
 import '../../config/constants.dart';
 import '../../providers/auth_provider.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -148,7 +149,22 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                           onFieldSubmitted: (_) => _submit(),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () => Navigator.push(context,
+                              MaterialPageRoute(builder: (_) => const ForgotPasswordScreen())),
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: const Size(0, 32),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text('Forgot Password?',
+                                style: TextStyle(color: kPrimaryBlue, fontSize: 13)),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                         SizedBox(
                           height: 48,
                           child: ElevatedButton(

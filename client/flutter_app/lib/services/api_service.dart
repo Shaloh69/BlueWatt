@@ -9,6 +9,7 @@ import '../models/billing_period.dart';
 import '../models/payment.dart';
 import '../models/user.dart';
 import 'storage_service.dart';
+import 'app_cache.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -86,6 +87,32 @@ class ApiService {
       headers: await _headers(),
       body: jsonEncode({
         'current_password': currentPassword,
+        'new_password': newPassword,
+      }),
+    ).timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
+    _body(res);
+  }
+
+  static Future<void> forgotPassword(String email) async {
+    final res = await http.post(
+      _uri('/auth/forgot-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email}),
+    ).timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
+    _body(res);
+  }
+
+  static Future<void> resetPassword({
+    required String email,
+    required String otp,
+    required String newPassword,
+  }) async {
+    final res = await http.post(
+      _uri('/auth/reset-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'otp': otp,
         'new_password': newPassword,
       }),
     ).timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
