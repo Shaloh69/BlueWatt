@@ -9,6 +9,8 @@ export const generalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   statusCode: HTTP_STATUS.TOO_MANY_REQUESTS,
+  // Skip rate limiting for authenticated requests — only throttle unauthenticated IPs
+  skip: (req) => !!req.headers.authorization,
 });
 
 export const authLimiter = rateLimit({

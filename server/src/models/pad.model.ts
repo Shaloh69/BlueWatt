@@ -85,7 +85,7 @@ export class PadModel {
 
   /** Returns pads with joined tenant name, device name, and latest billing status */
   static async findAllWithDetails(ownerId?: number): Promise<RowDataPacket[]> {
-    const where = ownerId !== undefined ? 'WHERE p.owner_id = ?' : '';
+    const where = ownerId !== undefined ? 'WHERE p.is_active = 1 AND p.owner_id = ?' : 'WHERE p.is_active = 1';
     const params = ownerId !== undefined ? [ownerId] : [];
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT p.*,
