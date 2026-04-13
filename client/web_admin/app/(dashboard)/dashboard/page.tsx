@@ -4,12 +4,12 @@ import { useState } from "react";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Chip } from "@heroui/chip";
 import { Button } from "@heroui/button";
-import { Building2, CreditCard, AlertTriangle, Cpu, RefreshCw, TrendingUp, BarChart3 } from "lucide-react";
+import { Building2, CreditCard, AlertTriangle, Cpu, RefreshCw, TrendingUp, LineChart as LineChartIcon } from "lucide-react";
 import { StatCard } from "@/components/shared/StatCard";
 import { TableSkeleton } from "@/components/shared/PageLoader";
 import { usePadSummary, usePendingPayments, reloadPendingPayments, useDailyReport } from "@/lib/use-api";
 import { PadSummaryRow } from "@/types";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Dot } from "recharts";
 
 // ── Per-pad daily consumption mini-chart ──────────────────────────────────────
 
@@ -29,17 +29,25 @@ function PadChart({ pad, month }: { pad: PadSummaryRow; month: string }) {
 
   return (
     <ResponsiveContainer width="100%" height={112}>
-      <BarChart data={daily} margin={{ top: 2, right: 4, bottom: 0, left: -24 }}>
+      <LineChart data={daily} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-        <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#64748b" }} tickFormatter={v => v.slice(8)} />
+        <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#64748b" }}
+          tickFormatter={v => String(v).slice(0, 10).slice(8)} />
         <YAxis tick={{ fontSize: 9, fill: "#64748b" }} />
         <Tooltip
           formatter={(v: number) => [`${Number(v).toFixed(3)} kWh`, "Energy"]}
           contentStyle={{ background: "#0f172a", border: "1px solid #1e3a5f", borderRadius: 6, fontSize: 11 }}
-          labelFormatter={l => `Day ${String(l).slice(8)}`}
+          labelFormatter={l => `Day ${String(l).slice(0, 10).slice(8)}`}
         />
-        <Bar dataKey="total_energy_kwh" fill="#6366f1" radius={[2, 2, 0, 0]} />
-      </BarChart>
+        <Line
+          type="monotone"
+          dataKey="total_energy_kwh"
+          stroke="#6366f1"
+          strokeWidth={2}
+          dot={<Dot r={3} fill="#6366f1" />}
+          activeDot={{ r: 5 }}
+        />
+      </LineChart>
     </ResponsiveContainer>
   );
 }
@@ -190,7 +198,7 @@ export default function DashboardPage() {
         <Card className="border border-default-200">
           <CardHeader className="flex items-start justify-between gap-3 pb-0 flex-wrap">
             <div className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-primary" />
+              <LineChartIcon className="w-5 h-5 text-primary" />
               <h2 className="font-semibold text-foreground">Daily Consumption — {month}</h2>
             </div>
             {/* Pad selector tabs */}
