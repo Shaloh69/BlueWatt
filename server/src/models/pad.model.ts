@@ -76,6 +76,14 @@ export class PadModel {
   }
 
   static async assignDevice(id: number, deviceId: number | null): Promise<void> {
+    // Clear any existing assignment of this device to another pad first
+    // (pads.device_id has a UNIQUE constraint — only one pad can hold a device at a time)
+    if (deviceId !== null) {
+      await pool.execute(
+        `UPDATE pads SET device_id = NULL WHERE device_id = ? AND id != ?`,
+        [deviceId, id]
+      );
+    }
     await pool.execute(`UPDATE pads SET device_id = ? WHERE id = ?`, [deviceId, id]);
   }
 

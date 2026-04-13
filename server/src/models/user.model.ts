@@ -5,7 +5,7 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 export class UserModel {
   static async create(email: string, passwordHash: string, fullName: string, role: 'admin' | 'user' = 'user'): Promise<User> {
     const [result] = await pool.execute<ResultSetHeader>(
-      'INSERT INTO users (email, password_hash, full_name, role) VALUES (?, ?, ?, ?)',
+      'INSERT INTO users (email, password_hash, full_name, role, is_active) VALUES (?, ?, ?, ?, 1)',
       [email, passwordHash, fullName, role]
     );
 
