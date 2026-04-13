@@ -25,7 +25,7 @@ export const listTenants = asyncHandler(async (_req: Request, res: Response, _ne
      FROM users u
      LEFT JOIN pads p ON p.tenant_id = u.id AND p.is_active = 1
      LEFT JOIN devices d ON d.id = p.device_id
-     WHERE u.role = 'user'
+     WHERE u.role = 'user' AND u.is_active = 1
      ORDER BY u.created_at DESC`
   );
   sendSuccess(res, { tenants: rows, count: rows.length });

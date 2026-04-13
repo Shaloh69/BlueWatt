@@ -46,7 +46,7 @@ export class DeviceModel {
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT id, owner_id, device_id, device_name, location, description, is_active, relay_status,
               last_seen_at, firmware_version, created_at, updated_at
-       FROM devices WHERE owner_id = ? ORDER BY created_at DESC`,
+       FROM devices WHERE owner_id = ? AND is_active = 1 ORDER BY created_at DESC`,
       [userId]
     );
 
