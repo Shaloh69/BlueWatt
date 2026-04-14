@@ -3,6 +3,7 @@ import https from 'https';
 import http from 'http';
 import { AggregationService } from '../services/aggregation.service';
 import { BillingService } from '../services/billing.service';
+import { StayBillingService } from '../services/stayBilling.service';
 import { PowerAggregateModel } from '../models/powerAggregate.model';
 import { PowerReadingModel } from '../models/powerReading.model';
 import { config } from '../config/environment';
@@ -30,9 +31,16 @@ export function startCronJobs(): void {
     catch (e) { logger.error('[cron] Monthly aggregation failed:', e); }
   });
 
-  // ── 1st of month 00:30: auto-generate billing for all pads ───────────────
+  // ── Every hour :45 — scan active stays and generate due bills ────────────
+  cron.schedule('45 * * * *', async () => {
+    logger.debug('[cron] Running stay billing scan');
+    try { await StayBillingService.scanAndBill(); }
+    catch (e) { logger.error('[cron] Stay billing scan failed:', e); }
+  });
+
+  // ── 1st of month 00:30: legacy pad billing (pads without stays) ──────────
   cron.schedule('30 0 1 * *', async () => {
-    logger.info('[cron] Auto-generating monthly billing');
+    logger.info('[cron] Auto-generating legacy monthly billing');
     try { await BillingService.autoGenerateAllPads(); }
     catch (e) { logger.error('[cron] Auto-billing failed:', e); }
   });
@@ -70,5 +78,5 @@ export function startCronJobs(): void {
     logger.info(`[keep-alive] Pinging ${selfUrl} every 14 min`);
   }
 
-  logger.info('Cron jobs registered: hourly-agg, daily-agg, monthly-agg, billing, overdue, cleanup, keep-alive');
+  logger.info('Cron jobs registered: hourly-agg, daily-agg, monthly-agg, stay-billing, legacy-billing, overdue, cleanup, keep-alive');
 }

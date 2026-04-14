@@ -11,6 +11,7 @@ import billingRoutes from './billing.routes';
 import paymentRoutes from './payment.routes';
 import reportsRoutes from './reports.routes';
 import relayCommandRoutes from './relayCommand.routes';
+import stayRoutes from './stay.routes';
 
 const router = Router();
 
@@ -26,6 +27,7 @@ router.use('/pads',           padRoutes);
 router.use('/billing',        billingRoutes);
 router.use('/payments',       paymentRoutes);
 router.use('/reports',        reportsRoutes);
+router.use('/stays',          stayRoutes);
 
 router.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

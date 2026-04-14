@@ -82,15 +82,34 @@ export interface Pad {
   updated_at: Date;
 }
 
+export interface Stay {
+  id: number;
+  pad_id: number;
+  tenant_id: number;
+  check_in_at: Date;
+  check_out_at?: Date;
+  billing_cycle: 'daily' | 'monthly';
+  flat_rate_per_cycle: number;
+  rate_per_kwh: number;
+  status: 'active' | 'ended';
+  notes?: string;
+  created_by: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
 export interface BillingPeriod {
   id: number;
   pad_id: number;
+  stay_id?: number;
   tenant_id?: number;
   period_start: Date;
   period_end: Date;
   energy_kwh: number;
   rate_per_kwh: number;
   amount_due: number;
+  flat_amount: number;
+  cycle_number?: number;
   status: 'unpaid' | 'paid' | 'overdue' | 'waived';
   due_date: Date;
   paid_at?: Date;

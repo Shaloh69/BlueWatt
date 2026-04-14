@@ -11,15 +11,38 @@ export class BillingPeriodModel {
     energyKwh: number,
     ratePerKwh: number,
     amountDue: number,
-    dueDate: Date
+    dueDate: Date,
+    opts?: { stayId?: number; flatAmount?: number; cycleNumber?: number }
   ): Promise<BillingPeriod> {
     const [result] = await pool.execute<ResultSetHeader>(
       `INSERT INTO billing_periods
-         (pad_id, tenant_id, period_start, period_end, energy_kwh, rate_per_kwh, amount_due, due_date)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [padId, tenantId, periodStart, periodEnd, energyKwh, ratePerKwh, amountDue, dueDate]
+         (pad_id, stay_id, tenant_id, period_start, period_end,
+          energy_kwh, rate_per_kwh, amount_due, flat_amount, cycle_number, due_date)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        padId,
+        opts?.stayId ?? null,
+        tenantId,
+        periodStart,
+        periodEnd,
+        energyKwh,
+        ratePerKwh,
+        amountDue,
+        opts?.flatAmount ?? 0,
+        opts?.cycleNumber ?? null,
+        dueDate,
+      ]
     );
     return (await BillingPeriodModel.findById(result.insertId))!;
+  }
+
+  /** Check whether a stay-cycle bill already exists */
+  static async existsForStayCycle(stayId: number, cycleNumber: number): Promise<boolean> {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT id FROM billing_periods WHERE stay_id = ? AND cycle_number = ? LIMIT 1`,
+      [stayId, cycleNumber]
+    );
+    return rows.length > 0;
   }
 
   static async findById(id: number): Promise<BillingPeriod | null> {

@@ -14,6 +14,7 @@ import {
   reportsApi,
   anomalyApi,
   adminApi,
+  staysApi,
 } from "./api";
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -140,4 +141,26 @@ export function useTenants() {
 
 export function reloadTenants() {
   return globalMutate("tenants");
+}
+
+// ── Stays ─────────────────────────────────────────────────────────────────────
+
+export function useStays() {
+  return useSWR(
+    "stays",
+    () => staysApi.list().then((r) => r.data.data?.stays ?? []),
+    { dedupingInterval: DEDUPE_MS, revalidateOnFocus: false }
+  );
+}
+
+export function useStaysByPad(padId: number | null) {
+  return useSWR(
+    padId ? ["stays:pad", padId] : null,
+    () => staysApi.getByPad(padId!).then((r) => r.data.data?.stays ?? []),
+    { dedupingInterval: DEDUPE_MS, revalidateOnFocus: false }
+  );
+}
+
+export function reloadStays() {
+  return globalMutate("stays");
 }

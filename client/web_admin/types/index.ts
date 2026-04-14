@@ -105,16 +105,41 @@ export interface Pad {
   last_seen_at?: string;
 }
 
+// ── Stay ──────────────────────────────────────────────────────────────────────
+export interface Stay {
+  id: number;
+  pad_id: number;
+  tenant_id: number;
+  check_in_at: string;
+  check_out_at?: string;
+  billing_cycle: "daily" | "monthly";
+  flat_rate_per_cycle: number;
+  rate_per_kwh: number;
+  status: "active" | "ended";
+  notes?: string;
+  created_by: number;
+  created_at: string;
+  updated_at: string;
+  // joins
+  pad_name?: string;
+  tenant_name?: string;
+  tenant_email?: string;
+  created_by_name?: string;
+}
+
 // ── Billing ───────────────────────────────────────────────────────────────────
 export interface BillingPeriod {
   id: number;
   pad_id: number;
+  stay_id?: number;
   tenant_id?: number;
   period_start: string;
   period_end: string;
   energy_kwh: number;
   rate_per_kwh: number;
   amount_due: number;
+  flat_amount: number;
+  cycle_number?: number;
   status: "unpaid" | "paid" | "overdue" | "waived";
   due_date: string;
   paid_at?: string;

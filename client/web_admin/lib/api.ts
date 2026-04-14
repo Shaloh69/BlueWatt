@@ -159,6 +159,24 @@ export const adminApi = {
   deleteTenant: (id: number) => api.delete(`/admin/tenants/${id}`),
 };
 
+// ── Stays ─────────────────────────────────────────────────────────────────────
+export const staysApi = {
+  list: () => api.get("/stays/"),
+  getByPad: (padId: number) => api.get(`/stays/pad/${padId}`),
+  get: (id: number) => api.get(`/stays/${id}`),
+  checkIn: (data: {
+    pad_id: number;
+    tenant_id: number;
+    billing_cycle: "daily" | "monthly";
+    flat_rate_per_cycle?: number;
+    notes?: string;
+    check_in_at?: string;
+  }) => api.post("/stays/", data),
+  checkOut: (id: number, check_out_at?: string) =>
+    api.put(`/stays/${id}/checkout`, { check_out_at }),
+  delete: (id: number) => api.delete(`/stays/${id}`),
+};
+
 // ── Power Data ────────────────────────────────────────────────────────────────
 export const powerApi = {
   latest: (deviceId: number) =>

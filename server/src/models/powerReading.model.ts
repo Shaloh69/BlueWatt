@@ -90,6 +90,20 @@ export class PowerReadingModel {
     return rows[0] as any;
   }
 
+  /**
+   * Minute-precise energy consumption between two datetimes.
+   * Uses MAX(energy_kwh) - MIN(energy_kwh) because energy_kwh is a cumulative counter.
+   */
+  static async energyBetween(deviceId: number, from: Date, to: Date): Promise<number> {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT COALESCE(MAX(energy_kwh) - MIN(energy_kwh), 0) AS kwh
+       FROM power_readings
+       WHERE device_id = ? AND timestamp BETWEEN ? AND ?`,
+      [deviceId, from, to]
+    );
+    return Math.max(0, Number((rows[0] as any).kwh) || 0);
+  }
+
   static async deleteOlderThan(days: number): Promise<number> {
     const [result] = await pool.execute<ResultSetHeader>(
       `DELETE FROM power_readings
