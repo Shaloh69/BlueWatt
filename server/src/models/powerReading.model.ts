@@ -104,6 +104,20 @@ export class PowerReadingModel {
     return Math.max(0, Number((rows[0] as any).kwh) || 0);
   }
 
+  /**
+   * Energy consumed today (midnight → now) for a device.
+   * Returns MAX(energy_kwh) - MIN(energy_kwh) for DATE(timestamp) = CURDATE().
+   */
+  static async energyToday(deviceId: number): Promise<number> {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT COALESCE(MAX(energy_kwh) - MIN(energy_kwh), 0) AS kwh
+       FROM power_readings
+       WHERE device_id = ? AND DATE(timestamp) = CURDATE()`,
+      [deviceId]
+    );
+    return Math.max(0, Number((rows[0] as any).kwh) || 0);
+  }
+
   static async deleteOlderThan(days: number): Promise<number> {
     const [result] = await pool.execute<ResultSetHeader>(
       `DELETE FROM power_readings

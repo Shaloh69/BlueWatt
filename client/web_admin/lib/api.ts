@@ -183,4 +183,6 @@ export const powerApi = {
     api.get(`/power-data/devices/${deviceId}/power-data/latest`),
   stats: (deviceId: number) =>
     api.get(`/power-data/devices/${deviceId}/power-data/stats`),
+  todayEnergy: (deviceId: number) =>
+    api.get(`/power-data/devices/${deviceId}/today-energy`),
 };

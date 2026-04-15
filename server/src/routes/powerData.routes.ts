@@ -25,6 +25,13 @@ router.get(
 );
 
 router.get(
+  '/devices/:id/today-energy',
+  authenticateJWT,
+  validate(deviceIdParamValidator),
+  powerDataController.getTodayEnergy
+);
+
+router.get(
   '/devices/:id/power-data/stats',
   authenticateJWT,
   validate([...deviceIdParamValidator, ...queryTimeRangeValidator]),

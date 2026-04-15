@@ -2,13 +2,12 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { toast } from "@/lib/toast";
-import { modalClassNames } from "@/lib/modal-styles";
-import { Card, CardBody, CardHeader } from "@heroui/card";
+import { Card, CardBody } from "@heroui/card";
 import { Chip } from "@heroui/chip";
 import { Button } from "@heroui/button";
-import { MonitorDot, Zap, RefreshCw, Wifi, WifiOff } from "lucide-react";
+import { MonitorDot, Zap, RefreshCw, Wifi, WifiOff, Flame } from "lucide-react";
 import { devicesApi, powerApi, getErrorMessage } from "@/lib/api";
-import { Device, PowerReading } from "@/types";
+import { Device } from "@/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api/v1";
 
@@ -29,6 +28,10 @@ export default function LivePage() {
   const [reading, setReading] = useState<LiveReading | null>(null);
   const [connected, setConnected] = useState(false);
   const [relayPending, setRelayPending] = useState(false);
+  const [todayKwh, setTodayKwh] = useState<number | null>(null);
+  // Track the energy_kwh value at the start of the SSE session so we can
+  // compute a delta as new readings arrive (supplements the DB query).
+  const sessionStartEnergyRef = useRef<number | null>(null);
   const esRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
@@ -39,9 +42,17 @@ export default function LivePage() {
     }).catch(() => {});
   }, []);
 
+  /** Fetch today's energy from the server and update state */
+  const fetchTodayEnergy = useCallback((deviceId: number) => {
+    powerApi.todayEnergy(deviceId)
+      .then(r => setTodayKwh(Number(r.data.data?.energy_kwh_today ?? 0)))
+      .catch(() => {});
+  }, []);
+
   const connectSSE = useCallback((deviceId: number) => {
     if (esRef.current) { esRef.current.close(); esRef.current = null; }
     setConnected(false);
+    sessionStartEnergyRef.current = null;
 
     const token = typeof window !== "undefined" ? localStorage.getItem("bw_token") : null;
     const url = `${BASE_URL}/sse/events${token ? `?token=${token}` : ""}`;
@@ -53,17 +64,33 @@ export default function LivePage() {
         const d = JSON.parse(e.data);
         setReading(d);
         setConnected(true);
+
+        // Real-time today kWh: on first reading of the session store the baseline,
+        // then keep fetching from DB (accurate across midnight resets).
+        if (d.energy_kwh != null) {
+          if (sessionStartEnergyRef.current === null) {
+            sessionStartEnergyRef.current = Number(d.energy_kwh);
+          }
+          // Refresh the DB-backed today figure on every reading so it stays accurate
+          fetchTodayEnergy(deviceId);
+        }
       } catch {}
     });
 
-    es.addEventListener("relay_state", () => { devicesApi.list().then(r => setDevices(r.data.data?.devices ?? [])).catch(() => {}); });
+    es.addEventListener("relay_state", () => {
+      devicesApi.list().then(r => setDevices(r.data.data?.devices ?? [])).catch(() => {});
+    });
     es.onerror = () => setConnected(false);
 
     return () => { es.close(); };
-  }, []);
+  }, [fetchTodayEnergy]);
 
   useEffect(() => {
     if (!selectedDevice) return;
+
+    // Reset today kWh when switching devices
+    setTodayKwh(null);
+    sessionStartEnergyRef.current = null;
 
     // Load latest reading immediately
     powerApi.latest(selectedDevice).then(r => {
@@ -71,9 +98,12 @@ export default function LivePage() {
       if (d) setReading(d);
     }).catch(() => {});
 
+    // Load today's energy immediately
+    fetchTodayEnergy(selectedDevice);
+
     const cleanup = connectSSE(selectedDevice);
     return cleanup;
-  }, [selectedDevice, connectSSE]);
+  }, [selectedDevice, connectSSE, fetchTodayEnergy]);
 
   useEffect(() => () => { esRef.current?.close(); }, []);
 
@@ -113,7 +143,9 @@ export default function LivePage() {
           </Chip>
         </div>
         <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />}
-          onPress={() => selectedDevice && connectSSE(selectedDevice)}>Reconnect</Button>
+          onPress={() => { if (selectedDevice) { connectSSE(selectedDevice); fetchTodayEnergy(selectedDevice); } }}>
+          Reconnect
+        </Button>
       </div>
 
       {/* Device tabs */}
@@ -127,6 +159,27 @@ export default function LivePage() {
           </Button>
         ))}
       </div>
+
+      {/* Today's energy — prominent real-time card */}
+      {selectedDevice && (
+        <Card className="border border-primary/30 bg-primary/5">
+          <CardBody className="flex flex-row items-center gap-4 py-4">
+            <div className="p-2 rounded-xl bg-primary/10">
+              <Flame className="w-6 h-6 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs text-default-400 uppercase tracking-wide">Energy Used Today</p>
+              <p className="text-3xl font-bold text-primary leading-tight">
+                {todayKwh !== null ? todayKwh.toFixed(3) : "—"}
+                <span className="text-base font-normal text-default-400 ml-1">kWh</span>
+              </p>
+            </div>
+            {connected && (
+              <Chip size="sm" color="success" variant="dot" className="self-start">live</Chip>
+            )}
+          </CardBody>
+        </Card>
+      )}
 
       {/* Relay control */}
       {device && (

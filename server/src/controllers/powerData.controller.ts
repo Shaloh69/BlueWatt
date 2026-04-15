@@ -118,6 +118,27 @@ export const getLatestPowerData = asyncHandler(async (req: Request, res: Respons
   sendSuccess(res, { reading: latestReading });
 });
 
+export const getTodayEnergy = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+  if (!req.user) {
+    throw new AppError('User not authenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+  }
+
+  const deviceId = parseInt(req.params.id, 10);
+
+  const device = await DeviceModel.findById(deviceId);
+  if (!device) {
+    throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
+  }
+
+  const isOwner = await DeviceModel.isAccessibleByUser(deviceId, req.user.id);
+  if (!isOwner) {
+    throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
+  }
+
+  const kwh = await PowerReadingModel.energyToday(deviceId);
+  sendSuccess(res, { energy_kwh_today: kwh });
+});
+
 export const getPowerStats = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
   if (!req.user) {
     throw new AppError('User not authenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
