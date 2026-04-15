@@ -164,9 +164,9 @@ export default function LivePage() {
           {reading.energy_kwh !== undefined && (
             <Card className="border border-default-200">
               <CardBody className="text-center py-4">
-                <p className="text-xs text-default-400 uppercase tracking-wide mb-1">Energy Consumed</p>
+                <p className="text-xs text-default-400 uppercase tracking-wide mb-1">Meter Reading</p>
                 <p className="text-4xl font-bold text-primary">{Number(reading.energy_kwh).toFixed(3)}</p>
-                <p className="text-xs text-default-400 mt-1">kWh</p>
+                <p className="text-xs text-default-400 mt-1">kWh — cumulative since device start</p>
               </CardBody>
             </Card>
           )}
