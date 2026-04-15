@@ -17,7 +17,6 @@
 import { BillingPeriodModel } from '../models/billingPeriod.model';
 import { StayModel } from '../models/stay.model';
 import { PowerReadingModel } from '../models/powerReading.model';
-import { DeviceModel } from '../models/device.model';
 import { logger } from '../utils/logger';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
