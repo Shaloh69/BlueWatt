@@ -66,7 +66,8 @@
       "Bash(sed -i -e 's/addToast\\({ title: \"Failed to load devices\", description: getErrorMessage\\(err\\), color: \"danger\" }\\)/toast.error\\(getErrorMessage\\(err\\)\\)/g' -e 's/addToast\\({ title: \"Failed to load anomalies\", description: getErrorMessage\\(err\\), color: \"danger\" }\\)/toast.error\\(getErrorMessage\\(err\\)\\)/g' -e 's/addToast\\({ title: \"Anomaly resolved\", color: \"success\" }\\)/toast.success\\(\"Anomaly resolved\"\\)/g' -e 's/addToast\\({ title: \"Resolve failed\", description: getErrorMessage\\(err\\), color: \"danger\" }\\)/toast.error\\(getErrorMessage\\(err\\)\\)/g' 'app/\\(dashboard\\)/anomalies/page.tsx')",
       "Bash(sed -i -e 's/addToast\\({ title: \"Failed to load report\", description: getErrorMessage\\(err\\), color: \"danger\" }\\)/toast.error\\(getErrorMessage\\(err\\)\\)/g' -e 's/addToast\\({ title: \"Export failed\", description: getErrorMessage\\(err\\), color: \"danger\" }\\)/toast.error\\(getErrorMessage\\(err\\)\\)/g' 'app/\\(dashboard\\)/reports/page.tsx')",
       "Bash(sed -i -e 's/addToast\\({ title: `Relay \\\\${command.toUpperCase\\(\\)} command sent`, color: \"success\" }\\)/toast.success\\(`Relay ${command.toUpperCase\\(\\)} sent`\\)/g' -e 's/addToast\\({ title: \"Relay command failed\", description: getErrorMessage\\(err\\), color: \"danger\" }\\)/toast.error\\(getErrorMessage\\(err\\)\\)/g' 'app/\\(dashboard\\)/live/page.tsx')",
-      "Bash(grep -v \"//\")"
+      "Bash(grep -v \"//\")",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/recharts/package.json'\\).version\\)\")"
     ],
     "additionalDirectories": [
       "d:\\Projects-Shem\\Thesis\\2026\\BlueWatt\\server\\src\\database\\migrations"
