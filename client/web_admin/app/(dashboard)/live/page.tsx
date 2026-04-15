@@ -22,15 +22,16 @@ interface LiveReading {
   timestamp: string;
 }
 
+const MAX_LOG = 50;
+
 export default function LivePage() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<number | null>(null);
   const [reading, setReading] = useState<LiveReading | null>(null);
+  const [readingLog, setReadingLog] = useState<LiveReading[]>([]);
   const [connected, setConnected] = useState(false);
   const [relayPending, setRelayPending] = useState(false);
   const [todayKwh, setTodayKwh] = useState<number | null>(null);
-  // Track the energy_kwh value at the start of the SSE session so we can
-  // compute a delta as new readings arrive (supplements the DB query).
   const sessionStartEnergyRef = useRef<number | null>(null);
   const esRef = useRef<EventSource | null>(null);
 
@@ -64,14 +65,12 @@ export default function LivePage() {
         const d = JSON.parse(e.data);
         setReading(d);
         setConnected(true);
+        setReadingLog(prev => [d, ...prev].slice(0, MAX_LOG));
 
-        // Real-time today kWh: on first reading of the session store the baseline,
-        // then keep fetching from DB (accurate across midnight resets).
         if (d.energy_kwh != null) {
           if (sessionStartEnergyRef.current === null) {
             sessionStartEnergyRef.current = Number(d.energy_kwh);
           }
-          // Refresh the DB-backed today figure on every reading so it stays accurate
           fetchTodayEnergy(deviceId);
         }
       } catch {}
@@ -88,8 +87,9 @@ export default function LivePage() {
   useEffect(() => {
     if (!selectedDevice) return;
 
-    // Reset today kWh when switching devices
+    // Reset state when switching devices
     setTodayKwh(null);
+    setReadingLog([]);
     sessionStartEnergyRef.current = null;
 
     // Load latest reading immediately
@@ -227,7 +227,49 @@ export default function LivePage() {
             Last updated: {new Date(reading.timestamp).toLocaleTimeString()}
           </p>
         </>
-      ) : (
+      ) : null}
+
+      {/* Raw readings log */}
+      {readingLog.length > 0 && (
+        <Card className="border border-default-200">
+          <CardBody className="p-0">
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-default-200">
+              <span className="font-semibold text-sm text-foreground">Raw Readings</span>
+              <Chip size="sm" variant="flat" color="success">{readingLog.length}</Chip>
+              <span className="text-xs text-default-400 ml-auto">last {MAX_LOG} entries · newest first</span>
+            </div>
+            <div className="overflow-x-auto max-h-72 overflow-y-auto">
+              <table className="w-full text-xs">
+                <thead className="sticky top-0 bg-content1 z-10">
+                  <tr className="border-b border-default-200">
+                    {["Time", "V (V)", "I (A)", "P (W)", "S (VA)", "PF", "f (Hz)", "E (kWh)"].map(h => (
+                      <th key={h} className="text-left py-2 px-3 text-default-500 font-medium uppercase tracking-wide whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {readingLog.map((r, i) => (
+                    <tr key={i} className="border-b border-default-100 hover:bg-default-50 font-mono">
+                      <td className="py-1.5 px-3 text-default-400 whitespace-nowrap">
+                        {new Date(r.timestamp).toLocaleTimeString()}
+                      </td>
+                      <td className="py-1.5 px-3 text-blue-400">{Number(r.voltage_rms).toFixed(1)}</td>
+                      <td className="py-1.5 px-3 text-green-400">{Number(r.current_rms).toFixed(3)}</td>
+                      <td className="py-1.5 px-3 text-yellow-400">{Number(r.power_real).toFixed(1)}</td>
+                      <td className="py-1.5 px-3">{Number(r.power_apparent).toFixed(1)}</td>
+                      <td className="py-1.5 px-3">{Number(r.power_factor).toFixed(3)}</td>
+                      <td className="py-1.5 px-3">{r.frequency != null ? Number(r.frequency).toFixed(1) : "—"}</td>
+                      <td className="py-1.5 px-3 text-primary">{r.energy_kwh != null ? Number(r.energy_kwh).toFixed(4) : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardBody>
+        </Card>
+      )}
+
+      {!reading && readingLog.length === 0 && (
         <Card className="border border-default-200">
           <CardBody className="flex flex-col items-center py-16">
             <MonitorDot className="w-12 h-12 text-default-300 mb-3" />
