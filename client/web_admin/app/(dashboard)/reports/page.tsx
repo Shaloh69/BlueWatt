@@ -126,7 +126,7 @@ export default function ReportsPage() {
                     <tr key={d.date} className="border-b border-default-100 hover:bg-default-50">
                       <td className="py-2 px-3 text-default-500">{String(d.date).slice(0, 10)}</td>
                       <td className="py-2 px-3 font-mono text-xs">{Number(d.total_energy_kwh).toFixed(3)}</td>
-                      <td className="py-2 px-3 font-mono text-xs">{Number(d.avg_power).toFixed(1)}</td>
+                      <td className="py-2 px-3 font-mono text-xs">{Number(d.avg_power_real).toFixed(1)}</td>
                       <td className="py-2 px-3 font-mono text-xs">{Number(d.avg_voltage).toFixed(1)}</td>
                       <td className="py-2 px-3">{d.anomaly_count}</td>
                     </tr>

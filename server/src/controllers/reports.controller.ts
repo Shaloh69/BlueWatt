@@ -47,7 +47,7 @@ export const getDailyReport = asyncHandler(async (req: Request, res: Response, _
            COALESCE(AVG(power_real), 0) AS avg_power_real,
            COALESCE(MAX(power_real), 0) AS max_power_real,
            COALESCE(MIN(power_real), 0) AS min_power_real,
-           COALESCE(SUM(energy_kwh), 0) AS total_energy_kwh,
+           COALESCE(MAX(energy_kwh) - MIN(energy_kwh), 0) AS total_energy_kwh,
            COALESCE(AVG(power_factor), 0) AS avg_power_factor,
            COUNT(*) AS reading_count,
            0 AS anomaly_count

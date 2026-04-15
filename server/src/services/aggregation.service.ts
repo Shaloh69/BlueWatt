@@ -72,7 +72,7 @@ export class AggregationService {
     );
 
     const r = rows[0] as any;
-    if (!r || r.reading_count === 0) return;
+    if (!r || !r.reading_count || Number(r.reading_count) === 0) return;
 
     await PowerAggregateModel.upsertDaily(deviceId, date, {
       avg_voltage:      Number(r.avg_voltage)    || 0,

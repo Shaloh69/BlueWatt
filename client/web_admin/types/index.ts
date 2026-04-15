@@ -199,7 +199,7 @@ export interface HourlyAggregate {
   hour: number;
   avg_voltage: number;
   avg_current: number;
-  avg_power: number;
+  avg_power_real: number;
   total_energy_kwh: number;
 }
 
@@ -207,7 +207,7 @@ export interface DailyAggregate {
   date: string;
   avg_voltage: number;
   avg_current: number;
-  avg_power: number;
+  avg_power_real: number;
   total_energy_kwh: number;
   anomaly_count: number;
 }
@@ -216,7 +216,7 @@ export interface MonthlyAggregate {
   year_month: string;
   avg_voltage: number;
   avg_current: number;
-  avg_power: number;
+  avg_power_real: number;
   total_energy_kwh: number;
   anomaly_count: number;
 }
