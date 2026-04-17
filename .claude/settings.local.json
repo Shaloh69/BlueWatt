@@ -67,7 +67,25 @@
       "Bash(sed -i -e 's/addToast\\({ title: \"Failed to load report\", description: getErrorMessage\\(err\\), color: \"danger\" }\\)/toast.error\\(getErrorMessage\\(err\\)\\)/g' -e 's/addToast\\({ title: \"Export failed\", description: getErrorMessage\\(err\\), color: \"danger\" }\\)/toast.error\\(getErrorMessage\\(err\\)\\)/g' 'app/\\(dashboard\\)/reports/page.tsx')",
       "Bash(sed -i -e 's/addToast\\({ title: `Relay \\\\${command.toUpperCase\\(\\)} command sent`, color: \"success\" }\\)/toast.success\\(`Relay ${command.toUpperCase\\(\\)} sent`\\)/g' -e 's/addToast\\({ title: \"Relay command failed\", description: getErrorMessage\\(err\\), color: \"danger\" }\\)/toast.error\\(getErrorMessage\\(err\\)\\)/g' 'app/\\(dashboard\\)/live/page.tsx')",
       "Bash(grep -v \"//\")",
-      "Bash(node -e \"console.log\\(require\\('./node_modules/recharts/package.json'\\).version\\)\")"
+      "Bash(node -e \"console.log\\(require\\('./node_modules/recharts/package.json'\\).version\\)\")",
+      "Read(//c//**)",
+      "Bash(cmd.exe /c \"set PATH && echo ---\")",
+      "Bash(cmd.exe /c \"dir C:\\\\flutter\\\\bin\\\\flutter.bat\")",
+      "Bash(cmd.exe /c \"dir C:\\\\src\\\\flutter\\\\bin\\\\flutter.bat\")",
+      "Bash(cmd.exe /c \"dir /s /b flutter.bat 2>nul\")",
+      "Bash(powershell.exe -Command \"Get-Command flutter -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source\")",
+      "Bash(powershell.exe -Command \"\\(Get-Item 'HKCU:\\\\Environment'\\).GetValue\\('PATH'\\)\")",
+      "Bash(powershell.exe -Command \"& 'C:\\\\Users\\\\Shaloh\\\\OneDrive\\\\Desktop\\\\Projects\\\\Flutter\\\\flutter\\\\bin\\\\flutter.bat' build apk --release\")",
+      "Bash(powershell.exe -Command \"Test-Path 'C:\\\\Users\\\\Shaloh\\\\OneDrive\\\\Desktop\\\\Projects\\\\Flutter\\\\flutter\\\\bin\\\\flutter.bat'\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem 'C:\\\\Users\\\\Shaloh\\\\OneDrive\\\\Desktop\\\\Projects\\\\Flutter\\\\' -ErrorAction SilentlyContinue\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem 'C:\\\\Users\\\\Shaloh\\\\OneDrive\\\\Desktop\\\\' | Select Name\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem 'C:\\\\Users\\\\Shaloh\\\\OneDrive\\\\Desktop\\\\Apps\\\\' | Select Name\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem 'D:\\\\' | Select Name\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem 'D:\\\\Tools\\\\' | Select Name\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem 'C:\\\\' | Select Name\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem 'C:\\\\Projects\\\\' | Select Name\")",
+      "Bash(powershell.exe -Command \"Test-Path 'C:\\\\Projects\\\\Flutter\\\\flutter\\\\bin\\\\flutter.bat'\")",
+      "Bash(powershell.exe -Command \"Set-Location 'D:\\\\Projects-Shem\\\\Thesis\\\\2026\\\\BlueWatt\\\\client\\\\flutter_app'; & 'C:\\\\Projects\\\\Flutter\\\\flutter\\\\bin\\\\flutter.bat' build apk --release 2>&1\")"
     ],
     "additionalDirectories": [
       "d:\\Projects-Shem\\Thesis\\2026\\BlueWatt\\server\\src\\database\\migrations"

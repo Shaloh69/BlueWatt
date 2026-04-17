@@ -20,8 +20,6 @@ const SALT_ROUNDS = 10;
 
 // ── Credentials ───────────────────────────────────────────────────────────────
 
-const ADMIN_EMAIL = 'admin@bluewatt.local';
-
 const TENANTS = [
   { email: 'sophie-proto@test.com',  password: 'Tenant@1234', full_name: 'Sophie Garcia'  },
   { email: 'reynie-proto@test.com',  password: 'Tenant@1234', full_name: 'Reynie Tapnio'  },
