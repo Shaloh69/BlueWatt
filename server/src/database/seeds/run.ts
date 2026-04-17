@@ -44,10 +44,8 @@ const CHECK_IN = new Date('2026-04-10T00:00:00');
 // ── Known ESP API keys (hardcoded in each ESP's config.h) ────────────────────
 // Add the keys for 003/004 once recovered from Render logs (look for
 // "[ESP] Full key for manual recovery:" after deploying this seed).
-const DEVICE_KEYS: { device_serial: string; api_key: string }[] = [
-  { device_serial: 'bluewatt-001', api_key: 'bw_2ac21f488a4a94f9a259d0e1d87471cf3d2f79dc8248271e1cd875de8d2c94c7' },
-  // bluewatt-003 and bluewatt-004 keys — check Render logs for full keys
-];
+// All three ESP keys are auto-registered on first connection (TOFU).
+const DEVICE_KEYS: { device_serial: string; api_key: string }[] = [];
 
 // ── Real daily power data (from CKS meter photos, Apr 10–16) ─────────────────
 //
