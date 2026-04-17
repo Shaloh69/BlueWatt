@@ -77,18 +77,38 @@ export const authenticateApiKey = async (
     let matchedDeviceId: number | null = null;
 
     for (const deviceKey of deviceKeys) {
-      const isMatch = apiKey === deviceKey.key_hash;
-      if (isMatch) {
+      if (apiKey === deviceKey.key_hash) {
         matchedDeviceId = deviceKey.device_id;
         await DeviceKeyModel.updateLastUsed(deviceKey.id);
         break;
       }
     }
 
+    // Trust-on-first-use: if no key matched, find the device by serial and
+    // auto-register the received key if that device has no keys yet.
     if (!matchedDeviceId) {
-      logger.warn(`[ESP] API key rejected — no matching device key (IP: ${req.ip})`);
-      logger.warn(`[ESP] Full key for manual recovery: "${apiKey}"`);
-      throw new AppError('Invalid API key', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+      const deviceSerial: string | undefined =
+        (req.params.id as string | undefined) ||
+        (req.body?.device_id as string | undefined);
+
+      if (deviceSerial) {
+        const candidate = await DeviceModel.findByDeviceId(deviceSerial);
+        if (candidate) {
+          const existingKeys = await DeviceKeyModel.findByDeviceId(candidate.id);
+          if (existingKeys.length === 0) {
+            await DeviceKeyModel.create(candidate.id, apiKey, 'Auto-registered');
+            matchedDeviceId = candidate.id;
+            logger.info(`[Auth] TOFU: auto-registered key for device "${deviceSerial}" — key starts "${apiKey.slice(0, 10)}..."`);
+          } else {
+            logger.warn(`[ESP] Key mismatch for "${deviceSerial}" — device has ${existingKeys.length} key(s) but none matched`);
+          }
+        }
+      }
+
+      if (!matchedDeviceId) {
+        logger.warn(`[ESP] API key rejected (IP: ${req.ip}) — no match, no keyless device found`);
+        throw new AppError('Invalid API key', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+      }
     }
 
     const device = await DeviceModel.findById(matchedDeviceId);
