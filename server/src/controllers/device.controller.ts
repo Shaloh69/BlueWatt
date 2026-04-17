@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { DeviceModel } from '../models/device.model';
 import { DeviceKeyModel } from '../models/deviceKey.model';
 import { ApiKeyService } from '../services/apiKey.service';
-import { HashService } from '../services/hash.service';
 import { AppError } from '../utils/AppError';
 import { sendSuccess } from '../utils/apiResponse';
 import { asyncHandler } from '../utils/asyncHandler';
@@ -26,9 +25,8 @@ export const registerDevice = asyncHandler(async (req: Request, res: Response, _
   const device = await DeviceModel.create(req.user.id, device_id, device_name, location);
 
   const apiKey = ApiKeyService.generateApiKey();
-  const apiKeyHash = await HashService.hashApiKey(apiKey);
 
-  await DeviceKeyModel.create(device.id, apiKeyHash, 'Default Key');
+  await DeviceKeyModel.create(device.id, apiKey, 'Default Key');
 
   bustCache('devices', req.user!.id);
 

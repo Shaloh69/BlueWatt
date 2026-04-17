@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../services/auth.service';
 import { ApiKeyService } from '../services/apiKey.service';
-import { HashService } from '../services/hash.service';
 import { AppError } from '../utils/AppError';
 import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
 import { UserModel } from '../models/user.model';
@@ -78,8 +77,7 @@ export const authenticateApiKey = async (
     let matchedDeviceId: number | null = null;
 
     for (const deviceKey of deviceKeys) {
-      const isMatch = await HashService.compareApiKey(apiKey, deviceKey.key_hash);
-      logger.info(`[Auth] Comparing against key#${deviceKey.id} (device#${deviceKey.device_id}): ${isMatch ? 'MATCH ✓' : 'no match'}`);
+      const isMatch = apiKey === deviceKey.key_hash;
       if (isMatch) {
         matchedDeviceId = deviceKey.device_id;
         await DeviceKeyModel.updateLastUsed(deviceKey.id);
@@ -89,6 +87,7 @@ export const authenticateApiKey = async (
 
     if (!matchedDeviceId) {
       logger.warn(`[ESP] API key rejected — no matching device key (IP: ${req.ip})`);
+      logger.warn(`[ESP] Full key for manual recovery: "${apiKey}"`);
       throw new AppError('Invalid API key', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
     }
 
