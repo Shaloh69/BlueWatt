@@ -8,17 +8,19 @@ import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import { Input } from "@heroui/input";
+import { Select, SelectItem } from "@heroui/select";
 import { Receipt, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { billingApi, getErrorMessage } from "@/lib/api";
 import { BillingPeriod } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
-import { useBilling, reloadBilling } from "@/lib/use-api";
+import { useBilling, usePads, reloadBilling } from "@/lib/use-api";
 
 const statusColor = (s: string) =>
   s === "paid" ? "success" : s === "overdue" ? "danger" : s === "waived" ? "default" : "warning";
 
 export default function BillingPage() {
   const { data: bills = [], isLoading: loading } = useBilling();
+  const { data: pads = [] } = usePads();
   const [showGen, setShowGen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<BillingPeriod | null>(null);
   const [saving, setSaving] = useState(false);
@@ -162,8 +164,18 @@ export default function BillingPage() {
         <ModalContent>
           <ModalHeader>Generate Billing Period</ModalHeader>
           <ModalBody className="space-y-3">
-            <Input label="Pad ID" type="number" placeholder="1" value={form.pad_id}
-              onChange={e => setForm(f => ({ ...f, pad_id: e.target.value }))} />
+            <Select
+              label="Pad"
+              placeholder="Select a pad"
+              selectedKeys={form.pad_id ? [form.pad_id] : []}
+              onSelectionChange={keys => setForm(f => ({ ...f, pad_id: String([...keys][0] ?? "") }))}>
+              {pads.map((p: { id: number; name: string; tenant_name?: string }) => (
+                <SelectItem key={String(p.id)} textValue={p.name}>
+                  <span className="font-medium">{p.name}</span>
+                  {p.tenant_name && <span className="text-default-400 ml-2 text-xs">{p.tenant_name}</span>}
+                </SelectItem>
+              ))}
+            </Select>
             <Input label="Period Start" type="date" value={form.period_start}
               onChange={e => setForm(f => ({ ...f, period_start: e.target.value }))} />
             <Input label="Period End" type="date" value={form.period_end}

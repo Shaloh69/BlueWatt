@@ -66,7 +66,7 @@
 // ============================================================
 #define HTTP_SERVER_URL         "https://bluewatt-api.onrender.com"
 #define HTTP_TIMEOUT_MS         30000                // 30s — Render cold starts can be slow
-#define HTTP_API_KEY            "bw_72d9f6e025d334fd43a409612b5d0c16c747be1026ce5fe2d1017dfb2b3e66e4"
+#define HTTP_API_KEY            "bw_fd0fdbbc6e3f51a520eba4d733df02ac88ffd559f7c4f4837dcc45c06b138a2b"
 #define HTTP_POWER_INTERVAL     10
 #define HTTP_DEVICE_ID          "bluewatt-002"
 
