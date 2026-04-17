@@ -37,11 +37,13 @@ class HomeProvider extends ChangeNotifier {
     });
   }
 
-  Future<void> load() async {
+  Future<void> load({int? userId}) async {
     _isOnline = await ConnectivityService.isConnected();
 
+    final cacheKey = userId != null ? 'home:pad:$userId' : 'home:pad';
+
     // Show cached data immediately so the screen isn't blank while fetching
-    final cachedPadJson = AppCache.getStale('home:pad');
+    final cachedPadJson = AppCache.getStale(cacheKey);
     if (cachedPadJson != null && _pad == null) {
       try {
         _pad = Pad.fromJson(cachedPadJson);
@@ -56,7 +58,7 @@ class HomeProvider extends ChangeNotifier {
     _error = null;
     try {
       _pad = await ApiService.getMyPad();
-      await AppCache.set('home:pad', _pad!.toJson());
+      await AppCache.set(cacheKey, _pad!.toJson());
       if (_pad!.hasDevice) {
         _reading = await ApiService.getLatestReading(_pad!.deviceId!);
       }

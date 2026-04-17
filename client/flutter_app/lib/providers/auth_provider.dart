@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../models/user.dart';
 import '../services/api_service.dart';
+import '../services/app_cache.dart';
 import '../services/storage_service.dart';
 
 enum AuthState { unknown, authenticated, unauthenticated }
@@ -44,7 +45,9 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    final userId = _user?.id;
     await StorageService.clear();
+    if (userId != null) await AppCache.remove('home:pad:$userId');
     _token = null;
     _user = null;
     _state = AuthState.unauthenticated;

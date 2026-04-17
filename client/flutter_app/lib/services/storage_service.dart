@@ -2,8 +2,9 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/constants.dart';
 
 class StorageService {
+  // encryptedSharedPreferences causes silent write failures on Android 14+
   static const _storage = FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    aOptions: AndroidOptions(encryptedSharedPreferences: false),
   );
 
   static Future<void> saveToken(String token) =>

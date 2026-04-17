@@ -57,7 +57,7 @@ class _MainShellState extends State<MainShell> {
     final home = context.read<HomeProvider>();
     final billing = context.read<BillingProvider>();
 
-    await home.load();
+    await home.load(userId: auth.user?.id);
     await billing.load();
 
     if (auth.token != null) {
