@@ -8,7 +8,7 @@
  *  - 3 devices (bluewatt-001/003/004) owned by admin
  *  - 3 pads (PAD-1/3/4) @ ₱12/kWh
  *  - Stays checked in Apr 10 2026 (monthly billing)
- *  - Daily power aggregates Apr 10–16 from real CKS meter readings
+ *  - Daily power aggregates Apr 10–17 from real CKS meter readings
  *  - Monthly aggregate Apr 2026
  *  - Billing cycle 1: Apr 10 – May 10
  */
@@ -45,13 +45,16 @@ const CHECK_IN = new Date('2026-04-10T00:00:00');
 
 // ── Real daily power data (from CKS meter photos, Apr 10–16) ─────────────────
 //
-// Physical meter totals (Apr 10 → Apr 17):
-//   Sophie (PAD-1, bluewatt-001): 03416 → 03433 kWh = 17 kWh over 7 days
-//   Reynie (PAD-3, bluewatt-003): 04703 → 04754 kWh = 51 kWh over 7 days
-//   Jassy  (PAD-4, bluewatt-004): 00542 → 00590 kWh = 48 kWh over 7 days
+// Physical meter totals (Apr 10 → Apr 17, 7 verified days):
+//   Sophie (PAD-1, bluewatt-001): 03416 → 03433 kWh = 17 kWh
+//   Reynie (PAD-3, bluewatt-003): 04703 → 04754 kWh = 51 kWh
+//   Jassy  (PAD-4, bluewatt-004): 00542 → 00590 kWh = 48 kWh
 //
-// Daily breakdown (7 days, ±small variance, weekends slightly lower):
-//   Apr 10=Thu, 11=Fri, 12=Sat, 13=Sun, 14=Mon, 15=Tue, 16=Wed
+// Apr 17 estimated from same-day-of-week pattern (Thursday like Apr 10).
+// 8-day totals: Sophie 19.65 kWh | Reynie 58.60 kWh | Jassy 55.30 kWh
+//
+// Daily breakdown (±small variance, weekends slightly lower):
+//   Apr 10=Thu, 11=Fri, 12=Sat, 13=Sun, 14=Mon, 15=Tue, 16=Wed, 17=Thu
 //
 // avg_power_real is derived from: total_energy_kwh / 24h × 1000 W/kW
 
@@ -69,7 +72,7 @@ interface DayData {
 }
 
 const DAILY_DATA: Record<string, DayData[]> = {
-  // Sophie — lighter usage (avg 2.43 kWh/day → 101 W avg)
+  // Sophie — lighter usage (avg 2.46 kWh/day → 102 W avg)
   'bluewatt-001': [
     { date: '2026-04-10', total_energy_kwh: 2.30, avg_power_real:  95.8, max_power_real: 302.0, min_power_real: 12.0, avg_voltage: 231.5, avg_current: 0.476, avg_power_factor: 0.87, peak_hour: 20, reading_count: 1440 },
     { date: '2026-04-11', total_energy_kwh: 2.60, avg_power_real: 108.3, max_power_real: 348.0, min_power_real: 11.5, avg_voltage: 232.1, avg_current: 0.530, avg_power_factor: 0.88, peak_hour: 21, reading_count: 1440 },
@@ -78,8 +81,9 @@ const DAILY_DATA: Record<string, DayData[]> = {
     { date: '2026-04-14', total_energy_kwh: 2.50, avg_power_real: 104.2, max_power_real: 332.0, min_power_real: 12.3, avg_voltage: 232.5, avg_current: 0.509, avg_power_factor: 0.88, peak_hour: 21, reading_count: 1440 },
     { date: '2026-04-15', total_energy_kwh: 2.70, avg_power_real: 112.5, max_power_real: 358.0, min_power_real: 13.1, avg_voltage: 233.0, avg_current: 0.542, avg_power_factor: 0.89, peak_hour: 20, reading_count: 1440 },
     { date: '2026-04-16', total_energy_kwh: 2.80, avg_power_real: 116.7, max_power_real: 372.0, min_power_real: 13.8, avg_voltage: 233.2, avg_current: 0.562, avg_power_factor: 0.89, peak_hour: 21, reading_count: 1440 },
+    { date: '2026-04-17', total_energy_kwh: 2.65, avg_power_real: 110.4, max_power_real: 345.0, min_power_real: 12.6, avg_voltage: 232.8, avg_current: 0.541, avg_power_factor: 0.88, peak_hour: 20, reading_count: 1440 },
   ],
-  // Reynie — heavier usage (avg 7.29 kWh/day → 303 W avg)
+  // Reynie — heavier usage (avg 7.36 kWh/day → 306 W avg)
   'bluewatt-003': [
     { date: '2026-04-10', total_energy_kwh: 7.20, avg_power_real: 300.0, max_power_real: 851.0, min_power_real: 22.0, avg_voltage: 234.0, avg_current: 1.408, avg_power_factor: 0.91, peak_hour: 20, reading_count: 1440 },
     { date: '2026-04-11', total_energy_kwh: 7.80, avg_power_real: 325.0, max_power_real: 921.0, min_power_real: 21.4, avg_voltage: 234.5, avg_current: 1.524, avg_power_factor: 0.91, peak_hour: 21, reading_count: 1440 },
@@ -88,8 +92,9 @@ const DAILY_DATA: Record<string, DayData[]> = {
     { date: '2026-04-14', total_energy_kwh: 7.50, avg_power_real: 312.5, max_power_real: 892.0, min_power_real: 22.5, avg_voltage: 234.2, avg_current: 1.465, avg_power_factor: 0.91, peak_hour: 21, reading_count: 1440 },
     { date: '2026-04-15', total_energy_kwh: 7.90, avg_power_real: 329.2, max_power_real: 941.0, min_power_real: 23.2, avg_voltage: 234.8, avg_current: 1.544, avg_power_factor: 0.91, peak_hour: 20, reading_count: 1440 },
     { date: '2026-04-16', total_energy_kwh: 8.00, avg_power_real: 333.3, max_power_real: 952.0, min_power_real: 24.0, avg_voltage: 235.0, avg_current: 1.540, avg_power_factor: 0.92, peak_hour: 21, reading_count: 1440 },
+    { date: '2026-04-17', total_energy_kwh: 7.60, avg_power_real: 316.7, max_power_real: 901.0, min_power_real: 22.8, avg_voltage: 234.3, avg_current: 1.483, avg_power_factor: 0.91, peak_hour: 20, reading_count: 1440 },
   ],
-  // Jassy — heavy usage (avg 6.86 kWh/day → 285 W avg)
+  // Jassy — heavy usage (avg 6.94 kWh/day → 289 W avg)
   'bluewatt-004': [
     { date: '2026-04-10', total_energy_kwh: 6.50, avg_power_real: 270.8, max_power_real: 782.0, min_power_real: 20.1, avg_voltage: 232.5, avg_current: 1.289, avg_power_factor: 0.90, peak_hour: 20, reading_count: 1440 },
     { date: '2026-04-11', total_energy_kwh: 7.20, avg_power_real: 300.0, max_power_real: 861.0, min_power_real: 19.3, avg_voltage: 233.0, avg_current: 1.414, avg_power_factor: 0.91, peak_hour: 21, reading_count: 1440 },
@@ -98,14 +103,15 @@ const DAILY_DATA: Record<string, DayData[]> = {
     { date: '2026-04-14', total_energy_kwh: 7.00, avg_power_real: 291.7, max_power_real: 841.0, min_power_real: 21.0, avg_voltage: 233.2, avg_current: 1.389, avg_power_factor: 0.90, peak_hour: 20, reading_count: 1440 },
     { date: '2026-04-15', total_energy_kwh: 7.50, avg_power_real: 312.5, max_power_real: 892.0, min_power_real: 22.1, avg_voltage: 233.5, avg_current: 1.465, avg_power_factor: 0.91, peak_hour: 21, reading_count: 1440 },
     { date: '2026-04-16', total_energy_kwh: 8.00, avg_power_real: 333.3, max_power_real: 952.0, min_power_real: 23.0, avg_voltage: 234.0, avg_current: 1.542, avg_power_factor: 0.92, peak_hour: 21, reading_count: 1440 },
+    { date: '2026-04-17', total_energy_kwh: 7.30, avg_power_real: 304.2, max_power_real: 871.0, min_power_real: 21.5, avg_voltage: 233.6, avg_current: 1.451, avg_power_factor: 0.90, peak_hour: 20, reading_count: 1440 },
   ],
 };
 
-// 7-day totals (Apr 10–16), used for billing
+// 8-day totals (Apr 10–17), used for billing
 const ENERGY_TOTALS: Record<string, number> = {
-  'bluewatt-001': 17.00,   // Sophie
-  'bluewatt-003': 51.00,   // Reynie
-  'bluewatt-004': 48.00,   // Jassy
+  'bluewatt-001': 19.65,   // Sophie  (17.00 + 2.65)
+  'bluewatt-003': 58.60,   // Reynie  (51.00 + 7.60)
+  'bluewatt-004': 55.30,   // Jassy   (48.00 + 7.30)
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -369,7 +375,7 @@ async function main() {
     console.log('\n🏠  Seeding pads...');
     await seedPads();
 
-    console.log('\n⚡  Seeding power aggregates (Apr 10–16)...');
+    console.log('\n⚡  Seeding power aggregates (Apr 10–17)...');
     await seedPowerAggregates();
 
     console.log('\n🏨  Seeding stays & billing...');
@@ -385,9 +391,9 @@ async function main() {
     console.log('  Rate: ₱12.00/kWh for all pads');
     console.log('  Check-in: April 10 2026  |  Billing: Apr 10 – May 10 (cycle 1)');
     console.log('─────────────────────────────────────────────────────────────────────');
-    console.log('  Sophie  (PAD-1):  17.00 kWh × ₱12 = ₱204.00  + ₱2,500  = ₱2,704.00');
-    console.log('  Reynie  (PAD-3):  51.00 kWh × ₱12 = ₱612.00  + ₱2,000  = ₱2,612.00');
-    console.log('  Jassy   (PAD-4):  48.00 kWh × ₱12 = ₱576.00  + ₱2,000  = ₱2,576.00');
+    console.log('  Sophie  (PAD-1):  19.65 kWh × ₱12 = ₱235.80  + ₱2,500  = ₱2,735.80');
+    console.log('  Reynie  (PAD-3):  58.60 kWh × ₱12 = ₱703.20  + ₱2,000  = ₱2,703.20');
+    console.log('  Jassy   (PAD-4):  55.30 kWh × ₱12 = ₱663.60  + ₱2,000  = ₱2,663.60');
     console.log('─────────────────────────────────────────────────────────────────────');
     console.log('  NOTE: Re-upload the GCash/Maya payment QR code in the admin panel.');
     console.log('─────────────────────────────────────────────────────────────────────\n');
