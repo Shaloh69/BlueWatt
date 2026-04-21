@@ -110,6 +110,7 @@ export interface BillingPeriod {
   amount_due: number;
   flat_amount: number;
   cycle_number?: number;
+  bill_type: 'electricity' | 'rent';
   status: 'unpaid' | 'paid' | 'overdue' | 'waived';
   due_date: Date;
   paid_at?: Date;
@@ -148,9 +149,10 @@ export interface RelayCommand {
   device_id: number;
   command: 'on' | 'off' | 'reset';
   issued_by: number;
-  status: 'pending' | 'acked' | 'failed';
+  status: 'pending' | 'acked' | 'failed' | 'expired';
   issued_at: Date;
   acked_at?: Date;
+  expires_at?: Date;
 }
 
 export interface PowerAggregateHourly {

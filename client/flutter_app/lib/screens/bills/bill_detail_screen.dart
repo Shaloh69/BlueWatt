@@ -41,12 +41,18 @@ class BillDetailScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Billing Period',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(color: Colors.white),
+                    Row(
+                      children: [
+                        Text(
+                          'Billing Period',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(color: Colors.white),
+                        ),
+                        const SizedBox(width: 8),
+                        _BillTypeChip(billType: bill.billType),
+                      ],
                     ),
                     _StatusChip(status: bill.status),
                   ],
@@ -73,16 +79,22 @@ class BillDetailScreen extends StatelessWidget {
             ),
             child: Column(
               children: [
-                _DetailRow(
-                  label: 'Energy Used',
-                  value: '${bill.energyKwh.toStringAsFixed(3)} kWh',
-                ),
-                const Divider(color: kBorderColor, height: 24),
-                _DetailRow(
-                  label: 'Rate per kWh',
-                  value: fmt.format(bill.ratePerKwh),
-                ),
-                const Divider(color: kBorderColor, height: 24),
+                if (bill.isElectricity) ...[
+                  _DetailRow(
+                    label: 'Energy Used',
+                    value: '${bill.energyKwh.toStringAsFixed(3)} kWh',
+                  ),
+                  const Divider(color: kBorderColor, height: 24),
+                  _DetailRow(
+                    label: 'Rate per kWh',
+                    value: fmt.format(bill.ratePerKwh),
+                  ),
+                  const Divider(color: kBorderColor, height: 24),
+                ],
+                if (bill.isRent) ...[
+                  _DetailRow(label: 'Type', value: 'Monthly Rent'),
+                  const Divider(color: kBorderColor, height: 24),
+                ],
                 _DetailRow(
                   label: 'Due Date',
                   value: dueDate != null ? dateFmt.format(dueDate) : bill.dueDate,
@@ -154,6 +166,35 @@ class _DetailRow extends StatelessWidget {
             style: const TextStyle(
                 color: Colors.white, fontWeight: FontWeight.w500)),
       ],
+    );
+  }
+}
+
+class _BillTypeChip extends StatelessWidget {
+  final String billType;
+  const _BillTypeChip({required this.billType});
+
+  @override
+  Widget build(BuildContext context) {
+    final isRent = billType == 'rent';
+    final color = isRent ? kPurple : kPrimaryBlue;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(isRent ? Icons.home_outlined : Icons.bolt_rounded, color: color, size: 12),
+          const SizedBox(width: 3),
+          Text(
+            isRent ? 'Rent' : 'Electricity',
+            style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
     );
   }
 }

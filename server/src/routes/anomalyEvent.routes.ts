@@ -32,7 +32,7 @@ router.get(
 );
 
 router.put(
-  '/anomaly-events/:id/resolve',
+  '/:id/resolve',
   authenticateJWT,
   validate(resolveAnomalyValidator),
   anomalyEventController.resolveAnomaly

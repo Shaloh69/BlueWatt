@@ -24,4 +24,6 @@ router.put('/:id/relay', authenticateJWT, validate(updateRelayValidator), device
 
 router.delete('/:id', authenticateJWT, validate(deviceIdParamValidator), deviceController.deleteDevice);
 
+router.post('/:id/keys/regenerate', authenticateJWT, validate(deviceIdParamValidator), deviceController.regenerateDeviceKey);
+
 export default router;

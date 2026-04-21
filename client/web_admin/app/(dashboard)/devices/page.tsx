@@ -9,7 +9,7 @@ import { Input, Textarea } from "@heroui/input";
 import { Tooltip } from "@heroui/tooltip";
 import {
   Cpu, Plus, RefreshCw, Wifi, WifiOff, ToggleLeft, ToggleRight,
-  Pencil, Building2, User, MapPin, Info, Trash2, Copy, Check,
+  Pencil, Building2, User, MapPin, Info, Trash2, Copy, Check, KeyRound,
 } from "lucide-react";
 import { devicesApi, getErrorMessage } from "@/lib/api";
 import { useDevices, usePads, reloadDevices, reloadPads } from "@/lib/use-api";
@@ -45,6 +45,10 @@ export default function DevicesPage() {
   // Delete confirm
   const [confirmDelete, setConfirmDelete] = useState<Device | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Regenerate key
+  const [regenTarget, setRegenTarget] = useState<Device | null>(null);
+  const [regenLoading, setRegenLoading] = useState(false);
 
   /** Find pads linked to a device */
   const linkedPads = (device: Device): Pad[] =>
@@ -116,6 +120,22 @@ export default function DevicesPage() {
       toast.error(getErrorMessage(err));
     } finally {
       setEditSaving(false);
+    }
+  }
+
+  async function handleRegenKey() {
+    if (!regenTarget) return;
+    setRegenLoading(true);
+    try {
+      const res = await devicesApi.regenerateKey(regenTarget.id);
+      const newKey = res.data.data?.api_key as string | undefined;
+      if (newKey) setRevealKey(newKey);
+      setRegenTarget(null);
+      toast.success("New API key generated");
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setRegenLoading(false);
     }
   }
 
@@ -271,6 +291,11 @@ export default function DevicesPage() {
                         <Info className="w-4 h-4" />
                       </Button>
                     </Tooltip>
+                    <Tooltip content="Regenerate API Key" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
+                      <Button size="sm" variant="flat" color="warning" isIconOnly onPress={() => setRegenTarget(d)}>
+                        <KeyRound className="w-4 h-4" />
+                      </Button>
+                    </Tooltip>
                     <Tooltip content="Delete Device" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
                       <Button size="sm" variant="flat" color="danger" isIconOnly onPress={() => setConfirmDelete(d)}>
                         <Trash2 className="w-4 h-4" />
@@ -424,6 +449,25 @@ export default function DevicesPage() {
             <Button color="primary" onPress={() => { setRevealKey(null); setKeyCopied(false); }}>
               I&apos;ve saved it — Done
             </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* ── Regenerate Key Confirm Modal ── */}
+      <Modal isOpen={!!regenTarget} onOpenChange={() => setRegenTarget(null)} classNames={modalClassNames}>
+        <ModalContent>
+          <ModalHeader>Regenerate API Key</ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-default-600">
+              Generate a new API key for <span className="font-semibold text-foreground">{regenTarget?.device_name}</span>?
+            </p>
+            <p className="text-xs text-warning mt-1">
+              The current key will be invalidated immediately. The ESP32 will be rejected until it is flashed with the new key.
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="flat" onPress={() => setRegenTarget(null)}>Cancel</Button>
+            <Button color="warning" isLoading={regenLoading} onPress={handleRegenKey}>Regenerate</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

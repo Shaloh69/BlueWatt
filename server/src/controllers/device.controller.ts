@@ -170,3 +170,28 @@ export const updateRelay = asyncHandler(async (req: Request, res: Response, _nex
 
   sendSuccess(res, { device: updatedDevice }, HTTP_STATUS.OK, 'Relay status updated successfully');
 });
+
+export const regenerateDeviceKey = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+  if (!req.user) throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+
+  const deviceId = parseInt(req.params.id, 10);
+  const device = await DeviceModel.findById(deviceId);
+  if (!device) throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
+
+  const isOwner = await DeviceModel.isOwnedByUser(deviceId, req.user.id);
+  if (!isOwner) throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
+
+  // Deactivate all existing keys and create a fresh one
+  const existingKeys = await DeviceKeyModel.findByDeviceId(deviceId);
+  for (const key of existingKeys) {
+    await DeviceKeyModel.deactivate(key.id);
+  }
+
+  const newApiKey = ApiKeyService.generateApiKey();
+  await DeviceKeyModel.create(deviceId, newApiKey, 'Regenerated Key');
+
+  bustCache('devices', req.user.id);
+  logger.info(`[Admin] API key regenerated for device#${deviceId} ("${device.device_id}") by user=${req.user.id}`);
+
+  sendSuccess(res, { api_key: newApiKey }, HTTP_STATUS.OK, 'New API key generated. Save it — it will not be shown again.');
+});

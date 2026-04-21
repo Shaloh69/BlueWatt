@@ -85,7 +85,22 @@
       "Bash(powershell.exe -Command \"Get-ChildItem 'C:\\\\' | Select Name\")",
       "Bash(powershell.exe -Command \"Get-ChildItem 'C:\\\\Projects\\\\' | Select Name\")",
       "Bash(powershell.exe -Command \"Test-Path 'C:\\\\Projects\\\\Flutter\\\\flutter\\\\bin\\\\flutter.bat'\")",
-      "Bash(powershell.exe -Command \"Set-Location 'D:\\\\Projects-Shem\\\\Thesis\\\\2026\\\\BlueWatt\\\\client\\\\flutter_app'; & 'C:\\\\Projects\\\\Flutter\\\\flutter\\\\bin\\\\flutter.bat' build apk --release 2>&1\")"
+      "Bash(powershell.exe -Command \"Set-Location 'D:\\\\Projects-Shem\\\\Thesis\\\\2026\\\\BlueWatt\\\\client\\\\flutter_app'; & 'C:\\\\Projects\\\\Flutter\\\\flutter\\\\bin\\\\flutter.bat' build apk --release 2>&1\")",
+      "Bash(flutter analyze *)",
+      "Bash(cmd.exe /c \"where flutter 2>&1 & echo --- & set PATH\")",
+      "Bash(powershell.exe -Command \"Get-Command flutter | Select-Object Source; [System.Environment]::GetEnvironmentVariable\\('PATH','User'\\) -split ';' | Select-String flutter\")",
+      "Bash(\"C:/Users/Shaloh/OneDrive/Desktop/Projects/Flutter/flutter/bin/flutter\" build *)",
+      "Bash(powershell.exe -Command \"Set-Location 'D:\\\\Projects-Shem\\\\Thesis\\\\2026\\\\BlueWatt\\\\client\\\\flutter_app'; & 'C:\\\\Users\\\\Shaloh\\\\OneDrive\\\\Desktop\\\\Projects\\\\Flutter\\\\flutter\\\\bin\\\\flutter.bat' build apk --release 2>&1\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem 'C:\\\\Users\\\\Shaloh\\\\OneDrive\\\\Desktop\\\\Projects\\\\Flutter\\\\flutter\\\\bin' -ErrorAction SilentlyContinue | Select-Object Name\")",
+      "Bash(powershell.exe -Command \"[System.Environment]::GetEnvironmentVariable\\('PATH','User'\\) -split ';'\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem 'C:\\\\Users\\\\Shaloh\\\\OneDrive\\\\Desktop\\\\Projects\\\\Flutter' -ErrorAction SilentlyContinue | Select-Object Name, FullName\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem 'C:\\\\Users\\\\Shaloh\\\\OneDrive' -ErrorAction SilentlyContinue | Select-Object Name\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem 'C:\\\\Users\\\\Shaloh\\\\OneDrive\\\\Desktop' -ErrorAction SilentlyContinue | Select-Object Name\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem 'C:\\\\Users\\\\Shaloh\\\\OneDrive\\\\Desktop\\\\Apps' -ErrorAction SilentlyContinue | Select-Object Name\")",
+      "Bash(powershell.exe -NoProfile -Command \"Set-Location 'D:\\\\Projects-Shem\\\\Thesis\\\\2026\\\\BlueWatt\\\\client\\\\flutter_app'; & 'D:\\\\Projects-Shem\\\\Flutter\\\\flutter\\\\bin\\\\flutter.bat' build apk --release 2>&1\")",
+      "Bash(node -e ' *)",
+      "Bash(npx ts-node -e ' *)",
+      "Bash(npx ts-node *)"
     ],
     "additionalDirectories": [
       "d:\\Projects-Shem\\Thesis\\2026\\BlueWatt\\server\\src\\database\\migrations"

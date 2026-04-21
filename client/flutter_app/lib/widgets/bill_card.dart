@@ -54,13 +54,37 @@ class BillCard extends StatelessWidget {
                 color: statusColor.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(Icons.receipt_long, color: statusColor, size: 22),
+              child: Icon(
+                bill.isRent ? Icons.home_outlined : Icons.bolt_rounded,
+                color: statusColor,
+                size: 22,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: (bill.isRent ? kPurple : kPrimaryBlue).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          bill.isRent ? 'Rent' : 'Electricity',
+                          style: TextStyle(
+                            color: bill.isRent ? kPurple : kPrimaryBlue,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
                   Text(
                     startDate != null && endDate != null
                         ? '${dateFmt.format(startDate)} – ${dateFmt.format(endDate)}'
@@ -70,11 +94,12 @@ class BillCard extends StatelessWidget {
                         fontWeight: FontWeight.w500,
                         fontSize: 13),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
-                    '${bill.energyKwh.toStringAsFixed(2)} kWh',
-                    style:
-                        const TextStyle(color: kTextMuted, fontSize: 12),
+                    bill.isElectricity
+                        ? '${bill.energyKwh.toStringAsFixed(2)} kWh'
+                        : 'Monthly rent',
+                    style: const TextStyle(color: kTextMuted, fontSize: 12),
                   ),
                 ],
               ),

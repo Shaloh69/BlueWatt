@@ -6,6 +6,8 @@ import '../providers/home_provider.dart';
 import '../providers/auth_provider.dart';
 import 'home/home_screen.dart';
 import 'bills/bills_screen.dart';
+import 'anomalies/anomaly_screen.dart';
+import 'reports/reports_screen.dart';
 import 'profile/profile_screen.dart';
 
 class _OfflineBanner extends StatelessWidget {
@@ -43,6 +45,8 @@ class _MainShellState extends State<MainShell> {
   static const _screens = [
     HomeScreen(),
     BillsScreen(),
+    AnomalyScreen(),
+    ReportsScreen(),
     ProfileScreen(),
   ];
 
@@ -96,6 +100,16 @@ class _MainShellState extends State<MainShell> {
             icon: Icon(Icons.receipt_long_outlined),
             selectedIcon: Icon(Icons.receipt_long, color: kPrimaryBlue),
             label: 'Bills',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.warning_amber_outlined),
+            selectedIcon: Icon(Icons.warning_amber_rounded, color: kDanger),
+            label: 'Alerts',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.bar_chart_outlined),
+            selectedIcon: Icon(Icons.bar_chart_rounded, color: kPrimaryBlue),
+            label: 'Reports',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),

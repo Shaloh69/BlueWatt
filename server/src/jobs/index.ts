@@ -6,6 +6,7 @@ import { BillingService } from '../services/billing.service';
 import { StayBillingService } from '../services/stayBilling.service';
 import { PowerAggregateModel } from '../models/powerAggregate.model';
 import { PowerReadingModel } from '../models/powerReading.model';
+import { RelayCommandModel } from '../models/relayCommand.model';
 import { config } from '../config/environment';
 import { logger } from '../utils/logger';
 
@@ -62,6 +63,14 @@ export function startCronJobs(): void {
     } catch (e) { logger.error('[cron] Cleanup failed:', e); }
   });
 
+  // ── Every minute: expire timed-out relay commands (3-min TTL) ───────────
+  cron.schedule('* * * * *', async () => {
+    try {
+      const n = await RelayCommandModel.expireStale();
+      if (n > 0) logger.info(`[cron] Expired ${n} relay command(s)`);
+    } catch (e) { logger.error('[cron] Relay expiry failed:', e); }
+  });
+
   // ── Every 14 min: self-ping to prevent Render free tier from sleeping ────────
   const selfUrl = process.env.RENDER_EXTERNAL_URL
     ? `${process.env.RENDER_EXTERNAL_URL}/api/v1/health`
@@ -78,5 +87,5 @@ export function startCronJobs(): void {
     logger.info(`[keep-alive] Pinging ${selfUrl} every 14 min`);
   }
 
-  logger.info('Cron jobs registered: hourly-agg, daily-agg, monthly-agg, stay-billing, legacy-billing, overdue, cleanup, keep-alive');
+  logger.info('Cron jobs registered: hourly-agg, daily-agg, monthly-agg, stay-billing, legacy-billing, overdue, cleanup, relay-expiry, keep-alive');
 }

@@ -7,7 +7,7 @@ import { Chip } from "@heroui/chip";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import { Input, Textarea } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
-import { CalendarCheck, Plus, RefreshCw, LogOut, Trash2, Clock } from "lucide-react";
+import { CalendarCheck, Plus, RefreshCw, LogOut, Trash2, Clock, Receipt } from "lucide-react";
 import { staysApi, getErrorMessage } from "@/lib/api";
 import { Stay } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
@@ -55,6 +55,7 @@ export default function StaysPage() {
   const [showCheckIn, setShowCheckIn]     = useState(false);
   const [checkOutTarget, setCheckOutTarget] = useState<Stay | null>(null);
   const [deleteTarget, setDeleteTarget]   = useState<Stay | null>(null);
+  const [genBillTarget, setGenBillTarget] = useState<Stay | null>(null);
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
@@ -107,6 +108,23 @@ export default function StaysPage() {
       await staysApi.checkOut(checkOutTarget.id);
       toast.success("Tenant checked out — prorated bill generated");
       setCheckOutTarget(null);
+      reloadStays();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // ── Generate bill ─────────────────────────────────────────────────────────────
+  async function handleGenerateBill() {
+    if (!genBillTarget) return;
+    setSaving(true);
+    try {
+      const res = await staysApi.generateBill(genBillTarget.id);
+      const count = res.data.data?.bills_created as number ?? 0;
+      toast.success(count > 0 ? `Generated ${count} bill(s)` : "No new bills — all cycles already billed");
+      setGenBillTarget(null);
       reloadStays();
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -234,11 +252,17 @@ export default function StaysPage() {
                       <td className="py-3 px-3">
                         <div className="flex gap-1">
                           {s.status === "active" && (
-                            <Button size="sm" variant="flat" color="warning"
-                              startContent={<LogOut className="w-3.5 h-3.5" />}
-                              onPress={() => setCheckOutTarget(s)}>
-                              Check Out
-                            </Button>
+                            <>
+                              <Button size="sm" variant="flat" color="success" isIconOnly title="Generate bill now"
+                                onPress={() => setGenBillTarget(s)}>
+                                <Receipt className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button size="sm" variant="flat" color="warning"
+                                startContent={<LogOut className="w-3.5 h-3.5" />}
+                                onPress={() => setCheckOutTarget(s)}>
+                                Check Out
+                              </Button>
+                            </>
                           )}
                           <Button size="sm" variant="flat" color="danger" isIconOnly title="Delete stay"
                             onPress={() => setDeleteTarget(s)}>
@@ -348,6 +372,30 @@ export default function StaysPage() {
           <ModalFooter>
             <Button variant="flat" onPress={() => setCheckOutTarget(null)}>Cancel</Button>
             <Button color="warning" isLoading={saving} onPress={handleCheckOut}>Check Out</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* ── Generate bill confirmation ────────────────────────────────────── */}
+      <Modal isOpen={!!genBillTarget} onOpenChange={() => setGenBillTarget(null)} classNames={modalClassNames}>
+        <ModalContent>
+          <ModalHeader>Generate Bill Now</ModalHeader>
+          <ModalBody>
+            <p className="text-default-600">
+              Manually generate any outstanding bills for{" "}
+              <span className="font-semibold text-foreground">{genBillTarget?.tenant_name}</span>{" "}
+              at <span className="font-semibold text-foreground">{genBillTarget?.pad_name}</span>?
+            </p>
+            <p className="text-sm text-default-500 mt-1">
+              Only cycles that have not yet been billed will be generated. Already-billed cycles are skipped.
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="flat" onPress={() => setGenBillTarget(null)}>Cancel</Button>
+            <Button color="success" isLoading={saving} onPress={handleGenerateBill}
+              startContent={<Receipt className="w-4 h-4" />}>
+              Generate
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

@@ -8,6 +8,7 @@ import '../models/power_reading.dart';
 import '../models/billing_period.dart';
 import '../models/payment.dart';
 import '../models/user.dart';
+import '../models/anomaly_event.dart';
 import 'storage_service.dart';
 import 'app_cache.dart';
 
@@ -214,6 +215,53 @@ class ApiService {
     }
   }
 
+  // ── Anomalies ──────────────────────────────────────────────────────────────
+
+  static Future<List<AnomalyEvent>> getMyAnomalies(int deviceId) async {
+    final res = await http.get(
+      _uri('/anomaly-events/devices/$deviceId/anomaly-events'),
+      headers: await _headers(),
+    ).timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
+    if (res.statusCode == 404) return [];
+    final body = _body(res);
+    final list = body['data']['events'] as List<dynamic>? ?? [];
+    return list.map((e) => AnomalyEvent.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
+  static Future<void> resolveAnomaly(int id) async {
+    final res = await http.put(
+      _uri('/anomaly-events/$id/resolve'),
+      headers: await _headers(),
+      body: '{}',
+    ).timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
+    _body(res);
+  }
+
+  // ── Reports ────────────────────────────────────────────────────────────────
+
+  static Future<List<Map<String, dynamic>>> getDailyReport(int deviceId, {String? month}) async {
+    final params = <String, String>{};
+    if (month != null) params['month'] = month;
+    final res = await http.get(
+      _uri('/reports/daily/$deviceId', params.isNotEmpty ? params : null),
+      headers: await _headers(),
+    ).timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
+    if (res.statusCode == 404) return [];
+    final body = _body(res);
+    final list = body['data']['daily'] as List<dynamic>? ?? [];
+    return list.map((e) => e as Map<String, dynamic>).toList();
+  }
+
+  static Future<double> getTodayEnergy(int deviceId) async {
+    final res = await http.get(
+      _uri('/power-data/devices/$deviceId/today-energy'),
+      headers: await _headers(),
+    ).timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
+    if (res.statusCode == 404) return 0;
+    final body = _body(res);
+    return (body['data']['today_energy_kwh'] as num?)?.toDouble() ?? 0;
+  }
+
   static Future<void> submitPayment({
     required int billingPeriodId,
     required String paymentMethod,
@@ -230,7 +278,7 @@ class ApiService {
     request.fields['payment_method'] = paymentMethod;
     request.fields['reference_number'] = referenceNumber;
     request.files.add(
-      await http.MultipartFile.fromPath('receipt_image', receiptImage.path),
+      await http.MultipartFile.fromPath('receipt', receiptImage.path),
     );
     final streamed = await request.send();
     final res = await http.Response.fromStream(streamed);

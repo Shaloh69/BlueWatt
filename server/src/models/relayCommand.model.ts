@@ -15,8 +15,8 @@ export class RelayCommandModel {
       [deviceId]
     );
     const [result] = await pool.execute<ResultSetHeader>(
-      `INSERT INTO relay_commands (device_id, command, issued_by)
-       VALUES (?, ?, ?)`,
+      `INSERT INTO relay_commands (device_id, command, issued_by, expires_at)
+       VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 3 MINUTE))`,
       [deviceId, command, issuedBy]
     );
     return (await RelayCommandModel.findById(result.insertId))!;
@@ -34,10 +34,19 @@ export class RelayCommandModel {
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT * FROM relay_commands
        WHERE device_id = ? AND status = 'pending'
+         AND (expires_at IS NULL OR expires_at > NOW())
        ORDER BY issued_at ASC LIMIT 1`,
       [deviceId]
     );
     return rows.length > 0 ? (rows[0] as RelayCommand) : null;
+  }
+
+  static async expireStale(): Promise<number> {
+    const [result] = await pool.execute<ResultSetHeader>(
+      `UPDATE relay_commands SET status = 'expired'
+       WHERE status = 'pending' AND expires_at IS NOT NULL AND expires_at < NOW()`
+    );
+    return result.affectedRows;
   }
 
   static async acknowledge(id: number): Promise<void> {

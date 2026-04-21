@@ -74,6 +74,7 @@ export const devicesApi = {
       headers: { "Content-Type": "multipart/form-data" },
     }),
   delete: (id: number) => api.delete(`/devices/${id}`),
+  regenerateKey: (id: number) => api.post(`/devices/${id}/keys/regenerate`, {}),
 };
 
 // ── Pads ──────────────────────────────────────────────────────────────────────
@@ -142,7 +143,7 @@ export const anomalyApi = {
   unresolved: (deviceId: number) =>
     api.get(`/anomaly-events/devices/${deviceId}/anomaly-events/unresolved`),
   resolve: (id: number) =>
-    api.put(`/anomaly-events/anomaly-events/${id}/resolve`, {}),
+    api.put(`/anomaly-events/${id}/resolve`, {}),
 };
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
@@ -175,6 +176,7 @@ export const staysApi = {
   checkOut: (id: number, check_out_at?: string) =>
     api.put(`/stays/${id}/checkout`, { check_out_at }),
   delete: (id: number) => api.delete(`/stays/${id}`),
+  generateBill: (id: number) => api.post(`/stays/${id}/generate-bill`, {}),
 };
 
 // ── Power Data ────────────────────────────────────────────────────────────────
