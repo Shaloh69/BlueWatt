@@ -8,6 +8,21 @@ import { DeviceKeyModel } from '../models/deviceKey.model';
 import { DeviceModel } from '../models/device.model';
 import { logger } from '../utils/logger';
 
+// ── Device-key cache ──────────────────────────────────────────────────────────
+// Avoids a full-table SELECT on every ESP POST. TTL is short so new TOFU keys
+// are picked up within one minute without a restart.
+const KEY_CACHE_TTL_MS = 60_000;
+let _keyCache: { keys: Awaited<ReturnType<typeof DeviceKeyModel.findAllActive>>; expiresAt: number } | null = null;
+
+async function getCachedDeviceKeys() {
+  if (_keyCache && Date.now() < _keyCache.expiresAt) return _keyCache.keys;
+  const keys = await DeviceKeyModel.findAllActive();
+  _keyCache = { keys, expiresAt: Date.now() + KEY_CACHE_TTL_MS };
+  return keys;
+}
+
+function invalidateKeyCache() { _keyCache = null; }
+
 export const authenticateJWT = async (
   req: Request,
   _res: Response,
@@ -65,7 +80,7 @@ export const authenticateApiKey = async (
       throw new AppError('Invalid API key format', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
     }
 
-    const deviceKeys = await DeviceKeyModel.findAllActive();
+    const deviceKeys = await getCachedDeviceKeys();
 
     if (deviceKeys.length === 0) {
       logger.warn(`[Auth] No active device keys in DB — register a device first`);
@@ -97,6 +112,7 @@ export const authenticateApiKey = async (
           const existingKeys = await DeviceKeyModel.findByDeviceId(candidate.id);
           if (existingKeys.length === 0) {
             await DeviceKeyModel.create(candidate.id, apiKey, 'Auto-registered');
+            invalidateKeyCache(); // force reload so next request sees the new key
             matchedDeviceId = candidate.id;
             logger.info(`[Auth] TOFU: auto-registered key for device "${deviceSerial}" — key starts "${apiKey.slice(0, 10)}..."`);
           } else {
