@@ -16,6 +16,7 @@ class HomeProvider extends ChangeNotifier {
   bool _isOnline = true;
   bool _isLive = false; // true once first SSE power_reading arrives
   DateTime? _lastReadingAt;
+  bool _relayBusy = false;
 
   final SseService _sse = SseService();
   StreamSubscription<SseEvent>? _sseSub;
@@ -28,6 +29,7 @@ class HomeProvider extends ChangeNotifier {
   bool get isOnline => _isOnline;
   bool get isLive => _isLive;
   DateTime? get lastReadingAt => _lastReadingAt;
+  bool get relayBusy => _relayBusy;
   Stream<SseEvent> get sseStream => _sse.stream;
 
   HomeProvider() {
@@ -71,6 +73,39 @@ class HomeProvider extends ChangeNotifier {
     }
   }
 
+  /// Sends an "off" relay command for the tenant's own pad.
+  /// Returns an error string on failure, null on success.
+  Future<String?> disablePad() async {
+    if (_relayBusy) return null;
+    _relayBusy = true;
+    notifyListeners();
+    try {
+      await ApiService.sendRelayOff();
+      // Optimistically reflect the queued state in the UI
+      if (_pad != null) {
+        _pad = Pad(
+          id: _pad!.id,
+          name: _pad!.name,
+          description: _pad!.description,
+          deviceId: _pad!.deviceId,
+          tenantId: _pad!.tenantId,
+          ratePerKwh: _pad!.ratePerKwh,
+          isActive: _pad!.isActive,
+          deviceSerial: _pad!.deviceSerial,
+          relayStatus: 'off',
+          lastSeenAt: _pad!.lastSeenAt,
+        );
+      }
+      notifyListeners();
+      return null;
+    } catch (e) {
+      return e.toString();
+    } finally {
+      _relayBusy = false;
+      notifyListeners();
+    }
+  }
+
   void connectSSE(String token) {
     _sse.connect(token);
     _sseSub = _sse.stream.listen(_handleSseEvent);
@@ -81,10 +116,11 @@ class HomeProvider extends ChangeNotifier {
       case 'power_reading':
         final deviceId = event.data['device_id'];
         if (_pad?.deviceId != null && deviceId == _pad!.deviceId) {
+          final now = DateTime.now().toIso8601String();
           _reading = PowerReading(
             id: 0,
             deviceId: _pad!.deviceId!,
-            timestamp: DateTime.now().toIso8601String(),
+            timestamp: now,
             voltageRms: (event.data['voltage_rms'] as num?)?.toDouble() ?? 0,
             currentRms: (event.data['current_rms'] as num?)?.toDouble() ?? 0,
             powerReal: (event.data['power_real'] as num?)?.toDouble() ?? 0,
@@ -92,6 +128,19 @@ class HomeProvider extends ChangeNotifier {
             powerFactor: (event.data['power_factor'] as num?)?.toDouble() ?? 0,
             energyKwh: (event.data['energy_kwh'] as num?)?.toDouble(),
             frequency: (event.data['frequency'] as num?)?.toDouble(),
+          );
+          // Update lastSeenAt so isDeviceOnline reflects live data arriving
+          _pad = Pad(
+            id: _pad!.id,
+            name: _pad!.name,
+            description: _pad!.description,
+            deviceId: _pad!.deviceId,
+            tenantId: _pad!.tenantId,
+            ratePerKwh: _pad!.ratePerKwh,
+            isActive: _pad!.isActive,
+            deviceSerial: _pad!.deviceSerial,
+            relayStatus: _pad!.relayStatus,
+            lastSeenAt: now,
           );
           _isLive = true;
           _lastReadingAt = DateTime.now();

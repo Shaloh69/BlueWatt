@@ -128,7 +128,7 @@
 // Server Configuration
 #define HTTP_SERVER_URL         "https://bluewatt-api.onrender.com"
 #define API_KEY                 "bw_2ac21f488a4a94f9a259d0e1d87471cf3d2f79dc8248271e1cd875de8d2c94c7"
-#define DEVICE_ID               "bluewatt-001"
+#define DEVICE_ID               "bluewatt-004"
 
 // HTTP Settings
 #define HTTP_TIMEOUT_MS         5000      // Request timeout
@@ -136,8 +136,8 @@
 #define DATA_SEND_INTERVAL_MS   10000     // Send data every 10 seconds
 
 // Endpoints
-#define ENDPOINT_POWER_DATA     "/api/power-data"
-#define ENDPOINT_ANOMALY_EVENT  "/api/anomaly-events"
+#define ENDPOINT_POWER_DATA     "/api/v1/power-data"
+#define ENDPOINT_ANOMALY_EVENT  "/api/v1/anomaly-events"
 
 // ============================================================================
 // FREERTOS TASK CONFIGURATION

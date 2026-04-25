@@ -2,11 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import { PadModel } from '../models/pad.model';
 import { DeviceModel } from '../models/device.model';
 import { UserModel } from '../models/user.model';
+import { RelayCommandModel } from '../models/relayCommand.model';
 import { AppError } from '../utils/AppError';
 import { sendSuccess } from '../utils/apiResponse';
 import { asyncHandler } from '../utils/asyncHandler';
 import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
 import { bustCache } from '../middleware/cache.middleware';
+import { sseService } from '../services/sse.service';
+import { logger } from '../utils/logger';
 
 /** POST /pads — admin creates a pad */
 export const createPad = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
@@ -93,6 +96,22 @@ export const assignPad = asyncHandler(async (req: Request, res: Response, _next:
 
   bustCache('pads', req.user!.id);
   sendSuccess(res, { pad: await PadModel.findById(padId) });
+});
+
+/** POST /pads/my/relay-command — tenant disables their own pad (off only) */
+export const disableMyPad = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+  if (!req.user) throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+
+  const pad = await PadModel.findByTenantId(req.user.id);
+  if (!pad) throw new AppError('No pad assigned to your account', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
+  if (!pad.device_id) throw new AppError('No device assigned to your pad', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+
+  const cmd = await RelayCommandModel.create(pad.device_id, 'off', req.user.id);
+  logger.info(`[Relay] Tenant user=${req.user.id} disabled pad "${pad.name}" device#${pad.device_id} cmd_id=${cmd.id}`);
+
+  sseService.sendToDevice(pad.device_id, 'relay_command_issued', { command: 'off', deviceId: pad.device_id });
+
+  sendSuccess(res, { command: cmd }, HTTP_STATUS.CREATED);
 });
 
 /** PUT /pads/:id/unassign — admin removes tenant */

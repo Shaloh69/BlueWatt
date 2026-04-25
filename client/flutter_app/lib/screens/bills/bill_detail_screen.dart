@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../config/constants.dart';
 import '../../models/billing_period.dart';
+import '../../providers/billing_provider.dart';
 import 'pay_bill_screen.dart';
 
 class BillDetailScreen extends StatelessWidget {
@@ -11,15 +13,19 @@ class BillDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Use live bill from provider so status updates (SSE approval) reflect here
+    final liveBill = context.select<BillingProvider, BillingPeriod>(
+      (b) => b.bills.firstWhere((e) => e.id == bill.id, orElse: () => bill),
+    );
     final fmt = NumberFormat.currency(symbol: '₱', decimalDigits: 2);
     final dateFmt = DateFormat('MMMM d, yyyy');
 
     DateTime? startDate, endDate, dueDate, paidAt;
     try {
-      startDate = DateTime.parse(bill.periodStart);
-      endDate = DateTime.parse(bill.periodEnd);
-      dueDate = DateTime.parse(bill.dueDate);
-      if (bill.paidAt != null) paidAt = DateTime.parse(bill.paidAt!);
+      startDate = DateTime.parse(liveBill.periodStart);
+      endDate = DateTime.parse(liveBill.periodEnd);
+      dueDate = DateTime.parse(liveBill.dueDate);
+      if (liveBill.paidAt != null) paidAt = DateTime.parse(liveBill.paidAt!);
     } catch (_) {}
 
     return Scaffold(
@@ -51,17 +57,17 @@ class BillDetailScreen extends StatelessWidget {
                               ?.copyWith(color: Colors.white),
                         ),
                         const SizedBox(width: 8),
-                        _BillTypeChip(billType: bill.billType),
+                        _BillTypeChip(billType: liveBill.billType),
                       ],
                     ),
-                    _StatusChip(status: bill.status),
+                    _StatusChip(status: liveBill.status),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(
                   startDate != null && endDate != null
                       ? '${dateFmt.format(startDate)} – ${dateFmt.format(endDate)}'
-                      : '${bill.periodStart} – ${bill.periodEnd}',
+                      : '${liveBill.periodStart} – ${liveBill.periodEnd}',
                   style: const TextStyle(color: kTextMuted, fontSize: 13),
                 ),
               ],
@@ -79,25 +85,25 @@ class BillDetailScreen extends StatelessWidget {
             ),
             child: Column(
               children: [
-                if (bill.isElectricity) ...[
+                if (liveBill.isElectricity) ...[
                   _DetailRow(
                     label: 'Energy Used',
-                    value: '${bill.energyKwh.toStringAsFixed(3)} kWh',
+                    value: '${liveBill.energyKwh.toStringAsFixed(3)} kWh',
                   ),
                   const Divider(color: kBorderColor, height: 24),
                   _DetailRow(
                     label: 'Rate per kWh',
-                    value: fmt.format(bill.ratePerKwh),
+                    value: fmt.format(liveBill.ratePerKwh),
                   ),
                   const Divider(color: kBorderColor, height: 24),
                 ],
-                if (bill.isRent) ...[
+                if (liveBill.isRent) ...[
                   _DetailRow(label: 'Type', value: 'Monthly Rent'),
                   const Divider(color: kBorderColor, height: 24),
                 ],
                 _DetailRow(
                   label: 'Due Date',
-                  value: dueDate != null ? dateFmt.format(dueDate) : bill.dueDate,
+                  value: dueDate != null ? dateFmt.format(dueDate) : liveBill.dueDate,
                 ),
                 if (paidAt != null) ...[
                   const Divider(color: kBorderColor, height: 24),
@@ -118,7 +124,7 @@ class BillDetailScreen extends StatelessWidget {
                           fontSize: 15),
                     ),
                     Text(
-                      fmt.format(bill.amountDue),
+                      fmt.format(liveBill.amountDue),
                       style: const TextStyle(
                           color: kPrimaryBlue,
                           fontWeight: FontWeight.bold,
@@ -131,14 +137,14 @@ class BillDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          if (!bill.isPaid && !bill.isWaived)
+          if (!liveBill.isPaid && !liveBill.isWaived)
             SizedBox(
               height: 50,
               child: ElevatedButton.icon(
                 onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => PayBillScreen(bill: bill),
+                    builder: (_) => PayBillScreen(bill: liveBill),
                   ),
                 ),
                 icon: const Icon(Icons.payment),

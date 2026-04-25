@@ -120,6 +120,12 @@ class HomeScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+                const SizedBox(height: 12),
+
+                // Tenant relay disable button
+                if (pad.hasDevice && pad.relayStatus != 'tripped')
+                  _DisableButton(pad: pad),
+
                 const SizedBox(height: 16),
 
                 // Live metrics or no-device placeholder
@@ -309,6 +315,88 @@ class _MetricsGrid extends StatelessWidget {
           iconColor: kSuccess,
         ),
       ],
+    );
+  }
+}
+
+class _DisableButton extends StatelessWidget {
+  final dynamic pad;
+  const _DisableButton({required this.pad});
+
+  Future<void> _confirm(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A2035),
+        title: const Text('Turn Off Power?',
+            style: TextStyle(color: Colors.white, fontSize: 16)),
+        content: const Text(
+          'This will cut power to your unit. Only the admin can turn it back on.',
+          style: TextStyle(color: Color(0xFF8A9BB0), fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel',
+                style: TextStyle(color: Color(0xFF8A9BB0))),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('Turn Off',
+                style: TextStyle(
+                    color: kDanger, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    final home = context.read<HomeProvider>();
+    final err = await home.disablePad();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(err ?? 'Power off command sent'),
+        backgroundColor: err != null ? kDanger : kSuccess,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<HomeProvider>(
+      builder: (context, home, _) {
+        final isOff = pad.relayStatus == 'off';
+        return SizedBox(
+          width: double.infinity,
+          height: 44,
+          child: OutlinedButton.icon(
+            onPressed: home.relayBusy || isOff ? null : () => _confirm(context),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: isOff ? kTextMuted : kDanger,
+              side: BorderSide(
+                  color: isOff ? kBorderColor : kDanger.withOpacity(0.5)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            icon: home.relayBusy
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: kDanger))
+                : Icon(isOff ? Icons.power_off : Icons.power_settings_new,
+                    size: 16),
+            label: Text(
+              home.relayBusy
+                  ? 'Sending…'
+                  : isOff
+                      ? 'Power is Off'
+                      : 'Turn Off My Power',
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ),
+        );
+      },
     );
   }
 }

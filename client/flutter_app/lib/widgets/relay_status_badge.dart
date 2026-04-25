@@ -30,8 +30,8 @@ class RelayStatusBadge extends StatelessWidget {
         break;
       default:
         color = kTextMuted;
-        label = 'Unknown';
-        icon = Icons.help_outline;
+        label = 'Standby';
+        icon = Icons.power_settings_new_outlined;
     }
 
     return Container(

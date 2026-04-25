@@ -215,6 +215,17 @@ class ApiService {
     }
   }
 
+  // ── Relay ──────────────────────────────────────────────────────────────────
+
+  static Future<void> sendRelayOff() async {
+    final res = await http.post(
+      _uri('/pads/my/relay-command'),
+      headers: await _headers(),
+      body: jsonEncode({'command': 'off'}),
+    ).timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
+    _body(res);
+  }
+
   // ── Anomalies ──────────────────────────────────────────────────────────────
 
   static Future<List<AnomalyEvent>> getMyAnomalies(int deviceId) async {

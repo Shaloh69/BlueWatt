@@ -115,7 +115,7 @@ export const approvePayment = asyncHandler(async (req: Request, res: Response, _
   await PaymentModel.approve(payment.id, req.user.id);
   await BillingPeriodModel.markPaid(payment.billing_period_id);
 
-  sseService.broadcastToAll('payment_received', {
+  sseService.sendToUser(payment.tenant_id, 'payment_received', {
     payment_id: payment.id,
     billing_period_id: payment.billing_period_id,
     tenant_id: payment.tenant_id,
