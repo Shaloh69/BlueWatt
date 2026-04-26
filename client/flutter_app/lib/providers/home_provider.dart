@@ -11,6 +11,7 @@ import '../services/sse_service.dart';
 class HomeProvider extends ChangeNotifier {
   Pad? _pad;
   PowerReading? _reading;
+  List<Map<String, dynamic>> _dailyRows = [];
   bool _loading = true;
   String? _error;
   bool _isOnline = true;
@@ -24,6 +25,7 @@ class HomeProvider extends ChangeNotifier {
 
   Pad? get pad => _pad;
   PowerReading? get reading => _reading;
+  List<Map<String, dynamic>> get dailyRows => _dailyRows;
   bool get loading => _loading;
   String? get error => _error;
   bool get isOnline => _isOnline;
@@ -63,6 +65,7 @@ class HomeProvider extends ChangeNotifier {
       await AppCache.set(cacheKey, _pad!.toJson());
       if (_pad!.hasDevice) {
         _reading = await ApiService.getLatestReading(_pad!.deviceId!);
+        _dailyRows = await ApiService.getAllDailyReport(_pad!.deviceId!);
       }
     } catch (e) {
       if (_pad == null) _error = e.toString();

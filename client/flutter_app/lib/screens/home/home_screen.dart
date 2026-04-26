@@ -248,6 +248,8 @@ class HomeScreen extends StatelessWidget {
                     );
                   },
                 ),
+                const SizedBox(height: 20),
+                _DailyConsumptionTable(rows: home.dailyRows),
               ],
             ),
           );
@@ -397,6 +399,124 @@ class _DisableButton extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _DailyConsumptionTable extends StatelessWidget {
+  final List<Map<String, dynamic>> rows;
+  const _DailyConsumptionTable({required this.rows});
+
+  static double _d(dynamic v) =>
+      v == null ? 0.0 : (v is num ? v.toDouble() : double.tryParse(v.toString()) ?? 0.0);
+
+  static int _i(dynamic v) =>
+      v == null ? 0 : (v is int ? v : int.tryParse(v.toString()) ?? 0);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: kCardBg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: kBorderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+            child: Row(
+              children: [
+                const Icon(Icons.table_chart_outlined,
+                    color: kPrimaryBlue, size: 18),
+                const SizedBox(width: 8),
+                const Text(
+                  'Daily Consumption History',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14),
+                ),
+                const Spacer(),
+                Text(
+                  '${rows.length} days',
+                  style: const TextStyle(color: kTextMuted, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          const Divider(color: kBorderColor, height: 1),
+          if (rows.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: Text('No daily data yet',
+                    style: TextStyle(color: kTextMuted, fontSize: 13)),
+              ),
+            )
+          else
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                headingRowHeight: 36,
+                dataRowMinHeight: 38,
+                dataRowMaxHeight: 38,
+                horizontalMargin: 14,
+                columnSpacing: 18,
+                headingTextStyle: const TextStyle(
+                    color: kTextMuted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600),
+                dataTextStyle: const TextStyle(
+                    color: Colors.white, fontSize: 12),
+                columns: const [
+                  DataColumn(label: Text('Date')),
+                  DataColumn(label: Text('kWh'), numeric: true),
+                  DataColumn(label: Text('Avg W'), numeric: true),
+                  DataColumn(label: Text('Voltage'), numeric: true),
+                  DataColumn(label: Text('Peak Hr'), numeric: true),
+                ],
+                rows: rows.map((r) {
+                  final dateRaw = r['date']?.toString() ?? '';
+                  final dateStr = dateRaw.length >= 10
+                      ? dateRaw.substring(0, 10)
+                      : dateRaw;
+                  DateTime? dt;
+                  try { dt = DateTime.parse(dateStr); } catch (_) {}
+                  final label = dt != null
+                      ? DateFormat('MMM d').format(dt)
+                      : dateStr;
+
+                  final kwh     = _d(r['total_energy_kwh']);
+                  final avgW    = _d(r['avg_power_real']);
+                  final voltage = _d(r['avg_voltage']);
+                  final peak    = _i(r['peak_hour']);
+                  final peakAm  = peak == 0 ? '12 AM'
+                      : peak < 12  ? '$peak AM'
+                      : peak == 12 ? '12 PM'
+                      : '${peak - 12} PM';
+
+                  return DataRow(cells: [
+                    DataCell(Text(label,
+                        style: const TextStyle(
+                            color: kTextMuted, fontSize: 12))),
+                    DataCell(Text(kwh.toStringAsFixed(2),
+                        style: TextStyle(
+                            color: kwh > 10 ? kDanger
+                                : kwh > 6  ? kWarning
+                                : kSuccess,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12))),
+                    DataCell(Text(avgW.toStringAsFixed(1))),
+                    DataCell(Text('${voltage.toStringAsFixed(1)} V')),
+                    DataCell(Text(peakAm)),
+                  ]);
+                }).toList(),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

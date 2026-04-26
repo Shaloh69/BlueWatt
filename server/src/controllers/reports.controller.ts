@@ -65,6 +65,16 @@ export const getDailyReport = asyncHandler(async (req: Request, res: Response, _
   sendSuccess(res, { month, device_id: deviceId, days: data });
 });
 
+/** GET /reports/daily/:deviceId/all — all-time daily records, newest first */
+export const getAllDailyReport = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
+  if (!req.user) throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+  const deviceId = parseInt(req.params.deviceId, 10);
+  await assertDeviceAccess(deviceId, req.user);
+
+  const data = await PowerAggregateModel.findAllDaily(deviceId);
+  sendSuccess(res, { device_id: deviceId, days: data });
+});
+
 /** GET /reports/monthly/:deviceId?year=YYYY */
 export const getMonthlyReport = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
   if (!req.user) throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);

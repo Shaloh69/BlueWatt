@@ -250,6 +250,17 @@ class ApiService {
 
   // ── Reports ────────────────────────────────────────────────────────────────
 
+  static Future<List<Map<String, dynamic>>> getAllDailyReport(int deviceId) async {
+    final res = await http.get(
+      _uri('/reports/daily/$deviceId/all'),
+      headers: await _headers(),
+    ).timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
+    if (res.statusCode == 404) return [];
+    final body = _body(res);
+    final list = body['data']['days'] as List<dynamic>? ?? [];
+    return list.map((e) => e as Map<String, dynamic>).toList();
+  }
+
   static Future<List<Map<String, dynamic>>> getDailyReport(int deviceId, {String? month}) async {
     final params = <String, String>{};
     if (month != null) params['month'] = month;

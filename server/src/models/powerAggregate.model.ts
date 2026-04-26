@@ -72,6 +72,16 @@ export class PowerAggregateModel {
     return rows as PowerAggregateDaily[];
   }
 
+  static async findAllDaily(deviceId: number): Promise<PowerAggregateDaily[]> {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT * FROM power_aggregates_daily
+       WHERE device_id = ?
+       ORDER BY date DESC`,
+      [deviceId]
+    );
+    return rows as PowerAggregateDaily[];
+  }
+
   static async sumEnergyForPeriod(deviceId: number, startDate: string, endDate: string): Promise<number> {
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT COALESCE(SUM(total_energy_kwh), 0) AS total
