@@ -10,59 +10,83 @@ import { DeviceRegistrationRequest } from '../types/api';
 import { bustCache } from '../middleware/cache.middleware';
 import { logger } from '../utils/logger';
 
-export const registerDevice = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-  if (!req.user) {
-    throw new AppError('User not authenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
-  }
+export const registerDevice = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    if (!req.user) {
+      throw new AppError(
+        'User not authenticated',
+        HTTP_STATUS.UNAUTHORIZED,
+        ERROR_CODES.UNAUTHORIZED
+      );
+    }
 
-  const { device_id, device_name, location } = req.body as DeviceRegistrationRequest;
+    const { device_id, device_name, location } = req.body as DeviceRegistrationRequest;
 
-  const existingDevice = await DeviceModel.findByDeviceId(device_id);
-  if (existingDevice) {
-    throw new AppError('Device ID already registered', HTTP_STATUS.CONFLICT, ERROR_CODES.DUPLICATE_ENTRY);
-  }
+    const existingDevice = await DeviceModel.findByDeviceId(device_id);
+    if (existingDevice) {
+      throw new AppError(
+        'Device ID already registered',
+        HTTP_STATUS.CONFLICT,
+        ERROR_CODES.DUPLICATE_ENTRY
+      );
+    }
 
-  const device = await DeviceModel.create(req.user.id, device_id, device_name, location);
+    const device = await DeviceModel.create(req.user.id, device_id, device_name, location);
 
-  const apiKey = ApiKeyService.generateApiKey();
+    const apiKey = ApiKeyService.generateApiKey();
 
-  await DeviceKeyModel.create(device.id, apiKey, 'Default Key');
+    await DeviceKeyModel.create(device.id, apiKey, 'Default Key');
 
-  bustCache('devices', req.user!.id);
+    bustCache('devices', req.user!.id);
 
-  logger.info(`[Admin] Device registered — device_id="${device_id}" name="${device_name}" db_id=${device.id} by user=${req.user.id}`);
-  logger.info(`[Auth]  Key hash stored for device#${device.id} — key starts with "${apiKey.slice(0, 8)}..." (len=${apiKey.length}). Save this key — it will not be shown again.`);
+    logger.info(
+      `[Admin] Device registered — device_id="${device_id}" name="${device_name}" db_id=${device.id} by user=${req.user.id}`
+    );
+    logger.info(
+      `[Auth]  Key hash stored for device#${device.id} — key starts with "${apiKey.slice(0, 8)}..." (len=${apiKey.length}). Save this key — it will not be shown again.`
+    );
 
-  sendSuccess(
-    res,
-    {
-      device: {
-        id: device.id,
-        device_id: device.device_id,
-        name: device.device_name,
-        location: device.location,
-        is_active: device.is_active,
+    sendSuccess(
+      res,
+      {
+        device: {
+          id: device.id,
+          device_id: device.device_id,
+          name: device.device_name,
+          location: device.location,
+          is_active: device.is_active,
+        },
+        api_key: apiKey,
       },
-      api_key: apiKey,
-    },
-    HTTP_STATUS.CREATED,
-    'Device registered successfully. Save the API key - it will not be shown again.'
-  );
-});
-
-export const listDevices = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-  if (!req.user) {
-    throw new AppError('User not authenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+      HTTP_STATUS.CREATED,
+      'Device registered successfully. Save the API key - it will not be shown again.'
+    );
   }
+);
 
-  const devices = await DeviceModel.findByUserId(req.user.id);
+export const listDevices = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    if (!req.user) {
+      throw new AppError(
+        'User not authenticated',
+        HTTP_STATUS.UNAUTHORIZED,
+        ERROR_CODES.UNAUTHORIZED
+      );
+    }
 
-  sendSuccess(res, { devices });
-});
+    const devices = await DeviceModel.findByUserId(req.user.id);
+
+    sendSuccess(res, { devices });
+  }
+);
 
 export const getDevice = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
   if (!req.user) {
-    throw new AppError('User not authenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+    throw new AppError(
+      'User not authenticated',
+      HTTP_STATUS.UNAUTHORIZED,
+      ERROR_CODES.UNAUTHORIZED
+    );
   }
 
   const deviceId = parseInt(req.params.id, 10);
@@ -82,116 +106,154 @@ export const getDevice = asyncHandler(async (req: Request, res: Response, _next:
   sendSuccess(res, { device });
 });
 
-export const updateDevice = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-  if (!req.user) {
-    throw new AppError('User not authenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+export const updateDevice = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    if (!req.user) {
+      throw new AppError(
+        'User not authenticated',
+        HTTP_STATUS.UNAUTHORIZED,
+        ERROR_CODES.UNAUTHORIZED
+      );
+    }
+
+    const deviceId = parseInt(req.params.id, 10);
+
+    const device = await DeviceModel.findById(deviceId);
+
+    if (!device) {
+      throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
+    }
+
+    const isOwner = await DeviceModel.isOwnedByUser(deviceId, req.user.id);
+
+    if (!isOwner) {
+      throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
+    }
+
+    const { device_name, location, description, is_active } = req.body;
+
+    // device_id (hardware identifier) is intentionally immutable — only metadata is editable
+    if ((req.body as any).device_id && (req.body as any).device_id !== device.device_id) {
+      logger.warn(
+        `[Admin] Attempt to change device_id rejected — device_id is immutable (db_id=${deviceId}, current="${device.device_id}", attempted="${(req.body as any).device_id}")`
+      );
+    }
+
+    const changed: Record<string, unknown> = {};
+    if (device_name !== undefined) changed.device_name = device_name;
+    if (location !== undefined) changed.location = location;
+    if (description !== undefined) changed.description = description;
+    if (is_active !== undefined) changed.is_active = is_active;
+
+    await DeviceModel.update(deviceId, { device_name, location, description, is_active });
+    bustCache('devices', req.user!.id);
+
+    logger.info(
+      `[Admin] Device updated — device_id="${device.device_id}" db_id=${deviceId} by user=${req.user!.id}: ${JSON.stringify(changed)}`
+    );
+
+    const updatedDevice = await DeviceModel.findById(deviceId);
+
+    sendSuccess(res, { device: updatedDevice }, HTTP_STATUS.OK, 'Device updated successfully');
   }
+);
 
-  const deviceId = parseInt(req.params.id, 10);
+export const deleteDevice = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    if (!req.user)
+      throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
 
-  const device = await DeviceModel.findById(deviceId);
+    const deviceId = parseInt(req.params.id, 10);
+    const device = await DeviceModel.findById(deviceId);
+    if (!device)
+      throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
 
-  if (!device) {
-    throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
+    const isOwner = await DeviceModel.isOwnedByUser(deviceId, req.user.id);
+    if (!isOwner && req.user.role !== 'admin') {
+      throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
+    }
+
+    await DeviceModel.delete(deviceId);
+    bustCache('devices', req.user!.id);
+    logger.info(
+      `[Admin] Device deleted — device_id="${device.device_id}" db_id=${deviceId} by user=${req.user!.id}`
+    );
+    sendSuccess(res, { id: deviceId }, HTTP_STATUS.OK, 'Device deleted');
   }
+);
 
-  const isOwner = await DeviceModel.isOwnedByUser(deviceId, req.user.id);
+export const updateRelay = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    if (!req.user) {
+      throw new AppError(
+        'User not authenticated',
+        HTTP_STATUS.UNAUTHORIZED,
+        ERROR_CODES.UNAUTHORIZED
+      );
+    }
 
-  if (!isOwner) {
-    throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
+    const deviceId = parseInt(req.params.id, 10);
+
+    const device = await DeviceModel.findById(deviceId);
+
+    if (!device) {
+      throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
+    }
+
+    const isOwner = await DeviceModel.isOwnedByUser(deviceId, req.user.id);
+
+    if (!isOwner) {
+      throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
+    }
+
+    const { relay_status } = req.body;
+
+    await DeviceModel.update(deviceId, { relay_status });
+    bustCache('devices', req.user!.id);
+
+    const updatedDevice = await DeviceModel.findById(deviceId);
+
+    sendSuccess(
+      res,
+      { device: updatedDevice },
+      HTTP_STATUS.OK,
+      'Relay status updated successfully'
+    );
   }
+);
 
-  const { device_name, location, description, is_active } = req.body;
+export const regenerateDeviceKey = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    if (!req.user)
+      throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
 
-  // device_id (hardware identifier) is intentionally immutable — only metadata is editable
-  if ((req.body as any).device_id && (req.body as any).device_id !== device.device_id) {
-    logger.warn(`[Admin] Attempt to change device_id rejected — device_id is immutable (db_id=${deviceId}, current="${device.device_id}", attempted="${(req.body as any).device_id}")`);
+    const deviceId = parseInt(req.params.id, 10);
+    const device = await DeviceModel.findById(deviceId);
+    if (!device)
+      throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
+
+    const isOwner = await DeviceModel.isOwnedByUser(deviceId, req.user.id);
+    if (!isOwner) throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
+
+    // Deactivate all existing keys and create a fresh one
+    const existingKeys = await DeviceKeyModel.findByDeviceId(deviceId);
+    for (const key of existingKeys) {
+      await DeviceKeyModel.deactivate(key.id);
+    }
+
+    const newApiKey = ApiKeyService.generateApiKey();
+    await DeviceKeyModel.create(deviceId, newApiKey, 'Regenerated Key');
+
+    bustCache('devices', req.user.id);
+    logger.info(
+      `[Admin] API key regenerated for device#${deviceId} ("${device.device_id}") by user=${req.user.id}`
+    );
+
+    sendSuccess(
+      res,
+      { api_key: newApiKey },
+      HTTP_STATUS.OK,
+      'New API key generated. Save it — it will not be shown again.'
+    );
   }
-
-  const changed: Record<string, unknown> = {};
-  if (device_name  !== undefined) changed.device_name  = device_name;
-  if (location     !== undefined) changed.location      = location;
-  if (description  !== undefined) changed.description   = description;
-  if (is_active    !== undefined) changed.is_active     = is_active;
-
-  await DeviceModel.update(deviceId, { device_name, location, description, is_active });
-  bustCache('devices', req.user!.id);
-
-  logger.info(`[Admin] Device updated — device_id="${device.device_id}" db_id=${deviceId} by user=${req.user!.id}: ${JSON.stringify(changed)}`);
-
-  const updatedDevice = await DeviceModel.findById(deviceId);
-
-  sendSuccess(res, { device: updatedDevice }, HTTP_STATUS.OK, 'Device updated successfully');
-});
-
-export const deleteDevice = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-  if (!req.user) throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
-
-  const deviceId = parseInt(req.params.id, 10);
-  const device = await DeviceModel.findById(deviceId);
-  if (!device) throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
-
-  const isOwner = await DeviceModel.isOwnedByUser(deviceId, req.user.id);
-  if (!isOwner && req.user.role !== 'admin') {
-    throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
-  }
-
-  await DeviceModel.delete(deviceId);
-  bustCache('devices', req.user!.id);
-  logger.info(`[Admin] Device deleted — device_id="${device.device_id}" db_id=${deviceId} by user=${req.user!.id}`);
-  sendSuccess(res, { id: deviceId }, HTTP_STATUS.OK, 'Device deleted');
-});
-
-export const updateRelay = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-  if (!req.user) {
-    throw new AppError('User not authenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
-  }
-
-  const deviceId = parseInt(req.params.id, 10);
-
-  const device = await DeviceModel.findById(deviceId);
-
-  if (!device) {
-    throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
-  }
-
-  const isOwner = await DeviceModel.isOwnedByUser(deviceId, req.user.id);
-
-  if (!isOwner) {
-    throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
-  }
-
-  const { relay_status } = req.body;
-
-  await DeviceModel.update(deviceId, { relay_status });
-  bustCache('devices', req.user!.id);
-
-  const updatedDevice = await DeviceModel.findById(deviceId);
-
-  sendSuccess(res, { device: updatedDevice }, HTTP_STATUS.OK, 'Relay status updated successfully');
-});
-
-export const regenerateDeviceKey = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-  if (!req.user) throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
-
-  const deviceId = parseInt(req.params.id, 10);
-  const device = await DeviceModel.findById(deviceId);
-  if (!device) throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
-
-  const isOwner = await DeviceModel.isOwnedByUser(deviceId, req.user.id);
-  if (!isOwner) throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
-
-  // Deactivate all existing keys and create a fresh one
-  const existingKeys = await DeviceKeyModel.findByDeviceId(deviceId);
-  for (const key of existingKeys) {
-    await DeviceKeyModel.deactivate(key.id);
-  }
-
-  const newApiKey = ApiKeyService.generateApiKey();
-  await DeviceKeyModel.create(deviceId, newApiKey, 'Regenerated Key');
-
-  bustCache('devices', req.user.id);
-  logger.info(`[Admin] API key regenerated for device#${deviceId} ("${device.device_id}") by user=${req.user.id}`);
-
-  sendSuccess(res, { api_key: newApiKey }, HTTP_STATUS.OK, 'New API key generated. Save it — it will not be shown again.');
-});
+);

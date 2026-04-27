@@ -56,7 +56,15 @@ export interface AnomalyEvent {
   id: number;
   device_id: number;
   timestamp: Date;
-  anomaly_type: 'overcurrent' | 'short_circuit' | 'wire_fire' | 'overvoltage' | 'undervoltage' | 'overpower' | 'arc_fault' | 'ground_fault';
+  anomaly_type:
+    | 'overcurrent'
+    | 'short_circuit'
+    | 'wire_fire'
+    | 'overvoltage'
+    | 'undervoltage'
+    | 'overpower'
+    | 'arc_fault'
+    | 'ground_fault';
   severity: 'low' | 'medium' | 'high' | 'critical';
   current_value?: number;
   voltage_value?: number;
@@ -123,12 +131,12 @@ export interface Payment {
   tenant_id: number;
   amount: number;
   currency: string;
-  payment_method?: string;        // 'gcash', 'maya', 'bank_transfer', etc.
-  reference_number?: string;      // reference from the receipt (e.g. GCash ref #)
-  receipt_url?: string;           // Supabase URL of uploaded receipt image
+  payment_method?: string; // 'gcash', 'maya', 'bank_transfer', etc.
+  reference_number?: string; // reference from the receipt (e.g. GCash ref #)
+  receipt_url?: string; // Supabase URL of uploaded receipt image
   status: 'pending' | 'pending_verification' | 'paid' | 'failed' | 'refunded';
-  rejection_reason?: string;      // set by admin when rejecting
-  verified_by?: number;           // admin user id
+  rejection_reason?: string; // set by admin when rejecting
+  verified_by?: number; // admin user id
   verified_at?: Date;
   paid_at?: Date;
   created_at: Date;

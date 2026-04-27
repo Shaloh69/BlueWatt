@@ -11,8 +11,8 @@ const poolConfig: PoolOptions = {
   database: config.db.name,
   waitForConnections: true,
   connectionLimit: config.db.connectionLimit,
-  queueLimit: 20,         // reject after 20 queued — fail fast instead of OOM
-  connectTimeout: 10000,  // 10s; prevents hung queries holding a slot forever
+  queueLimit: 20, // reject after 20 queued — fail fast instead of OOM
+  connectTimeout: 10000, // 10s; prevents hung queries holding a slot forever
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
 };

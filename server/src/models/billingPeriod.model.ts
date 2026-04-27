@@ -12,7 +12,12 @@ export class BillingPeriodModel {
     ratePerKwh: number,
     amountDue: number,
     dueDate: Date,
-    opts?: { stayId?: number; flatAmount?: number; cycleNumber?: number; billType?: 'electricity' | 'rent' }
+    opts?: {
+      stayId?: number;
+      flatAmount?: number;
+      cycleNumber?: number;
+      billType?: 'electricity' | 'rent';
+    }
   ): Promise<BillingPeriod> {
     const [result] = await pool.execute<ResultSetHeader>(
       `INSERT INTO billing_periods
@@ -82,8 +87,14 @@ export class BillingPeriodModel {
   static async findAll(filters?: { status?: string; padId?: number }): Promise<RowDataPacket[]> {
     const conditions: string[] = [];
     const params: any[] = [];
-    if (filters?.status) { conditions.push('b.status = ?'); params.push(filters.status); }
-    if (filters?.padId)  { conditions.push('b.pad_id = ?'); params.push(filters.padId); }
+    if (filters?.status) {
+      conditions.push('b.status = ?');
+      params.push(filters.status);
+    }
+    if (filters?.padId) {
+      conditions.push('b.pad_id = ?');
+      params.push(filters.padId);
+    }
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT b.*, p.name AS pad_name,
@@ -107,10 +118,9 @@ export class BillingPeriodModel {
   }
 
   static async markPaid(id: number): Promise<void> {
-    await pool.execute(
-      `UPDATE billing_periods SET status = 'paid', paid_at = NOW() WHERE id = ?`,
-      [id]
-    );
+    await pool.execute(`UPDATE billing_periods SET status = 'paid', paid_at = NOW() WHERE id = ?`, [
+      id,
+    ]);
   }
 
   static async markOverdue(): Promise<number> {
@@ -123,10 +133,7 @@ export class BillingPeriodModel {
   }
 
   static async waive(id: number): Promise<void> {
-    await pool.execute(
-      `UPDATE billing_periods SET status = 'waived' WHERE id = ?`,
-      [id]
-    );
+    await pool.execute(`UPDATE billing_periods SET status = 'waived' WHERE id = ?`, [id]);
   }
 
   static async delete(id: number): Promise<void> {

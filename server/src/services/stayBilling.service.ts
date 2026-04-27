@@ -54,12 +54,12 @@ export class StayBillingService {
   static async scanAndBill(): Promise<void> {
     const now = new Date();
 
-    const active  = await StayModel.findActive();
-    const ended   = await StayModel.findRecentlyEnded(72); // look back 3 days for safety
+    const active = await StayModel.findActive();
+    const ended = await StayModel.findRecentlyEnded(72); // look back 3 days for safety
     const allStays = [...active, ...ended];
 
     let generated = 0;
-    let skipped   = 0;
+    let skipped = 0;
 
     for (const stay of allStays) {
       try {
@@ -83,7 +83,7 @@ export class StayBillingService {
    * Returns the number of bills created.
    */
   static async billStay(stay: any, now: Date): Promise<number> {
-    const checkIn: Date  = new Date(stay.check_in_at);
+    const checkIn: Date = new Date(stay.check_in_at);
     const checkOut: Date | null = stay.check_out_at ? new Date(stay.check_out_at) : null;
     const effective = checkOut ?? now; // don't bill past check-out or now
 
@@ -100,20 +100,30 @@ export class StayBillingService {
     // ── Full cycles ──────────────────────────────────────────────────────────
     for (let cycle = 1; cycle <= completedCycles; cycle++) {
       const periodStart = addCycles(checkIn, cycle - 1, stay.billing_cycle);
-      const periodEnd   = addCycles(checkIn, cycle,     stay.billing_cycle);
+      const periodEnd = addCycles(checkIn, cycle, stay.billing_cycle);
 
       // ── Electricity bill ────────────────────────────────────────────────
       const elecExists = await BillingPeriodModel.existsForStayCycle(stay.id, cycle, 'electricity');
       if (!elecExists) {
-        const energyKwh    = deviceId ? await PowerReadingModel.energyBetween(deviceId, periodStart, periodEnd) : 0;
+        const energyKwh = deviceId
+          ? await PowerReadingModel.energyBetween(deviceId, periodStart, periodEnd)
+          : 0;
         const energyAmount = parseFloat((energyKwh * stay.rate_per_kwh).toFixed(2));
 
         await BillingPeriodModel.create(
-          stay.pad_id, stay.tenant_id, periodStart, periodEnd,
-          energyKwh, stay.rate_per_kwh, energyAmount, dueDate(periodEnd),
+          stay.pad_id,
+          stay.tenant_id,
+          periodStart,
+          periodEnd,
+          energyKwh,
+          stay.rate_per_kwh,
+          energyAmount,
+          dueDate(periodEnd),
           { stayId: stay.id, flatAmount: 0, cycleNumber: cycle, billType: 'electricity' }
         );
-        logger.info(`[StayBilling] stay=${stay.id} cycle=${cycle} electricity ${energyKwh.toFixed(4)}kWh ₱${energyAmount}`);
+        logger.info(
+          `[StayBilling] stay=${stay.id} cycle=${cycle} electricity ${energyKwh.toFixed(4)}kWh ₱${energyAmount}`
+        );
         created++;
       }
 
@@ -123,8 +133,14 @@ export class StayBillingService {
         const flatAmount = parseFloat(Number(stay.flat_rate_per_cycle).toFixed(2));
 
         await BillingPeriodModel.create(
-          stay.pad_id, stay.tenant_id, periodStart, periodEnd,
-          0, 0, flatAmount, dueDate(periodEnd),
+          stay.pad_id,
+          stay.tenant_id,
+          periodStart,
+          periodEnd,
+          0,
+          0,
+          flatAmount,
+          dueDate(periodEnd),
           { stayId: stay.id, flatAmount, cycleNumber: cycle, billType: 'rent' }
         );
         logger.info(`[StayBilling] stay=${stay.id} cycle=${cycle} rent ₱${flatAmount}`);
@@ -134,25 +150,39 @@ export class StayBillingService {
 
     // ── Prorated final cycle on check-out ────────────────────────────────────
     if (checkOut) {
-      const finalCycle  = completedCycles + 1;
+      const finalCycle = completedCycles + 1;
       const periodStart = addCycles(checkIn, completedCycles, stay.billing_cycle);
-      const periodEnd   = checkOut;
+      const periodEnd = checkOut;
 
-      const fullMs  = cycleDurationMs(periodStart, stay.billing_cycle);
-      const usedMs  = checkOut.getTime() - periodStart.getTime();
+      const fullMs = cycleDurationMs(periodStart, stay.billing_cycle);
+      const usedMs = checkOut.getTime() - periodStart.getTime();
       const proRate = usedMs > 0 ? Math.min(usedMs / fullMs, 1) : 0;
 
       if (proRate > 0) {
-        const elecExists = await BillingPeriodModel.existsForStayCycle(stay.id, finalCycle, 'electricity');
+        const elecExists = await BillingPeriodModel.existsForStayCycle(
+          stay.id,
+          finalCycle,
+          'electricity'
+        );
         if (!elecExists) {
-          const energyKwh    = deviceId ? await PowerReadingModel.energyBetween(deviceId, periodStart, periodEnd) : 0;
+          const energyKwh = deviceId
+            ? await PowerReadingModel.energyBetween(deviceId, periodStart, periodEnd)
+            : 0;
           const energyAmount = parseFloat((energyKwh * stay.rate_per_kwh).toFixed(2));
           await BillingPeriodModel.create(
-            stay.pad_id, stay.tenant_id, periodStart, periodEnd,
-            energyKwh, stay.rate_per_kwh, energyAmount, dueDate(periodEnd),
+            stay.pad_id,
+            stay.tenant_id,
+            periodStart,
+            periodEnd,
+            energyKwh,
+            stay.rate_per_kwh,
+            energyAmount,
+            dueDate(periodEnd),
             { stayId: stay.id, flatAmount: 0, cycleNumber: finalCycle, billType: 'electricity' }
           );
-          logger.info(`[StayBilling] stay=${stay.id} cycle=${finalCycle}(prorated ${(proRate*100).toFixed(1)}%) electricity ${energyKwh.toFixed(4)}kWh ₱${energyAmount}`);
+          logger.info(
+            `[StayBilling] stay=${stay.id} cycle=${finalCycle}(prorated ${(proRate * 100).toFixed(1)}%) electricity ${energyKwh.toFixed(4)}kWh ₱${energyAmount}`
+          );
           created++;
         }
 
@@ -160,11 +190,19 @@ export class StayBillingService {
         if (!rentExists) {
           const flatAmount = parseFloat((stay.flat_rate_per_cycle * proRate).toFixed(2));
           await BillingPeriodModel.create(
-            stay.pad_id, stay.tenant_id, periodStart, periodEnd,
-            0, 0, flatAmount, dueDate(periodEnd),
+            stay.pad_id,
+            stay.tenant_id,
+            periodStart,
+            periodEnd,
+            0,
+            0,
+            flatAmount,
+            dueDate(periodEnd),
             { stayId: stay.id, flatAmount, cycleNumber: finalCycle, billType: 'rent' }
           );
-          logger.info(`[StayBilling] stay=${stay.id} cycle=${finalCycle}(prorated ${(proRate*100).toFixed(1)}%) rent ₱${flatAmount}`);
+          logger.info(
+            `[StayBilling] stay=${stay.id} cycle=${finalCycle}(prorated ${(proRate * 100).toFixed(1)}%) rent ₱${flatAmount}`
+          );
           created++;
         }
       }

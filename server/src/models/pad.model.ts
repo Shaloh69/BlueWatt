@@ -19,10 +19,7 @@ export class PadModel {
   }
 
   static async findById(id: number): Promise<Pad | null> {
-    const [rows] = await pool.execute<RowDataPacket[]>(
-      `SELECT * FROM pads WHERE id = ?`,
-      [id]
-    );
+    const [rows] = await pool.execute<RowDataPacket[]>(`SELECT * FROM pads WHERE id = ?`, [id]);
     return rows.length > 0 ? (rows[0] as Pad) : null;
   }
 
@@ -34,9 +31,7 @@ export class PadModel {
       );
       return rows as Pad[];
     }
-    const [rows] = await pool.execute<RowDataPacket[]>(
-      `SELECT * FROM pads ORDER BY name`
-    );
+    const [rows] = await pool.execute<RowDataPacket[]>(`SELECT * FROM pads ORDER BY name`);
     return rows as Pad[];
   }
 
@@ -62,10 +57,22 @@ export class PadModel {
   ): Promise<void> {
     const fields: string[] = [];
     const values: any[] = [];
-    if (data.name !== undefined)         { fields.push('name = ?');          values.push(data.name); }
-    if (data.description !== undefined)  { fields.push('description = ?');   values.push(data.description); }
-    if (data.rate_per_kwh !== undefined) { fields.push('rate_per_kwh = ?');  values.push(data.rate_per_kwh); }
-    if (data.is_active !== undefined)    { fields.push('is_active = ?');     values.push(data.is_active); }
+    if (data.name !== undefined) {
+      fields.push('name = ?');
+      values.push(data.name);
+    }
+    if (data.description !== undefined) {
+      fields.push('description = ?');
+      values.push(data.description);
+    }
+    if (data.rate_per_kwh !== undefined) {
+      fields.push('rate_per_kwh = ?');
+      values.push(data.rate_per_kwh);
+    }
+    if (data.is_active !== undefined) {
+      fields.push('is_active = ?');
+      values.push(data.is_active);
+    }
     if (fields.length === 0) return;
     values.push(id);
     await pool.execute(`UPDATE pads SET ${fields.join(', ')} WHERE id = ?`, values);
@@ -79,10 +86,10 @@ export class PadModel {
     // Clear any existing assignment of this device to another pad first
     // (pads.device_id has a UNIQUE constraint — only one pad can hold a device at a time)
     if (deviceId !== null) {
-      await pool.execute(
-        `UPDATE pads SET device_id = NULL WHERE device_id = ? AND id != ?`,
-        [deviceId, id]
-      );
+      await pool.execute(`UPDATE pads SET device_id = NULL WHERE device_id = ? AND id != ?`, [
+        deviceId,
+        id,
+      ]);
     }
     await pool.execute(`UPDATE pads SET device_id = ? WHERE id = ?`, [deviceId, id]);
   }
@@ -93,7 +100,8 @@ export class PadModel {
 
   /** Returns pads with joined tenant name, device name, and latest billing status */
   static async findAllWithDetails(ownerId?: number): Promise<RowDataPacket[]> {
-    const where = ownerId !== undefined ? 'WHERE p.is_active = 1 AND p.owner_id = ?' : 'WHERE p.is_active = 1';
+    const where =
+      ownerId !== undefined ? 'WHERE p.is_active = 1 AND p.owner_id = ?' : 'WHERE p.is_active = 1';
     const params = ownerId !== undefined ? [ownerId] : [];
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT p.*,

@@ -15,14 +15,14 @@ import { cacheFor } from '../middleware/cache.middleware';
 
 const router = Router();
 
-router.post('/',              authenticateJWT, requireAdmin, createPad);
-router.get('/',               authenticateJWT, requireAdmin, cacheFor(30, 'pads'), listPads);
-router.get('/my',             authenticateJWT, cacheFor(30, 'pads'), getMyPad);
+router.post('/', authenticateJWT, requireAdmin, createPad);
+router.get('/', authenticateJWT, requireAdmin, cacheFor(30, 'pads'), listPads);
+router.get('/my', authenticateJWT, cacheFor(30, 'pads'), getMyPad);
 router.post('/my/relay-command', authenticateJWT, disableMyPad);
-router.get('/:id',            authenticateJWT, cacheFor(30, 'pads'), getPad);
-router.put('/:id',            authenticateJWT, requireAdmin, updatePad);
-router.delete('/:id',         authenticateJWT, requireAdmin, deletePad);
-router.put('/:id/assign',     authenticateJWT, requireAdmin, assignPad);
-router.put('/:id/unassign',   authenticateJWT, requireAdmin, unassignPad);
+router.get('/:id', authenticateJWT, cacheFor(30, 'pads'), getPad);
+router.put('/:id', authenticateJWT, requireAdmin, updatePad);
+router.delete('/:id', authenticateJWT, requireAdmin, deletePad);
+router.put('/:id/assign', authenticateJWT, requireAdmin, assignPad);
+router.put('/:id/unassign', authenticateJWT, requireAdmin, unassignPad);
 
 export default router;

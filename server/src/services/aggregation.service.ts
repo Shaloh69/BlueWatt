@@ -30,14 +30,14 @@ export class AggregationService {
     if (!r || r.reading_count === 0) return;
 
     await PowerAggregateModel.upsertHourly(deviceId, hourStart, {
-      avg_voltage:      Number(r.avg_voltage)    || 0,
-      avg_current:      Number(r.avg_current)    || 0,
-      avg_power_real:   Number(r.avg_power_real) || 0,
-      max_power_real:   Number(r.max_power_real) || 0,
-      min_power_real:   Number(r.min_power_real) || 0,
-      total_energy_kwh: Number(r.energy_diff)    || (Number(r.avg_power_real) * 1) / 1000,
+      avg_voltage: Number(r.avg_voltage) || 0,
+      avg_current: Number(r.avg_current) || 0,
+      avg_power_real: Number(r.avg_power_real) || 0,
+      max_power_real: Number(r.max_power_real) || 0,
+      min_power_real: Number(r.min_power_real) || 0,
+      total_energy_kwh: Number(r.energy_diff) || (Number(r.avg_power_real) * 1) / 1000,
       avg_power_factor: Number(r.avg_power_factor) || 0,
-      reading_count:    Number(r.reading_count),
+      reading_count: Number(r.reading_count),
     });
   }
 
@@ -75,16 +75,16 @@ export class AggregationService {
     if (!r || !r.reading_count || Number(r.reading_count) === 0) return;
 
     await PowerAggregateModel.upsertDaily(deviceId, date, {
-      avg_voltage:      Number(r.avg_voltage)    || 0,
-      avg_current:      Number(r.avg_current)    || 0,
-      avg_power_real:   Number(r.avg_power_real) || 0,
-      max_power_real:   Number(r.max_power_real) || 0,
-      min_power_real:   Number(r.min_power_real) || 0,
+      avg_voltage: Number(r.avg_voltage) || 0,
+      avg_current: Number(r.avg_current) || 0,
+      avg_power_real: Number(r.avg_power_real) || 0,
+      max_power_real: Number(r.max_power_real) || 0,
+      min_power_real: Number(r.min_power_real) || 0,
       total_energy_kwh: Number(r.total_energy_kwh) || 0,
       avg_power_factor: Number(r.avg_power_factor) || 0,
-      peak_hour:        r.peak_hour !== null ? Number(r.peak_hour) : undefined,
-      reading_count:    Number(r.reading_count),
-      anomaly_count:    Number((anomalyRows[0] as any).cnt) || 0,
+      peak_hour: r.peak_hour !== null ? Number(r.peak_hour) : undefined,
+      reading_count: Number(r.reading_count),
+      anomaly_count: Number((anomalyRows[0] as any).cnt) || 0,
     });
   }
 
@@ -112,12 +112,12 @@ export class AggregationService {
 
     await PowerAggregateModel.upsertMonthly(deviceId, yearMonth, {
       total_energy_kwh: Number(r.total_energy_kwh) || 0,
-      avg_power_real:   Number(r.avg_power_real)   || 0,
-      max_power_real:   Number(r.max_power_real)   || 0,
-      avg_voltage:      Number(r.avg_voltage)      || 0,
-      avg_current:      Number(r.avg_current)      || 0,
+      avg_power_real: Number(r.avg_power_real) || 0,
+      max_power_real: Number(r.max_power_real) || 0,
+      avg_voltage: Number(r.avg_voltage) || 0,
+      avg_current: Number(r.avg_current) || 0,
       avg_power_factor: Number(r.avg_power_factor) || 0,
-      anomaly_count:    Number(r.anomaly_count)    || 0,
+      anomaly_count: Number(r.anomaly_count) || 0,
     });
   }
 

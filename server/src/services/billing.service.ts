@@ -21,7 +21,7 @@ export class BillingService {
     dueDate.setDate(dueDate.getDate() + 7);
 
     const startStr = periodStart.toISOString().split('T')[0];
-    const endStr   = periodEnd.toISOString().split('T')[0];
+    const endStr = periodEnd.toISOString().split('T')[0];
 
     // Skip if already exists
     const exists = await BillingPeriodModel.existsForPeriod(padId, periodStart);
@@ -52,7 +52,9 @@ export class BillingService {
       dueDate
     );
 
-    logger.info(`Billing generated: pad=${padId} period=${startStr} energy=${energyKwh}kWh amount=₱${amountDue}`);
+    logger.info(
+      `Billing generated: pad=${padId} period=${startStr} energy=${energyKwh}kWh amount=₱${amountDue}`
+    );
   }
 
   /** Auto-generate billing for all active pads for the previous month */

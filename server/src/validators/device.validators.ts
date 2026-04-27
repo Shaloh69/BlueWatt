@@ -24,9 +24,7 @@ export const registerDeviceValidator = [
 ];
 
 export const updateDeviceValidator = [
-  param('id')
-    .isInt({ min: 1 })
-    .withMessage('Valid device ID is required'),
+  param('id').isInt({ min: 1 }).withMessage('Valid device ID is required'),
   body('device_name')
     .optional()
     .trim()
@@ -44,23 +42,16 @@ export const updateDeviceValidator = [
     .trim()
     .isLength({ max: 500 })
     .withMessage('Description must be less than 500 characters'),
-  body('is_active')
-    .optional()
-    .isBoolean()
-    .withMessage('is_active must be a boolean'),
+  body('is_active').optional().isBoolean().withMessage('is_active must be a boolean'),
 ];
 
 export const updateRelayValidator = [
-  param('id')
-    .isInt({ min: 1 })
-    .withMessage('Valid device ID is required'),
+  param('id').isInt({ min: 1 }).withMessage('Valid device ID is required'),
   body('relay_status')
     .isIn(RELAY_STATUSES)
     .withMessage(`Relay status must be one of: ${RELAY_STATUSES.join(', ')}`),
 ];
 
 export const deviceIdParamValidator = [
-  param('id')
-    .isInt({ min: 1 })
-    .withMessage('Valid device ID is required'),
+  param('id').isInt({ min: 1 }).withMessage('Valid device ID is required'),
 ];

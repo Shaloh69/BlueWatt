@@ -49,10 +49,9 @@ export class DeviceKeyModel {
   }
 
   static async updateLastUsed(id: number): Promise<void> {
-    await pool.execute(
-      'UPDATE device_keys SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [id]
-    );
+    await pool.execute('UPDATE device_keys SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?', [
+      id,
+    ]);
   }
 
   static async deactivate(id: number): Promise<void> {

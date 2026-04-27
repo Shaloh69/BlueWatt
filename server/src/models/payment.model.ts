@@ -22,10 +22,7 @@ export class PaymentModel {
   }
 
   static async findById(id: number): Promise<Payment | null> {
-    const [rows] = await pool.execute<RowDataPacket[]>(
-      `SELECT * FROM payments WHERE id = ?`,
-      [id]
-    );
+    const [rows] = await pool.execute<RowDataPacket[]>(`SELECT * FROM payments WHERE id = ?`, [id]);
     return rows.length > 0 ? (rows[0] as Payment) : null;
   }
 

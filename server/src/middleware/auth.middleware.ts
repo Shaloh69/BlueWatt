@@ -12,7 +12,10 @@ import { logger } from '../utils/logger';
 // Avoids a full-table SELECT on every ESP POST. TTL is short so new TOFU keys
 // are picked up within one minute without a restart.
 const KEY_CACHE_TTL_MS = 60_000;
-let _keyCache: { keys: Awaited<ReturnType<typeof DeviceKeyModel.findAllActive>>; expiresAt: number } | null = null;
+let _keyCache: {
+  keys: Awaited<ReturnType<typeof DeviceKeyModel.findAllActive>>;
+  expiresAt: number;
+} | null = null;
 
 async function getCachedDeviceKeys() {
   if (_keyCache && Date.now() < _keyCache.expiresAt) return _keyCache.keys;
@@ -21,7 +24,9 @@ async function getCachedDeviceKeys() {
   return keys;
 }
 
-function invalidateKeyCache() { _keyCache = null; }
+function invalidateKeyCache() {
+  _keyCache = null;
+}
 
 export const authenticateJWT = async (
   req: Request,
@@ -74,14 +79,18 @@ export const authenticateApiKey = async (
     const isRelayPoll = req.method === 'GET' && req.path.includes('relay-command');
     const logFn = isRelayPoll ? logger.debug.bind(logger) : logger.info.bind(logger);
 
-    const masked = apiKey.length > 12
-      ? `${apiKey.slice(0, 6)}...${apiKey.slice(-4)}`
-      : apiKey;
+    const masked = apiKey.length > 12 ? `${apiKey.slice(0, 6)}...${apiKey.slice(-4)}` : apiKey;
     logFn(`[ESP] Key received: "${masked}"  ${req.method} ${req.path}`);
 
     if (!ApiKeyService.isValidFormat(apiKey)) {
-      logger.warn(`[ESP] Format check FAILED — len=${apiKey.length} prefix="${apiKey.slice(0, 3)}"`);
-      throw new AppError('Invalid API key format', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+      logger.warn(
+        `[ESP] Format check FAILED — len=${apiKey.length} prefix="${apiKey.slice(0, 3)}"`
+      );
+      throw new AppError(
+        'Invalid API key format',
+        HTTP_STATUS.UNAUTHORIZED,
+        ERROR_CODES.UNAUTHORIZED
+      );
     }
 
     const deviceKeys = await getCachedDeviceKeys();
@@ -104,8 +113,7 @@ export const authenticateApiKey = async (
     // auto-register the received key if that device has no keys yet.
     if (!matchedDeviceId) {
       const deviceSerial: string | undefined =
-        (req.params.id as string | undefined) ||
-        (req.body?.device_id as string | undefined);
+        (req.params.id as string | undefined) || (req.body?.device_id as string | undefined);
 
       if (deviceSerial) {
         const candidate = await DeviceModel.findByDeviceId(deviceSerial);
@@ -115,9 +123,13 @@ export const authenticateApiKey = async (
             await DeviceKeyModel.create(candidate.id, apiKey, 'Auto-registered');
             invalidateKeyCache(); // force reload so next request sees the new key
             matchedDeviceId = candidate.id;
-            logger.info(`[Auth] TOFU: auto-registered key for device "${deviceSerial}" — key starts "${apiKey.slice(0, 10)}..."`);
+            logger.info(
+              `[Auth] TOFU: auto-registered key for device "${deviceSerial}" — key starts "${apiKey.slice(0, 10)}..."`
+            );
           } else {
-            logger.warn(`[ESP] Key mismatch for "${deviceSerial}" — device has ${existingKeys.length} key(s) but none matched`);
+            logger.warn(
+              `[ESP] Key mismatch for "${deviceSerial}" — device has ${existingKeys.length} key(s) but none matched`
+            );
           }
         }
       }
@@ -137,10 +149,16 @@ export const authenticateApiKey = async (
 
     if (!device.is_active) {
       logger.warn(`[ESP] Device "${device.device_id}" authenticated but is inactive — rejecting`);
-      throw new AppError('Device is not active', HTTP_STATUS.FORBIDDEN, ERROR_CODES.DEVICE_INACTIVE);
+      throw new AppError(
+        'Device is not active',
+        HTTP_STATUS.FORBIDDEN,
+        ERROR_CODES.DEVICE_INACTIVE
+      );
     }
 
-    logFn(`[ESP] Device "${device.device_id}" connected (ID: ${device.id}, IP: ${req.ip}) → ${req.method} ${req.path}`);
+    logFn(
+      `[ESP] Device "${device.device_id}" connected (ID: ${device.id}, IP: ${req.ip}) → ${req.method} ${req.path}`
+    );
 
     req.device = device;
     req.deviceId = device.id;
@@ -152,7 +170,9 @@ export const authenticateApiKey = async (
     if (error instanceof AppError) {
       next(error);
     } else {
-      next(new AppError('Authentication failed', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED));
+      next(
+        new AppError('Authentication failed', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED)
+      );
     }
   }
 };

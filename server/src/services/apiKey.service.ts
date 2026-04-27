@@ -8,15 +8,15 @@ export class ApiKeyService {
     return `${config.apiKey.prefix}${apiKey}`;
   }
 
-static isValidFormat(apiKey: string): boolean {
-  if (!apiKey) return false;
+  static isValidFormat(apiKey: string): boolean {
+    if (!apiKey) return false;
 
-  const trimmed = apiKey.trim();
-  const expectedPrefix = config.apiKey.prefix;
-  const expectedLength = config.apiKey.length * 2;
+    const trimmed = apiKey.trim();
+    const expectedPrefix = config.apiKey.prefix;
+    const expectedLength = config.apiKey.length * 2;
 
-  const keyPart = trimmed.slice(expectedPrefix.length);
+    const keyPart = trimmed.slice(expectedPrefix.length);
 
-  return trimmed.startsWith(expectedPrefix) && keyPart.length === expectedLength;
-}
+    return trimmed.startsWith(expectedPrefix) && keyPart.length === expectedLength;
+  }
 }

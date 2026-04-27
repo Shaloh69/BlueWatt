@@ -13,7 +13,8 @@ export class PaymentQrCodeModel {
 
   static async findById(id: number): Promise<PaymentQrCode | null> {
     const [rows] = await pool.execute<RowDataPacket[]>(
-      `SELECT * FROM payment_qr_codes WHERE id = ?`, [id]
+      `SELECT * FROM payment_qr_codes WHERE id = ?`,
+      [id]
     );
     return rows.length > 0 ? (rows[0] as PaymentQrCode) : null;
   }
@@ -36,10 +37,10 @@ export class PaymentQrCodeModel {
   }
 
   static async setActive(id: number, isActive: boolean): Promise<void> {
-    await pool.execute(
-      `UPDATE payment_qr_codes SET is_active = ? WHERE id = ?`,
-      [isActive ? 1 : 0, id]
-    );
+    await pool.execute(`UPDATE payment_qr_codes SET is_active = ? WHERE id = ?`, [
+      isActive ? 1 : 0,
+      id,
+    ]);
   }
 
   static async delete(id: number): Promise<void> {

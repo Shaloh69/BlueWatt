@@ -113,10 +113,10 @@ export class StayModel {
   }
 
   static async checkout(id: number, checkOutAt: Date): Promise<void> {
-    await pool.execute(
-      `UPDATE stays SET status = 'ended', check_out_at = ? WHERE id = ?`,
-      [checkOutAt, id]
-    );
+    await pool.execute(`UPDATE stays SET status = 'ended', check_out_at = ? WHERE id = ?`, [
+      checkOutAt,
+      id,
+    ]);
   }
 
   static async delete(id: number): Promise<void> {

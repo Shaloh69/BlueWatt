@@ -13,7 +13,8 @@ import { logger } from '../utils/logger';
 
 /** POST /pads — admin creates a pad */
 export const createPad = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-  if (!req.user) throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+  if (!req.user)
+    throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
   const { name, description, rate_per_kwh } = req.body;
   const pad = await PadModel.create(req.user.id, name, description, rate_per_kwh);
   bustCache('pads', req.user.id);
@@ -22,7 +23,8 @@ export const createPad = asyncHandler(async (req: Request, res: Response, _next:
 
 /** GET /pads — admin gets all pads with details */
 export const listPads = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-  if (!req.user) throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+  if (!req.user)
+    throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
   const ownerId = req.user.role === 'admin' ? undefined : req.user.id;
   const pads = await PadModel.findAllWithDetails(ownerId);
   sendSuccess(res, { pads, count: pads.length });
@@ -30,15 +32,22 @@ export const listPads = asyncHandler(async (req: Request, res: Response, _next: 
 
 /** GET /pads/my — tenant gets own pad */
 export const getMyPad = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-  if (!req.user) throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+  if (!req.user)
+    throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
   const pad = await PadModel.findByTenantId(req.user.id);
-  if (!pad) throw new AppError('No pad assigned to this account', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
+  if (!pad)
+    throw new AppError(
+      'No pad assigned to this account',
+      HTTP_STATUS.NOT_FOUND,
+      ERROR_CODES.NOT_FOUND
+    );
   sendSuccess(res, { pad });
 });
 
 /** GET /pads/:id */
 export const getPad = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-  if (!req.user) throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+  if (!req.user)
+    throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
   const pad = await PadModel.findById(parseInt(req.params.id, 10));
   if (!pad) throw new AppError('Pad not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
 
@@ -81,7 +90,8 @@ export const assignPad = asyncHandler(async (req: Request, res: Response, _next:
   if (tenant_id !== undefined) {
     if (tenant_id !== null) {
       const tenant = await UserModel.findById(tenant_id);
-      if (!tenant) throw new AppError('Tenant not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
+      if (!tenant)
+        throw new AppError('Tenant not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
     }
     await PadModel.assignTenant(padId, tenant_id);
   }
@@ -89,7 +99,8 @@ export const assignPad = asyncHandler(async (req: Request, res: Response, _next:
   if (device_id !== undefined) {
     if (device_id !== null) {
       const device = await DeviceModel.findById(device_id);
-      if (!device) throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
+      if (!device)
+        throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
     }
     await PadModel.assignDevice(padId, device_id);
   }
@@ -99,27 +110,47 @@ export const assignPad = asyncHandler(async (req: Request, res: Response, _next:
 });
 
 /** POST /pads/my/relay-command — tenant disables their own pad (off only) */
-export const disableMyPad = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-  if (!req.user) throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+export const disableMyPad = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    if (!req.user)
+      throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
 
-  const pad = await PadModel.findByTenantId(req.user.id);
-  if (!pad) throw new AppError('No pad assigned to your account', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
-  if (!pad.device_id) throw new AppError('No device assigned to your pad', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+    const pad = await PadModel.findByTenantId(req.user.id);
+    if (!pad)
+      throw new AppError(
+        'No pad assigned to your account',
+        HTTP_STATUS.NOT_FOUND,
+        ERROR_CODES.NOT_FOUND
+      );
+    if (!pad.device_id)
+      throw new AppError(
+        'No device assigned to your pad',
+        HTTP_STATUS.BAD_REQUEST,
+        ERROR_CODES.VALIDATION_ERROR
+      );
 
-  const cmd = await RelayCommandModel.create(pad.device_id, 'off', req.user.id);
-  logger.info(`[Relay] Tenant user=${req.user.id} disabled pad "${pad.name}" device#${pad.device_id} cmd_id=${cmd.id}`);
+    const cmd = await RelayCommandModel.create(pad.device_id, 'off', req.user.id);
+    logger.info(
+      `[Relay] Tenant user=${req.user.id} disabled pad "${pad.name}" device#${pad.device_id} cmd_id=${cmd.id}`
+    );
 
-  sseService.sendToDevice(pad.device_id, 'relay_command_issued', { command: 'off', deviceId: pad.device_id });
+    sseService.sendToDevice(pad.device_id, 'relay_command_issued', {
+      command: 'off',
+      deviceId: pad.device_id,
+    });
 
-  sendSuccess(res, { command: cmd }, HTTP_STATUS.CREATED);
-});
+    sendSuccess(res, { command: cmd }, HTTP_STATUS.CREATED);
+  }
+);
 
 /** PUT /pads/:id/unassign — admin removes tenant */
-export const unassignPad = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-  const padId = parseInt(req.params.id, 10);
-  const pad = await PadModel.findById(padId);
-  if (!pad) throw new AppError('Pad not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
-  await PadModel.assignTenant(padId, null);
-  bustCache('pads', req.user!.id);
-  sendSuccess(res, { message: 'Tenant removed from pad' });
-});
+export const unassignPad = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    const padId = parseInt(req.params.id, 10);
+    const pad = await PadModel.findById(padId);
+    if (!pad) throw new AppError('Pad not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
+    await PadModel.assignTenant(padId, null);
+    bustCache('pads', req.user!.id);
+    sendSuccess(res, { message: 'Tenant removed from pad' });
+  }
+);

@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import * as anomalyEventController from '../controllers/anomalyEvent.controller';
-import { anomalyEventValidator, resolveAnomalyValidator } from '../validators/anomalyEvent.validators';
+import {
+  anomalyEventValidator,
+  resolveAnomalyValidator,
+} from '../validators/anomalyEvent.validators';
 import { deviceIdParamValidator } from '../validators/device.validators';
 import { queryTimeRangeValidator } from '../validators/powerData.validators';
 import { validate } from '../middleware/validation.middleware';

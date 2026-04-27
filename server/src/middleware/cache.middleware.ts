@@ -14,7 +14,10 @@ import { cache } from '../services/cache.service';
 export function cacheFor(ttlSeconds: number = 30, namespace?: string) {
   return (req: Request, res: Response, next: NextFunction): void => {
     // Only cache GET requests
-    if (req.method !== 'GET') { next(); return; }
+    if (req.method !== 'GET') {
+      next();
+      return;
+    }
 
     const userId = req.user?.id ?? 'anon';
     const ns = namespace ?? req.path.split('/')[1] ?? 'misc';

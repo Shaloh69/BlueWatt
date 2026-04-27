@@ -3,7 +3,12 @@ import { User } from '../types/models';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 
 export class UserModel {
-  static async create(email: string, passwordHash: string, fullName: string, role: 'admin' | 'user' = 'user'): Promise<User> {
+  static async create(
+    email: string,
+    passwordHash: string,
+    fullName: string,
+    role: 'admin' | 'user' = 'user'
+  ): Promise<User> {
     const [result] = await pool.execute<ResultSetHeader>(
       'INSERT INTO users (email, password_hash, full_name, role, is_active) VALUES (?, ?, ?, ?, 1)',
       [email, passwordHash, fullName, role]
@@ -38,7 +43,10 @@ export class UserModel {
     return rows[0] as User;
   }
 
-  static async update(id: number, data: Partial<Pick<User, 'email' | 'full_name' | 'password_hash'>>): Promise<void> {
+  static async update(
+    id: number,
+    data: Partial<Pick<User, 'email' | 'full_name' | 'password_hash'>>
+  ): Promise<void> {
     const fields: string[] = [];
     const values: any[] = [];
 

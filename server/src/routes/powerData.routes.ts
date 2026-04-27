@@ -8,7 +8,13 @@ import { deviceDataLimiter } from '../middleware/rateLimit.middleware';
 
 const router = Router();
 
-router.post('/', authenticateApiKey, deviceDataLimiter, validate(powerDataValidator), powerDataController.submitPowerData);
+router.post(
+  '/',
+  authenticateApiKey,
+  deviceDataLimiter,
+  validate(powerDataValidator),
+  powerDataController.submitPowerData
+);
 
 router.get(
   '/devices/:id/power-data',

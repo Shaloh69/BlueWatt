@@ -13,12 +13,12 @@ import { cacheFor } from '../middleware/cache.middleware';
 
 const router = Router();
 
-router.get('/',                    authenticateJWT, requireAdmin, cacheFor(60, 'billing'), listAllBilling);
-router.get('/my',                  authenticateJWT, cacheFor(60, 'billing'), getMyBilling);
-router.get('/pad/:padId',          authenticateJWT, cacheFor(60, 'billing'), getBillingByPad);
-router.get('/:id',                 authenticateJWT, cacheFor(60, 'billing'), getBillingById);
-router.post('/generate',           authenticateJWT, requireAdmin, generateBilling);
-router.put('/:id/waive',           authenticateJWT, requireAdmin, waiveBilling);
-router.delete('/:id',              authenticateJWT, requireAdmin, deleteBilling);
+router.get('/', authenticateJWT, requireAdmin, cacheFor(60, 'billing'), listAllBilling);
+router.get('/my', authenticateJWT, cacheFor(60, 'billing'), getMyBilling);
+router.get('/pad/:padId', authenticateJWT, cacheFor(60, 'billing'), getBillingByPad);
+router.get('/:id', authenticateJWT, cacheFor(60, 'billing'), getBillingById);
+router.post('/generate', authenticateJWT, requireAdmin, generateBilling);
+router.put('/:id/waive', authenticateJWT, requireAdmin, waiveBilling);
+router.delete('/:id', authenticateJWT, requireAdmin, deleteBilling);
 
 export default router;

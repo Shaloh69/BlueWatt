@@ -4,8 +4,8 @@ import { listTenants, createTenant, deleteTenant } from '../controllers/admin.co
 
 const router = Router();
 
-router.get('/tenants',     authenticateJWT, requireAdmin, listTenants);
-router.post('/tenants',    authenticateJWT, requireAdmin, createTenant);
+router.get('/tenants', authenticateJWT, requireAdmin, listTenants);
+router.post('/tenants', authenticateJWT, requireAdmin, createTenant);
 router.delete('/tenants/:id', authenticateJWT, requireAdmin, deleteTenant);
 
 export default router;

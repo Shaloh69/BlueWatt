@@ -14,14 +14,16 @@ export const listStays = asyncHandler(async (_req: Request, res: Response, _next
 });
 
 /** GET /stays/pad/:padId — stays for a specific pad */
-export const getStaysByPad = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-  const padId = parseInt(req.params.padId, 10);
-  const pad = await PadModel.findById(padId);
-  if (!pad) throw new AppError('Pad not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
+export const getStaysByPad = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    const padId = parseInt(req.params.padId, 10);
+    const pad = await PadModel.findById(padId);
+    if (!pad) throw new AppError('Pad not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
 
-  const stays = await StayModel.findByPad(padId);
-  sendSuccess(res, { stays });
-});
+    const stays = await StayModel.findByPad(padId);
+    sendSuccess(res, { stays });
+  }
+);
 
 /** GET /stays/:id — single stay */
 export const getStay = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
@@ -32,16 +34,10 @@ export const getStay = asyncHandler(async (req: Request, res: Response, _next: N
 
 /** POST /stays — check in (admin creates a stay for a pad/tenant) */
 export const checkIn = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-  if (!req.user) throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+  if (!req.user)
+    throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
 
-  const {
-    pad_id,
-    tenant_id,
-    billing_cycle,
-    flat_rate_per_cycle,
-    notes,
-    check_in_at,
-  } = req.body;
+  const { pad_id, tenant_id, billing_cycle, flat_rate_per_cycle, notes, check_in_at } = req.body;
 
   if (!pad_id || !tenant_id || !billing_cycle) {
     throw new AppError(
@@ -68,14 +64,14 @@ export const checkIn = asyncHandler(async (req: Request, res: Response, _next: N
   checkInAt.setSeconds(0, 0);
 
   const stay = await StayModel.create({
-    pad_id:              parseInt(pad_id, 10),
-    tenant_id:           parseInt(tenant_id, 10),
-    check_in_at:         checkInAt,
-    billing_cycle:       billing_cycle as 'daily' | 'monthly',
+    pad_id: parseInt(pad_id, 10),
+    tenant_id: parseInt(tenant_id, 10),
+    check_in_at: checkInAt,
+    billing_cycle: billing_cycle as 'daily' | 'monthly',
     flat_rate_per_cycle: parseFloat(flat_rate_per_cycle ?? '0') || 0,
-    rate_per_kwh:        pad.rate_per_kwh,
-    notes:               notes ?? undefined,
-    created_by:          req.user.id,
+    rate_per_kwh: pad.rate_per_kwh,
+    notes: notes ?? undefined,
+    created_by: req.user.id,
   });
 
   sendSuccess(res, { stay }, HTTP_STATUS.CREATED);
@@ -119,14 +115,20 @@ export const deleteStay = asyncHandler(async (req: Request, res: Response, _next
 });
 
 /** POST /stays/:id/generate-bill — manually trigger bill generation for a stay */
-export const generateBillNow = asyncHandler(async (req: Request, res: Response, _next: NextFunction) => {
-  const id = parseInt(req.params.id, 10);
-  const stay = await StayModel.findById(id);
-  if (!stay) throw new AppError('Stay not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
+export const generateBillNow = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    const id = parseInt(req.params.id, 10);
+    const stay = await StayModel.findById(id);
+    if (!stay) throw new AppError('Stay not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
 
-  const now = new Date();
-  const created = await StayBillingService.billStay(stay, now);
+    const now = new Date();
+    const created = await StayBillingService.billStay(stay, now);
 
-  sendSuccess(res, { bills_created: created }, HTTP_STATUS.OK,
-    created > 0 ? `Generated ${created} bill(s)` : 'No new bills — all cycles already billed');
-});
+    sendSuccess(
+      res,
+      { bills_created: created },
+      HTTP_STATUS.OK,
+      created > 0 ? `Generated ${created} bill(s)` : 'No new bills — all cycles already billed'
+    );
+  }
+);

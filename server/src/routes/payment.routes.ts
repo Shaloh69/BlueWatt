@@ -26,7 +26,7 @@ router.get('/pending-verification', authenticateJWT, requireAdmin, getPendingVer
 
 // Admin: approve or reject a submitted receipt
 router.put('/:id/approve', authenticateJWT, requireAdmin, approvePayment);
-router.put('/:id/reject',  authenticateJWT, requireAdmin, rejectPayment);
+router.put('/:id/reject', authenticateJWT, requireAdmin, rejectPayment);
 
 // Payment status for a bill (tenant sees own, admin sees all)
 router.get('/billing/:billId', authenticateJWT, getPaymentStatus);
@@ -40,14 +40,14 @@ router.get('/admin/all', authenticateJWT, requireAdmin, getAllPayments);
 // ── QR Code routes ────────────────────────────────────────────────────────────
 
 // Tenants see active QR codes to know where to send money (public once logged in)
-router.get('/qr-codes',              authenticateJWT, getActiveQrCodes);
+router.get('/qr-codes', authenticateJWT, getActiveQrCodes);
 
 // Admin: upload a new QR code
-router.post('/qr-codes',             authenticateJWT, requireAdmin, upload.single('image'), uploadQrCode);
+router.post('/qr-codes', authenticateJWT, requireAdmin, upload.single('image'), uploadQrCode);
 
 // Admin: manage existing QR codes
-router.get('/qr-codes/all',          authenticateJWT, requireAdmin, getAllQrCodes);
-router.put('/qr-codes/:id/toggle',   authenticateJWT, requireAdmin, toggleQrCode);
-router.delete('/qr-codes/:id',       authenticateJWT, requireAdmin, deleteQrCode);
+router.get('/qr-codes/all', authenticateJWT, requireAdmin, getAllQrCodes);
+router.put('/qr-codes/:id/toggle', authenticateJWT, requireAdmin, toggleQrCode);
+router.delete('/qr-codes/:id', authenticateJWT, requireAdmin, deleteQrCode);
 
 export default router;

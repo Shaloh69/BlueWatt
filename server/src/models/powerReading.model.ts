@@ -18,8 +18,17 @@ export class PowerReadingModel {
       `INSERT INTO power_readings
        (device_id, timestamp, voltage_rms, current_rms, power_apparent, power_real, power_factor, energy_kwh, frequency)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [deviceId, timestamp, voltageRms, currentRms, powerApparent, powerReal, powerFactor,
-       energyKwh ?? null, frequency ?? null]
+      [
+        deviceId,
+        timestamp,
+        voltageRms,
+        currentRms,
+        powerApparent,
+        powerReal,
+        powerFactor,
+        energyKwh ?? null,
+        frequency ?? null,
+      ]
     );
 
     return result.insertId;

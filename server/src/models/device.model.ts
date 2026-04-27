@@ -3,7 +3,13 @@ import { Device } from '../types/models';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 
 export class DeviceModel {
-  static async create(userId: number, deviceId: string, deviceName: string, location?: string, description?: string): Promise<Device> {
+  static async create(
+    userId: number,
+    deviceId: string,
+    deviceName: string,
+    location?: string,
+    description?: string
+  ): Promise<Device> {
     const [result] = await pool.execute<ResultSetHeader>(
       'INSERT INTO devices (owner_id, device_id, device_name, location, description) VALUES (?, ?, ?, ?, ?)',
       [userId, deviceId, deviceName, location || null, description || null]
@@ -53,7 +59,12 @@ export class DeviceModel {
     return rows as Device[];
   }
 
-  static async update(id: number, data: Partial<Pick<Device, 'device_name' | 'location' | 'description' | 'is_active' | 'relay_status'>>): Promise<void> {
+  static async update(
+    id: number,
+    data: Partial<
+      Pick<Device, 'device_name' | 'location' | 'description' | 'is_active' | 'relay_status'>
+    >
+  ): Promise<void> {
     const fields: string[] = [];
     const values: any[] = [];
 
@@ -95,10 +106,7 @@ export class DeviceModel {
   }
 
   static async updateLastSeen(id: number): Promise<void> {
-    await pool.execute(
-      'UPDATE devices SET last_seen_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [id]
-    );
+    await pool.execute('UPDATE devices SET last_seen_at = CURRENT_TIMESTAMP WHERE id = ?', [id]);
   }
 
   static async delete(id: number): Promise<void> {

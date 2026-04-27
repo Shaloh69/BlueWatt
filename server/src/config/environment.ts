@@ -15,7 +15,7 @@ export const config = {
     name: process.env.DB_NAME || 'bluewatt_db',
     connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '10', 10),
     ssl: process.env.DB_SSL === 'true',
-    sslCa: process.env.DB_SSL_CA,           // file path (local dev)
+    sslCa: process.env.DB_SSL_CA, // file path (local dev)
     sslCaBase64: process.env.DB_SSL_CA_B64, // base64-encoded cert (Render/cloud)
   },
 
@@ -71,5 +71,4 @@ export const config = {
     pass: process.env.SMTP_PASS || '',
     from: process.env.EMAIL_FROM || 'BlueWatt <noreply@bluewatt.app>',
   },
-
 };

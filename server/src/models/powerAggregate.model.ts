@@ -20,9 +20,18 @@ export class PowerAggregateModel {
          avg_power_real = VALUES(avg_power_real), max_power_real = VALUES(max_power_real),
          min_power_real = VALUES(min_power_real), total_energy_kwh = VALUES(total_energy_kwh),
          avg_power_factor = VALUES(avg_power_factor), reading_count = VALUES(reading_count)`,
-      [deviceId, hourStart, data.avg_voltage, data.avg_current, data.avg_power_real,
-       data.max_power_real, data.min_power_real, data.total_energy_kwh,
-       data.avg_power_factor, data.reading_count]
+      [
+        deviceId,
+        hourStart,
+        data.avg_voltage,
+        data.avg_current,
+        data.avg_power_real,
+        data.max_power_real,
+        data.min_power_real,
+        data.total_energy_kwh,
+        data.avg_power_factor,
+        data.reading_count,
+      ]
     );
   }
 
@@ -55,13 +64,27 @@ export class PowerAggregateModel {
          min_power_real = VALUES(min_power_real), total_energy_kwh = VALUES(total_energy_kwh),
          avg_power_factor = VALUES(avg_power_factor), peak_hour = VALUES(peak_hour),
          reading_count = VALUES(reading_count), anomaly_count = VALUES(anomaly_count)`,
-      [deviceId, date, data.avg_voltage, data.avg_current, data.avg_power_real,
-       data.max_power_real, data.min_power_real, data.total_energy_kwh,
-       data.avg_power_factor, data.peak_hour ?? null, data.reading_count, data.anomaly_count]
+      [
+        deviceId,
+        date,
+        data.avg_voltage,
+        data.avg_current,
+        data.avg_power_real,
+        data.max_power_real,
+        data.min_power_real,
+        data.total_energy_kwh,
+        data.avg_power_factor,
+        data.peak_hour ?? null,
+        data.reading_count,
+        data.anomaly_count,
+      ]
     );
   }
 
-  static async findDailyByMonth(deviceId: number, yearMonth: string): Promise<PowerAggregateDaily[]> {
+  static async findDailyByMonth(
+    deviceId: number,
+    yearMonth: string
+  ): Promise<PowerAggregateDaily[]> {
     // yearMonth = 'YYYY-MM'
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT * FROM power_aggregates_daily
@@ -82,7 +105,11 @@ export class PowerAggregateModel {
     return rows as PowerAggregateDaily[];
   }
 
-  static async sumEnergyForPeriod(deviceId: number, startDate: string, endDate: string): Promise<number> {
+  static async sumEnergyForPeriod(
+    deviceId: number,
+    startDate: string,
+    endDate: string
+  ): Promise<number> {
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT COALESCE(SUM(total_energy_kwh), 0) AS total
        FROM power_aggregates_daily
@@ -109,8 +136,17 @@ export class PowerAggregateModel {
          max_power_real = VALUES(max_power_real), avg_voltage = VALUES(avg_voltage),
          avg_current = VALUES(avg_current), avg_power_factor = VALUES(avg_power_factor),
          anomaly_count = VALUES(anomaly_count)`,
-      [deviceId, yearMonth, data.total_energy_kwh, data.avg_power_real, data.max_power_real,
-       data.avg_voltage, data.avg_current, data.avg_power_factor, data.anomaly_count]
+      [
+        deviceId,
+        yearMonth,
+        data.total_energy_kwh,
+        data.avg_power_real,
+        data.max_power_real,
+        data.avg_voltage,
+        data.avg_current,
+        data.avg_power_factor,
+        data.anomaly_count,
+      ]
     );
   }
 
@@ -124,7 +160,10 @@ export class PowerAggregateModel {
     return rows as PowerAggregateMonthly[];
   }
 
-  static async findMonthly(deviceId: number, yearMonth: string): Promise<PowerAggregateMonthly | null> {
+  static async findMonthly(
+    deviceId: number,
+    yearMonth: string
+  ): Promise<PowerAggregateMonthly | null> {
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT * FROM power_aggregates_monthly WHERE device_id = ? AND period_month = ?`,
       [deviceId, yearMonth]
