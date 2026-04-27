@@ -154,7 +154,7 @@ class ApiService {
 
   static Future<PowerReading?> getLatestReading(int deviceId) async {
     final res = await http.get(
-      _uri('/power-data/devices/$deviceId/power-data/latest'),
+      _uri('/power-data/devices/$deviceId/latest'),
       headers: await _headers(),
     ).timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
     if (res.statusCode == 404) return null;

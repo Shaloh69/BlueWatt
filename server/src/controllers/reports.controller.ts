@@ -216,12 +216,6 @@ async function assertDeviceAccess(deviceId: number, user: any): Promise<void> {
   const device = await DeviceModel.findById(deviceId);
   if (!device) throw new AppError('Device not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.DEVICE_NOT_FOUND);
   if (user.role === 'admin') return;
-  const isOwner = await DeviceModel.isOwnedByUser(deviceId, user.id);
-  if (!isOwner) {
-    // Check if tenant is assigned to the pad with this device
-    const pad = await PadModel.findByDeviceId(deviceId);
-    if (!pad || pad.tenant_id !== user.id) {
-      throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
-    }
-  }
+  const ok = await DeviceModel.isAccessibleByUser(deviceId, user.id);
+  if (!ok) throw new AppError('Access denied', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN);
 }
