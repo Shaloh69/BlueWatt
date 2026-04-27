@@ -34,7 +34,19 @@ class ApiService {
   }
 
   static Map<String, dynamic> _body(http.Response res) {
-    final decoded = jsonDecode(res.body) as Map<String, dynamic>;
+    Map<String, dynamic> decoded;
+    try {
+      decoded = jsonDecode(res.body) as Map<String, dynamic>;
+    } catch (_) {
+      throw ApiException(
+        res.statusCode == 429
+            ? 'Too many attempts — please wait a moment and try again'
+            : res.statusCode >= 500
+                ? 'Server error (${res.statusCode}) — please try again'
+                : 'Unexpected response from server',
+        res.statusCode,
+      );
+    }
     if (res.statusCode >= 400) {
       throw ApiException(
         decoded['message'] as String? ?? 'Request failed',

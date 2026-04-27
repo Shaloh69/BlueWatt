@@ -1,35 +1,36 @@
 import rateLimit from 'express-rate-limit';
+import { Request, Response } from 'express';
 import { config } from '../config/environment';
 import { HTTP_STATUS } from '../config/constants';
+
+const jsonHandler = (message: string) => (_req: Request, res: Response) => {
+  res.status(HTTP_STATUS.TOO_MANY_REQUESTS).json({ success: false, message });
+};
 
 export const generalLimiter = rateLimit({
   windowMs: config.rateLimit.windowMs,
   max: config.rateLimit.maxRequests,
-  message: 'Too many requests from this IP, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
-  statusCode: HTTP_STATUS.TOO_MANY_REQUESTS,
-  // Skip rate limiting for authenticated requests — only throttle unauthenticated IPs
+  handler: jsonHandler('Too many requests from this IP, please try again later'),
   skip: (req) => !!req.headers.authorization,
 });
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
-  message: 'Too many authentication attempts, please try again later',
+  max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  statusCode: HTTP_STATUS.TOO_MANY_REQUESTS,
   skipSuccessfulRequests: true,
+  handler: jsonHandler('Too many authentication attempts, please try again later'),
 });
 
 export const deviceDataLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 1000,
-  message: 'Too many data submissions, please slow down',
   standardHeaders: true,
   legacyHeaders: false,
-  statusCode: HTTP_STATUS.TOO_MANY_REQUESTS,
+  handler: jsonHandler('Too many data submissions, please slow down'),
   keyGenerator: (req) => {
     return req.deviceId?.toString() || req.ip || 'unknown';
   },
