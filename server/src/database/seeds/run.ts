@@ -2731,7 +2731,6 @@ async function seedBillingPeriods() {
     }
 
     const energyAmount = parseFloat((energyKwh * p.rate_per_kwh).toFixed(2));
-    const flatAmount = parseFloat(String(p.flat_rate));
 
     // Electricity bill (cycle 1) — insert or fix if previously generated as 0.00
     const [exElec] = await pool.execute<any[]>(
@@ -2759,27 +2758,6 @@ async function seedBillingPeriods() {
       );
     }
 
-    // Rent bill (cycle 1) — insert or fix if previously generated as 0.00
-    const [exRent] = await pool.execute<any[]>(
-      'SELECT id, amount_due FROM billing_periods WHERE stay_id = ? AND cycle_number = 1 AND bill_type = ?',
-      [stayId, 'rent']
-    );
-    if (!(exRent as any[]).length) {
-      await pool.execute(
-        `INSERT INTO billing_periods
-           (pad_id, stay_id, tenant_id, period_start, period_end,
-            energy_kwh, rate_per_kwh, amount_due, flat_amount, cycle_number, bill_type, due_date)
-         VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?, 1, 'rent', ?)`,
-        [padId, stayId, tenantId, cycleStart, cycleEnd, flatAmount, flatAmount, dueDate]
-      );
-      console.log(`  ✓ Rent bill:        ${p.tenant_email}  |  ₱${flatAmount}`);
-    } else if (parseFloat((exRent as any[])[0].amount_due) === 0 && flatAmount > 0) {
-      await pool.execute(
-        `UPDATE billing_periods SET amount_due = ?, flat_amount = ? WHERE id = ?`,
-        [flatAmount, flatAmount, (exRent as any[])[0].id]
-      );
-      console.log(`  ↻ Fixed 0.00 rent:  ${p.tenant_email}  |  ₱${flatAmount}`);
-    }
   }
 }
 
