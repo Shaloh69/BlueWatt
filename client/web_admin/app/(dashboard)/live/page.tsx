@@ -60,10 +60,14 @@ export default function LivePage() {
     const es = new EventSource(url);
     esRef.current = es;
 
+    // Flip to "Live" as soon as the SSE handshake completes
+    es.addEventListener("connected", () => setConnected(true));
+
     es.addEventListener("power_reading", (e) => {
       try {
         const d = JSON.parse(e.data);
-        if (d.device_id !== deviceId && d.device_id != null) return;
+        // Filter: only update display for the currently selected device
+        if (d.device_id != null && Number(d.device_id) !== deviceId) return;
         setReading(d);
         setConnected(true);
         setReadingLog(prev => [d, ...prev].slice(0, MAX_LOG));
