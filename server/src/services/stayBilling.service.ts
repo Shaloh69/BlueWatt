@@ -4,8 +4,7 @@
  * Billing model:
  *  - Each stay has a billing_cycle ('daily' | 'monthly') anchored to check_in_at.
  *  - Bills are generated for every *completed* cycle.
- *  - On check-out the final partial cycle is prorated (fraction of a full cycle used).
- *  - Energy is read minute-precisely from power_readings using MAX-MIN energy_kwh diff.
+ *  - Energy is sourced from power_aggregates_daily (seeded + cron-aggregated).
  *  - The flat_rate_per_cycle is prorated on the final bill too.
  *
  * Cycle numbering (1-based):
@@ -16,10 +15,14 @@
 
 import { BillingPeriodModel } from '../models/billingPeriod.model';
 import { StayModel } from '../models/stay.model';
-import { PowerReadingModel } from '../models/powerReading.model';
+import { PowerAggregateModel } from '../models/powerAggregate.model';
 import { logger } from '../utils/logger';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+function toDateStr(d: Date): string {
+  return d.toISOString().split('T')[0];
+}
 
 /** Add N daily-cycle units to a date (minute-precise clone) */
 function addCycles(base: Date, n: number, cycle: 'daily' | 'monthly'): Date {
@@ -105,8 +108,13 @@ export class StayBillingService {
       // ── Electricity bill ────────────────────────────────────────────────
       const elecExists = await BillingPeriodModel.existsForStayCycle(stay.id, cycle, 'electricity');
       if (!elecExists) {
+        const endInclusive = new Date(periodEnd.getTime() - 86400_000);
         const energyKwh = deviceId
-          ? await PowerReadingModel.energyBetween(deviceId, periodStart, periodEnd)
+          ? await PowerAggregateModel.sumEnergyForPeriod(
+              deviceId,
+              toDateStr(periodStart),
+              toDateStr(endInclusive)
+            )
           : 0;
         const energyAmount = parseFloat((energyKwh * stay.rate_per_kwh).toFixed(2));
 
@@ -165,8 +173,13 @@ export class StayBillingService {
           'electricity'
         );
         if (!elecExists) {
+          const endInclusive = new Date(periodEnd.getTime() - 86400_000);
           const energyKwh = deviceId
-            ? await PowerReadingModel.energyBetween(deviceId, periodStart, periodEnd)
+            ? await PowerAggregateModel.sumEnergyForPeriod(
+                deviceId,
+                toDateStr(periodStart),
+                toDateStr(endInclusive)
+              )
             : 0;
           const energyAmount = parseFloat((energyKwh * stay.rate_per_kwh).toFixed(2));
           await BillingPeriodModel.create(

@@ -2688,10 +2688,91 @@ async function seedStaysAndBilling() {
   }
 }
 
+// ── Step 7: Billing periods ───────────────────────────────────────────────────
+
+async function seedBillingPeriods() {
+  // Cycle 1: 2026-03-11 → 2026-04-11 (complete)
+  const cycleStart = new Date('2026-03-11T00:00:00');
+  const cycleEnd = new Date('2026-04-11T00:00:00');
+  const dueDate = new Date('2026-04-18T00:00:00');
+
+  for (const p of PADS) {
+    if (!p.tenant_email) continue;
+
+    const padId = await getPadId(p.name);
+    const tenantId = await getUserId(p.tenant_email);
+    if (!padId || !tenantId) continue;
+
+    // Get stay id
+    const [stayRows] = await pool.execute<any[]>(
+      'SELECT id FROM stays WHERE pad_id = ? AND tenant_id = ?',
+      [padId, tenantId]
+    );
+    if (!(stayRows as any[]).length) continue;
+    const stayId = (stayRows as any[])[0].id;
+
+    // Get device db id
+    const [devRows] = await pool.execute<any[]>(
+      'SELECT d.id FROM devices d JOIN pads p ON p.device_id = d.id WHERE p.id = ?',
+      [padId]
+    );
+    const deviceDbId: number | null = (devRows as any[]).length ? (devRows as any[])[0].id : null;
+
+    // Sum energy from aggregates (Mar 11 – Apr 10 inclusive)
+    let energyKwh = 0;
+    if (deviceDbId) {
+      const [eRows] = await pool.execute<any[]>(
+        `SELECT COALESCE(SUM(total_energy_kwh), 0) AS total
+         FROM power_aggregates_daily
+         WHERE device_id = ? AND date BETWEEN '2026-03-11' AND '2026-04-10'`,
+        [deviceDbId]
+      );
+      energyKwh = parseFloat((eRows as any[])[0].total) || 0;
+    }
+
+    const energyAmount = parseFloat((energyKwh * p.rate_per_kwh).toFixed(2));
+    const flatAmount = parseFloat(String(p.flat_rate));
+
+    // Electricity bill (cycle 1)
+    const [exElec] = await pool.execute<any[]>(
+      'SELECT id FROM billing_periods WHERE stay_id = ? AND cycle_number = 1 AND bill_type = ?',
+      [stayId, 'electricity']
+    );
+    if (!(exElec as any[]).length) {
+      await pool.execute(
+        `INSERT INTO billing_periods
+           (pad_id, stay_id, tenant_id, period_start, period_end,
+            energy_kwh, rate_per_kwh, amount_due, flat_amount, cycle_number, bill_type, due_date)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 1, 'electricity', ?)`,
+        [padId, stayId, tenantId, cycleStart, cycleEnd, energyKwh, p.rate_per_kwh, energyAmount, dueDate]
+      );
+      console.log(
+        `  ✓ Electricity bill: ${p.tenant_email}  |  ${energyKwh.toFixed(2)} kWh  |  ₱${energyAmount}`
+      );
+    }
+
+    // Rent bill (cycle 1)
+    const [exRent] = await pool.execute<any[]>(
+      'SELECT id FROM billing_periods WHERE stay_id = ? AND cycle_number = 1 AND bill_type = ?',
+      [stayId, 'rent']
+    );
+    if (!(exRent as any[]).length) {
+      await pool.execute(
+        `INSERT INTO billing_periods
+           (pad_id, stay_id, tenant_id, period_start, period_end,
+            energy_kwh, rate_per_kwh, amount_due, flat_amount, cycle_number, bill_type, due_date)
+         VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?, 1, 'rent', ?)`,
+        [padId, stayId, tenantId, cycleStart, cycleEnd, flatAmount, flatAmount, dueDate]
+      );
+      console.log(`  ✓ Rent bill:        ${p.tenant_email}  |  ₱${flatAmount}`);
+    }
+  }
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log('\n🌱  BlueWatt Seeder — Real Meter Data (Mar 11 – Apr 9 2026)\n');
+  console.log('\n🌱  BlueWatt Seeder — Real Meter Data (Mar 11 – Apr 26 2026)\n');
   try {
     console.log('🗑️   Cleansing database (keeping admin)...');
     await cleanseDatabase();
@@ -2711,11 +2792,14 @@ async function main() {
     console.log('\n🏠  Seeding pads...');
     await seedPads();
 
-    console.log('\n⚡  Seeding power aggregates (Mar 11 – Apr 9)...');
+    console.log('\n⚡  Seeding power aggregates (Mar 11 – Apr 26)...');
     await seedPowerAggregates();
 
     console.log('\n🏨  Seeding stays...');
     await seedStaysAndBilling();
+
+    console.log('\n💰  Seeding billing periods (cycle 1: Mar 11 – Apr 11)...');
+    await seedBillingPeriods();
 
     console.log('\n✅  Seed complete.\n');
     console.log('─────────────────────────────────────────────────────────────────────');
@@ -2725,8 +2809,8 @@ async function main() {
     console.log('  Reynie:  reynie-proto@test.com  /  Tenant@1234  →  PAD-3 (bluewatt-003)');
     console.log('  Jassy:   jassy-proto@test.com   /  Tenant@1234  →  PAD-4 (bluewatt-004)');
     console.log('─────────────────────────────────────────────────────────────────────');
-    console.log('  Rate: ₱11.35/kWh | Check-in: March 11 2026 | Data: Mar 11 – Apr 9');
-    console.log('  Billing skipped — no verified Apr 10+ meter data yet.');
+    console.log('  Rate: ₱11.35/kWh | Check-in: March 11 2026 | Data: Mar 11 – Apr 26');
+    console.log('  Billing cycle 1 (Mar 11 – Apr 11): electricity + rent seeded.');
     console.log('─────────────────────────────────────────────────────────────────────');
     console.log('  NOTE: Re-upload the GCash/Maya payment QR code in the admin panel.');
     console.log('─────────────────────────────────────────────────────────────────────\n');
