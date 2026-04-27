@@ -17,14 +17,14 @@ router.post(
 );
 
 router.get(
-  '/devices/:id/power-data',
+  '/devices/:id',
   authenticateJWT,
   validate([...deviceIdParamValidator, ...queryTimeRangeValidator]),
   powerDataController.getPowerData
 );
 
 router.get(
-  '/devices/:id/power-data/latest',
+  '/devices/:id/latest',
   authenticateJWT,
   validate(deviceIdParamValidator),
   powerDataController.getLatestPowerData
@@ -38,7 +38,7 @@ router.get(
 );
 
 router.get(
-  '/devices/:id/power-data/stats',
+  '/devices/:id/stats',
   authenticateJWT,
   validate([...deviceIdParamValidator, ...queryTimeRangeValidator]),
   powerDataController.getPowerStats

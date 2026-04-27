@@ -68,7 +68,7 @@ export const devicesApi = {
     api.post(`/devices/${id}/relay-command`, { command }),
   getRelayHistory: (id: number) => api.get(`/devices/${id}/relay-command/history`),
   getLatestReading: (id: number) =>
-    api.get(`/power-data/devices/${id}/power-data/latest`),
+    api.get(`/power-data/devices/${id}/latest`),
   uploadImage: (id: number, formData: FormData) =>
     api.post(`/upload/device/${id}/image`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
