@@ -68,6 +68,9 @@ export default function LivePage() {
     const es = new EventSource(url);
     esRef.current = es;
 
+    // onopen fires at HTTP level the moment the connection is established —
+    // more reliable than the custom `connected` event in React Strict Mode
+    es.onopen = () => setConnected(true);
     es.addEventListener("connected", () => setConnected(true));
 
     es.addEventListener("power_reading", (e) => {
@@ -84,6 +87,8 @@ export default function LivePage() {
         }
       } catch {}
     });
+
+    es.addEventListener("ping", () => setConnected(true));
 
     es.addEventListener("relay_state", () => {
       devicesApi.list().then(r => setDevices(r.data.data?.devices ?? [])).catch(() => {});

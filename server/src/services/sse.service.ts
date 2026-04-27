@@ -24,7 +24,7 @@ class SSEService {
     setInterval(() => {
       this.clients.forEach((client) => {
         try {
-          client.res.write(': ping\n\n');
+          client.res.write('event: ping\ndata: {}\n\n');
         } catch {
           this.removeClient(client.id);
         }
