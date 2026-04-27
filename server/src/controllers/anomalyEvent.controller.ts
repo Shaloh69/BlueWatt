@@ -53,12 +53,16 @@ export const submitAnomalyEvent = asyncHandler(
 
     // Send real-time SSE notification
     sseService.sendToDevice(device.id, 'anomaly', {
+      id: eventId,
       event_id: eventId,
       device_id,
       anomaly_type,
       severity: determinedSeverity,
       relay_tripped,
       timestamp: eventTimestamp,
+      current_value: current,
+      voltage_value: voltage,
+      power_value: power,
     });
 
     sendSuccess(

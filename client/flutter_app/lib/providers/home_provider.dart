@@ -177,11 +177,27 @@ class HomeProvider extends ChangeNotifier {
       case 'anomaly':
         final deviceId = event.data['device_id'];
         if (_pad?.deviceId != null && deviceId == _pad!.deviceId) {
+          final relayTripped = event.data['relay_tripped'] == true;
           NotificationService.showAnomalyAlert(
             type: event.data['anomaly_type'] as String? ?? 'unknown',
             severity: event.data['severity'] as String? ?? 'low',
-            relayTripped: event.data['relay_tripped'] == true,
+            relayTripped: relayTripped,
           );
+          if (relayTripped && _pad != null) {
+            _pad = Pad(
+              id: _pad!.id,
+              name: _pad!.name,
+              description: _pad!.description,
+              deviceId: _pad!.deviceId,
+              tenantId: _pad!.tenantId,
+              ratePerKwh: _pad!.ratePerKwh,
+              isActive: _pad!.isActive,
+              deviceSerial: _pad!.deviceSerial,
+              relayStatus: 'tripped',
+              lastSeenAt: _pad!.lastSeenAt,
+            );
+            notifyListeners();
+          }
         }
         break;
     }

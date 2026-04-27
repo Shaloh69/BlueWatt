@@ -18,6 +18,9 @@ function SSEListener() {
       toast.warning(`Anomaly: ${type} on device ${d.device_id}`);
       if (typeof d.device_id === "number") reloadAnomalyEvents(d.device_id);
     },
+    anomaly_resolved: (d) => {
+      if (typeof d.device_id === "number") reloadAnomalyEvents(d.device_id);
+    },
     payment_submitted: () => { reloadPayments(); reloadPendingPayments(); },
     payment_received:  () => { reloadPayments(); reloadPendingPayments(); },
   });

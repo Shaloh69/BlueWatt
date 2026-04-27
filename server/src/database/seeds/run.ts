@@ -2638,7 +2638,7 @@ async function seedPowerAggregates() {
 
     const totalAll = days.reduce((s, d) => s + d.total_energy_kwh, 0);
     console.log(
-      `  ✓ Power data seeded: ${p.device_serial}  |  Mar 11 – Apr 9  |  ` +
+      `  ✓ Power data seeded: ${p.device_serial}  |  Mar 11 – Apr 10  |  ` +
         `${totalAll.toFixed(2)} kWh`
     );
   }
@@ -2693,7 +2693,7 @@ async function seedStaysAndBilling() {
 async function seedBillingPeriods() {
   // Cycle 1: 2026-03-11 → 2026-04-11 (complete)
   const cycleStart = new Date('2026-03-11T00:00:00');
-  const cycleEnd = new Date('2026-04-11T00:00:00');
+  const cycleEnd = new Date('2026-04-10T00:00:00');
   const dueDate = new Date('2026-04-18T00:00:00');
 
   for (const p of PADS) {
@@ -2790,7 +2790,7 @@ async function main() {
     console.log('\n🏨  Seeding stays...');
     await seedStaysAndBilling();
 
-    console.log('\n💰  Seeding billing periods (cycle 1: Mar 11 – Apr 11)...');
+    console.log('\n💰  Seeding billing periods (cycle 1: Mar 11 – Apr 10)...');
     await seedBillingPeriods();
 
     console.log('\n✅  Seed complete.\n');
@@ -2801,8 +2801,8 @@ async function main() {
     console.log('  Reynie:  reynie-proto@test.com  /  Tenant@1234  →  PAD-3 (bluewatt-003)');
     console.log('  Jassy:   jassy-proto@test.com   /  Tenant@1234  →  PAD-4 (bluewatt-004)');
     console.log('─────────────────────────────────────────────────────────────────────');
-    console.log('  Rate: ₱11.35/kWh | Check-in: March 11 2026 | Data: Mar 11 – Apr 26');
-    console.log('  Billing cycle 1 (Mar 11 – Apr 11): electricity + rent seeded.');
+    console.log('  Rate: ₱11.98/kWh | Check-in: March 11 2026 | Data: Mar 11 – Apr 26');
+    console.log('  Billing cycle 1 (Mar 11 – Apr 10): electricity only.');
     console.log('─────────────────────────────────────────────────────────────────────');
     console.log('  NOTE: Re-upload the GCash/Maya payment QR code in the admin panel.');
     console.log('─────────────────────────────────────────────────────────────────────\n');

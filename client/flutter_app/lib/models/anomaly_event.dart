@@ -36,6 +36,19 @@ class AnomalyEvent {
         powerValue: (j['power_value'] as num?)?.toDouble(),
       );
 
+  AnomalyEvent copyWithResolved() => AnomalyEvent(
+        id: id,
+        deviceId: deviceId,
+        anomalyType: anomalyType,
+        severity: severity,
+        relayTripped: relayTripped,
+        isResolved: true,
+        timestamp: timestamp,
+        currentValue: currentValue,
+        voltageValue: voltageValue,
+        powerValue: powerValue,
+      );
+
   bool get isCritical => severity == 'critical';
   bool get isHigh => severity == 'high';
 

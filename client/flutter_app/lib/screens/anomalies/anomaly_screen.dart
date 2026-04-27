@@ -48,6 +48,17 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
   }
 
   void _onSse(SseEvent event) {
+    if (event.type == 'anomaly_resolved') {
+      final resolvedId = event.data['event_id'] as int?;
+      if (resolvedId != null) {
+        setState(() {
+          _events = _events.map((e) =>
+            e.id == resolvedId ? e.copyWithResolved() : e
+          ).toList();
+        });
+      }
+      return;
+    }
     if (event.type != 'anomaly') return;
     final home = context.read<HomeProvider>();
     final deviceId = event.data['device_id'];
