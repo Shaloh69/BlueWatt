@@ -123,9 +123,9 @@ export class PowerReadingModel {
     // Midnight in Philippine Standard Time (UTC+8)
     const now = new Date();
     const phtNow = new Date(now.getTime() + 8 * 3600 * 1000);
-    const midnightPHT = new Date(Date.UTC(
-      phtNow.getUTCFullYear(), phtNow.getUTCMonth(), phtNow.getUTCDate()
-    ) - 8 * 3600 * 1000);
+    const midnightPHT = new Date(
+      Date.UTC(phtNow.getUTCFullYear(), phtNow.getUTCMonth(), phtNow.getUTCDate()) - 8 * 3600 * 1000
+    );
 
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT
@@ -137,7 +137,7 @@ export class PowerReadingModel {
        WHERE device_id = ? AND timestamp >= ?`,
       [deviceId, midnightPHT]
     );
-    const r = rows[0] as any;
+    const r = rows[0] as { kwh_delta: unknown; avg_power_w: unknown; span_seconds: unknown };
     const delta = Math.max(0, Number(r.kwh_delta) || 0);
     if (delta > 0.001) return delta;
     // Fallback: W × h / 1000 = kWh

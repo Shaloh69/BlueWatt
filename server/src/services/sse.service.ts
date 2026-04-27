@@ -25,7 +25,7 @@ class SSEService {
       this.clients.forEach((client) => {
         try {
           client.res.write('event: ping\ndata: {}\n\n');
-          (client.res as any).flush?.();
+          (client.res as unknown as { flush?: () => void }).flush?.();
         } catch {
           this.removeClient(client.id);
         }
@@ -43,10 +43,10 @@ class SSEService {
     logger.info(`SSE client disconnected: ${clientId}`);
   }
 
-  private writeEvent(client: SSEClient, event: string, data: any): void {
+  private writeEvent(client: SSEClient, event: string, data: unknown): void {
     client.res.write(`event: ${event}\n`);
     client.res.write(`data: ${JSON.stringify(data)}\n\n`);
-    (client.res as any).flush?.();
+    (client.res as unknown as { flush?: () => void }).flush?.();
   }
 
   sendToUser(userId: number, event: string, data: any): void {

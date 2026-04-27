@@ -2,8 +2,6 @@ import { Request, Response } from 'express';
 import { sseService } from '../services/sse.service';
 import { DeviceModel } from '../models/device.model';
 import { PadModel } from '../models/pad.model';
-import { AppError } from '../utils/AppError';
-import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../utils/logger';
 
@@ -45,7 +43,7 @@ export const streamEvents = async (req: Request, res: Response): Promise<void> =
 
   res.write(`event: connected\n`);
   res.write(`data: ${JSON.stringify({ clientId, message: 'Connected to real-time updates' })}\n\n`);
-  (res as any).flush?.();
+  (res as unknown as { flush?: () => void }).flush?.();
 
   req.on('close', () => {
     sseService.removeClient(clientId);
