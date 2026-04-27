@@ -109,11 +109,20 @@ export const assignPad = asyncHandler(async (req: Request, res: Response, _next:
   sendSuccess(res, { pad: await PadModel.findById(padId) });
 });
 
-/** POST /pads/my/relay-command — tenant disables their own pad (off only) */
+/** POST /pads/my/relay-command — tenant toggles their own pad on or off */
 export const disableMyPad = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
     if (!req.user)
       throw new AppError('Unauthenticated', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+
+    const { command } = req.body as { command?: string };
+    if (!command || !['on', 'off'].includes(command)) {
+      throw new AppError(
+        "command must be 'on' or 'off'",
+        HTTP_STATUS.BAD_REQUEST,
+        ERROR_CODES.VALIDATION_ERROR
+      );
+    }
 
     const pad = await PadModel.findByTenantId(req.user.id);
     if (!pad)
@@ -129,13 +138,13 @@ export const disableMyPad = asyncHandler(
         ERROR_CODES.VALIDATION_ERROR
       );
 
-    const cmd = await RelayCommandModel.create(pad.device_id, 'off', req.user.id);
+    const cmd = await RelayCommandModel.create(pad.device_id, command as 'on' | 'off', req.user.id);
     logger.info(
-      `[Relay] Tenant user=${req.user.id} disabled pad "${pad.name}" device#${pad.device_id} cmd_id=${cmd.id}`
+      `[Relay] Tenant user=${req.user.id} set pad "${pad.name}" device#${pad.device_id} → ${command} cmd_id=${cmd.id}`
     );
 
     sseService.sendToDevice(pad.device_id, 'relay_command_issued', {
-      command: 'off',
+      command,
       deviceId: pad.device_id,
     });
 

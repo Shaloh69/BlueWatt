@@ -76,15 +76,15 @@ class HomeProvider extends ChangeNotifier {
     }
   }
 
-  /// Sends an "off" relay command for the tenant's own pad.
-  /// Returns an error string on failure, null on success.
-  Future<String?> disablePad() async {
+  Future<String?> disablePad() => _sendRelay('off');
+  Future<String?> enablePad() => _sendRelay('on');
+
+  Future<String?> _sendRelay(String command) async {
     if (_relayBusy) return null;
     _relayBusy = true;
     notifyListeners();
     try {
-      await ApiService.sendRelayOff();
-      // Optimistically reflect the queued state in the UI
+      await ApiService.sendRelayCommand(command);
       if (_pad != null) {
         _pad = Pad(
           id: _pad!.id,
@@ -95,7 +95,7 @@ class HomeProvider extends ChangeNotifier {
           ratePerKwh: _pad!.ratePerKwh,
           isActive: _pad!.isActive,
           deviceSerial: _pad!.deviceSerial,
-          relayStatus: 'off',
+          relayStatus: command,
           lastSeenAt: _pad!.lastSeenAt,
         );
       }

@@ -229,11 +229,11 @@ class ApiService {
 
   // ── Relay ──────────────────────────────────────────────────────────────────
 
-  static Future<void> sendRelayOff() async {
+  static Future<void> sendRelayCommand(String command) async {
     final res = await http.post(
       _uri('/pads/my/relay-command'),
       headers: await _headers(),
-      body: jsonEncode({'command': 'off'}),
+      body: jsonEncode({'command': command}),
     ).timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
     _body(res);
   }
