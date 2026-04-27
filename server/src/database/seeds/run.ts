@@ -105,7 +105,7 @@ const DEVICE_KEYS: { device_serial: string; api_key: string }[] = [];
 // max_power_real ≈ avg * 3.5  |  min_power_real ≈ avg * 0.13
 // avg_current    = avg_power_real / (avg_voltage * avg_power_factor)
 //
-// Sophie (001): 47-day total = 320.22 kWh  avg = 6.81/day
+// Sophie (001): 47-day total = 319.27 kWh  avg = 6.79/day
 // PAD-2  (002): 47-day total ≈ 169.8 kWh  avg ≈ 3.61/day  (inactive, relay off, volt 210–241)
 // Reynie (003): 47-day total = 128.00 kWh  avg = 2.72/day
 // Jassy  (004): 47-day total = 507.10 kWh  avg = 10.79/day
@@ -126,7 +126,7 @@ interface DayData {
 const DAILY_DATA: Record<string, DayData[]> = {
   // ── Sophie (PAD-1, bluewatt-001) ──────────────────────────────────────────
   // Exact CKS spreadsheet daily deltas Mar 11–Apr 9; Apr 10–26 from meter photo
-  // 47-day total: 320.22 kWh  avg: 6.81/day
+  // 47-day total: 319.27 kWh  avg: 6.79/day
   'bluewatt-001': [
     {
       date: '2026-03-11',
@@ -490,12 +490,12 @@ const DAILY_DATA: Record<string, DayData[]> = {
     }, // Thu
     {
       date: '2026-04-10',
-      total_energy_kwh: 7.45,
-      avg_power_real: 310.4,
-      max_power_real: 1087,
-      min_power_real: 40.4,
+      total_energy_kwh: 6.5,
+      avg_power_real: 270.8,
+      max_power_real: 948,
+      min_power_real: 35.2,
       avg_voltage: 221.8,
-      avg_current: 1.609,
+      avg_current: 1.403,
       avg_power_factor: 0.87,
       peak_hour: 20,
       reading_count: 1440,
