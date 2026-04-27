@@ -94,6 +94,7 @@ export const billingApi = {
   getByPad: (padId: number) => api.get(`/billing/pad/${padId}`),
   get: (id: number) => api.get(`/billing/${id}`),
   generate: (data: object) => api.post("/billing/generate", data),
+  markPaid: (id: number) => api.put(`/billing/${id}/mark-paid`, {}),
   waive: (id: number) => api.put(`/billing/${id}/waive`, {}),
   delete: (id: number) => api.delete(`/billing/${id}`),
 };

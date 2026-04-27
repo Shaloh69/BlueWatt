@@ -80,6 +80,17 @@ export const generateBilling = asyncHandler(
   }
 );
 
+/** PUT /billing/:id/mark-paid — admin: manually mark a bill as paid */
+export const markBillingPaid = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    const bill = await BillingPeriodModel.findById(parseInt(req.params.id, 10));
+    if (!bill)
+      throw new AppError('Billing period not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
+    await BillingPeriodModel.markPaid(bill.id);
+    sendSuccess(res, { message: 'Bill marked as paid' });
+  }
+);
+
 /** PUT /billing/:id/waive — admin: waive a bill */
 export const waiveBilling = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {

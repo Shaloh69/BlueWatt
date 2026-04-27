@@ -9,7 +9,7 @@ import { Chip } from "@heroui/chip";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import { Input } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
-import { Receipt, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { Receipt, Plus, RefreshCw, Trash2, CheckCircle, Download } from "lucide-react";
 import { billingApi, getErrorMessage } from "@/lib/api";
 import { BillingPeriod } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
@@ -57,6 +57,16 @@ export default function BillingPage() {
       toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleMarkPaid(bill: BillingPeriod) {
+    try {
+      await billingApi.markPaid(bill.id);
+      toast.success("Bill marked as paid");
+      reloadBilling();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
     }
   }
 
@@ -120,9 +130,23 @@ export default function BillingPage() {
                         </Chip>
                       </td>
                       <td className="py-3 px-3">
-                        <div className="flex gap-1">
+                        <div className="flex gap-1 flex-wrap">
+                          {(b.status === "unpaid" || b.status === "overdue") && (
+                            <Button size="sm" variant="flat" color="success"
+                              startContent={<CheckCircle className="w-3 h-3" />}
+                              onPress={() => handleMarkPaid(b)}>
+                              Mark Paid
+                            </Button>
+                          )}
                           {b.status === "unpaid" && (
                             <Button size="sm" variant="flat" color="default" onPress={() => handleWaive(b)}>Waive</Button>
+                          )}
+                          {(b as any).receipt_url && (
+                            <Button size="sm" variant="flat" color="primary" isIconOnly
+                              title="Download receipt"
+                              as="a" href={(b as any).receipt_url} target="_blank" rel="noopener noreferrer">
+                              <Download className="w-3 h-3" />
+                            </Button>
                           )}
                           <Button size="sm" variant="flat" color="danger" isIconOnly title="Delete bill"
                             onPress={() => setDeleteTarget(b)}>

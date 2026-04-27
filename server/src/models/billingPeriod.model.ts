@@ -98,10 +98,12 @@ export class BillingPeriodModel {
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT b.*, p.name AS pad_name,
-              u.full_name AS tenant_name
+              u.full_name AS tenant_name,
+              pay.receipt_url
        FROM billing_periods b
        JOIN pads p ON p.id = b.pad_id
        LEFT JOIN users u ON u.id = b.tenant_id
+       LEFT JOIN payments pay ON pay.billing_period_id = b.id AND pay.status = 'paid'
        ${where}
        ORDER BY b.period_start DESC`,
       params
