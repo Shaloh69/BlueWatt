@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { PowerAggregateModel } from '../models/powerAggregate.model';
 import { DeviceModel } from '../models/device.model';
-import { PadModel } from '../models/pad.model';
 import { AppError } from '../utils/AppError';
 import { sendSuccess } from '../utils/apiResponse';
 import { asyncHandler } from '../utils/asyncHandler';
