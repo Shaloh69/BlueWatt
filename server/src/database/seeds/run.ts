@@ -2741,20 +2741,23 @@ async function seedBillingPeriods() {
       await pool.execute(
         `INSERT INTO billing_periods
            (pad_id, stay_id, tenant_id, period_start, period_end,
-            energy_kwh, rate_per_kwh, amount_due, flat_amount, cycle_number, bill_type, due_date)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 1, 'electricity', ?)`,
+            energy_kwh, rate_per_kwh, amount_due, flat_amount, cycle_number, bill_type, due_date,
+            status, paid_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 1, 'electricity', ?, 'paid', NOW())`,
         [padId, stayId, tenantId, cycleStart, cycleEnd, energyKwh, p.rate_per_kwh, energyAmount, dueDate]
       );
       console.log(
-        `  ✓ Electricity bill: ${p.tenant_email}  |  ${energyKwh.toFixed(2)} kWh  |  ₱${energyAmount}`
+        `  ✓ Electricity bill: ${p.tenant_email}  |  ${energyKwh.toFixed(2)} kWh  |  ₱${energyAmount}  [paid]`
       );
-    } else if (parseFloat((exElec as any[])[0].amount_due) === 0 && energyAmount > 0) {
+    } else {
       await pool.execute(
-        `UPDATE billing_periods SET energy_kwh = ?, rate_per_kwh = ?, amount_due = ? WHERE id = ?`,
+        `UPDATE billing_periods
+         SET energy_kwh = ?, rate_per_kwh = ?, amount_due = ?, status = 'paid', paid_at = COALESCE(paid_at, NOW())
+         WHERE id = ?`,
         [energyKwh, p.rate_per_kwh, energyAmount, (exElec as any[])[0].id]
       );
       console.log(
-        `  ↻ Fixed 0.00 elec:  ${p.tenant_email}  |  ${energyKwh.toFixed(2)} kWh  |  ₱${energyAmount}`
+        `  ↻ Updated bill:     ${p.tenant_email}  |  ${energyKwh.toFixed(2)} kWh  |  ₱${energyAmount}  [paid]`
       );
     }
 
@@ -2802,7 +2805,7 @@ async function main() {
     console.log('  Jassy:   jassy-proto@test.com   /  Tenant@1234  →  PAD-4 (bluewatt-004)');
     console.log('─────────────────────────────────────────────────────────────────────');
     console.log('  Rate: ₱11.98/kWh | Check-in: March 11 2026 | Data: Mar 11 – Apr 26');
-    console.log('  Billing cycle 1 (Mar 11 – Apr 10): electricity only.');
+    console.log('  Billing cycle 1 (Mar 11 – Apr 10): electricity only, status = paid.');
     console.log('─────────────────────────────────────────────────────────────────────');
     console.log('  NOTE: Re-upload the GCash/Maya payment QR code in the admin panel.');
     console.log('─────────────────────────────────────────────────────────────────────\n');
