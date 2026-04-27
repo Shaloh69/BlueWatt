@@ -63,15 +63,13 @@ export default function LivePage() {
     es.addEventListener("power_reading", (e) => {
       try {
         const d = JSON.parse(e.data);
+        if (d.device_id !== deviceId && d.device_id != null) return;
         setReading(d);
         setConnected(true);
         setReadingLog(prev => [d, ...prev].slice(0, MAX_LOG));
 
-        if (d.energy_kwh != null) {
-          if (sessionStartEnergyRef.current === null) {
-            sessionStartEnergyRef.current = Number(d.energy_kwh);
-          }
-          fetchTodayEnergy(deviceId);
+        if (d.energy_kwh != null && sessionStartEnergyRef.current === null) {
+          sessionStartEnergyRef.current = Number(d.energy_kwh);
         }
       } catch {}
     });
@@ -82,7 +80,7 @@ export default function LivePage() {
     es.onerror = () => setConnected(false);
 
     return () => { es.close(); };
-  }, [fetchTodayEnergy]);
+  }, []);
 
   useEffect(() => {
     if (!selectedDevice) return;
@@ -98,11 +96,12 @@ export default function LivePage() {
       if (d) setReading(d);
     }).catch(() => {});
 
-    // Load today's energy immediately
+    // Fetch today's energy once now, then every 30 s — not on every reading
     fetchTodayEnergy(selectedDevice);
+    const energyTimer = setInterval(() => fetchTodayEnergy(selectedDevice), 30_000);
 
     const cleanup = connectSSE(selectedDevice);
-    return cleanup;
+    return () => { cleanup(); clearInterval(energyTimer); };
   }, [selectedDevice, connectSSE, fetchTodayEnergy]);
 
   useEffect(() => () => { esRef.current?.close(); }, []);

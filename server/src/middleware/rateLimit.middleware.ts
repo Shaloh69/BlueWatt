@@ -13,7 +13,8 @@ export const generalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: jsonHandler('Too many requests from this IP, please try again later'),
-  skip: (req) => !!req.headers.authorization,
+  // SSE uses ?token= (EventSource can't set headers), authenticated API calls use Bearer
+  skip: (req) => !!req.headers.authorization || req.path.startsWith('/sse/'),
 });
 
 export const authLimiter = rateLimit({
