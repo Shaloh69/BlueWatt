@@ -39,42 +39,35 @@ class SseService {
         final request = http.Request('GET', uri);
         final response = await _client!.send(request);
 
-        String eventType = '';
         final buffer = StringBuffer();
+        String pendingType = '';
+        String pendingData = '';
 
         await for (final chunk
             in response.stream.transform(utf8.decoder)) {
           buffer.write(chunk);
           final content = buffer.toString();
-          // Process complete lines
           final lines = content.split('\n');
-          // Keep last incomplete line in buffer
           buffer.clear();
           buffer.write(lines.last);
 
-          String currentType = '';
-          String currentData = '';
-
           for (final line in lines.sublist(0, lines.length - 1)) {
             if (line.startsWith('event:')) {
-              currentType = line.substring(6).trim();
+              pendingType = line.substring(6).trim();
             } else if (line.startsWith('data:')) {
-              currentData = line.substring(5).trim();
+              pendingData = line.substring(5).trim();
             } else if (line.trim().isEmpty &&
-                currentType.isNotEmpty &&
-                currentData.isNotEmpty) {
+                pendingType.isNotEmpty &&
+                pendingData.isNotEmpty) {
               try {
                 final parsed =
-                    jsonDecode(currentData) as Map<String, dynamic>;
-                _controller.add(SseEvent(currentType, parsed));
+                    jsonDecode(pendingData) as Map<String, dynamic>;
+                _controller.add(SseEvent(pendingType, parsed));
               } catch (_) {}
-              currentType = '';
-              currentData = '';
-            } else if (line.startsWith(':')) {
-              // heartbeat ping — ignore
+              pendingType = '';
+              pendingData = '';
             }
           }
-          eventType = currentType;
         }
       } catch (_) {
         // ignore — will retry
