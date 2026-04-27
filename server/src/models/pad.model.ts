@@ -7,7 +7,7 @@ export class PadModel {
     ownerId: number,
     name: string,
     description?: string,
-    ratePerKwh: number = 11.0
+    ratePerKwh: number = 11.98
   ): Promise<Pad> {
     const [result] = await pool.execute<ResultSetHeader>(
       `INSERT INTO pads (owner_id, name, description, rate_per_kwh, is_active)
