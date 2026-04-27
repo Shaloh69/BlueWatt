@@ -115,16 +115,28 @@ export class PowerReadingModel {
 
   /**
    * Energy consumed today (midnight → now) for a device.
-   * Returns MAX(energy_kwh) - MIN(energy_kwh) for DATE(timestamp) = CURDATE().
+   * Primary: MAX(energy_kwh) - MIN(energy_kwh) cumulative delta.
+   * Fallback: avg_power_real (W) × elapsed time (h) / 1000 — used when the
+   * PZEM energy register is near-zero (fresh power-on) or not reported.
    */
   static async energyToday(deviceId: number): Promise<number> {
     const [rows] = await pool.execute<RowDataPacket[]>(
-      `SELECT COALESCE(MAX(energy_kwh) - MIN(energy_kwh), 0) AS kwh
+      `SELECT
+         COALESCE(MAX(energy_kwh) - MIN(energy_kwh), 0)           AS kwh_delta,
+         COALESCE(AVG(power_real), 0)                              AS avg_power_w,
+         COALESCE(UNIX_TIMESTAMP(MAX(timestamp))
+                - UNIX_TIMESTAMP(MIN(timestamp)), 0)               AS span_seconds
        FROM power_readings
        WHERE device_id = ? AND DATE(timestamp) = CURDATE()`,
       [deviceId]
     );
-    return Math.max(0, Number((rows[0] as any).kwh) || 0);
+    const r = rows[0] as any;
+    const delta = Math.max(0, Number(r.kwh_delta) || 0);
+    if (delta > 0.001) return delta;
+    // Fallback: W × h / 1000 = kWh
+    const avgPowerW = Number(r.avg_power_w) || 0;
+    const spanHours = (Number(r.span_seconds) || 0) / 3600;
+    return Math.max(0, (avgPowerW * spanHours) / 1000);
   }
 
   static async deleteOlderThan(days: number): Promise<number> {

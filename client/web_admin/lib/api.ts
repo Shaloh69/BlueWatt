@@ -182,9 +182,9 @@ export const staysApi = {
 // ── Power Data ────────────────────────────────────────────────────────────────
 export const powerApi = {
   latest: (deviceId: number) =>
-    api.get(`/power-data/devices/${deviceId}/power-data/latest`),
+    api.get(`/power-data/devices/${deviceId}/latest`),
   stats: (deviceId: number) =>
-    api.get(`/power-data/devices/${deviceId}/power-data/stats`),
+    api.get(`/power-data/devices/${deviceId}/stats`),
   todayEnergy: (deviceId: number) =>
     api.get(`/power-data/devices/${deviceId}/today-energy`),
 };
