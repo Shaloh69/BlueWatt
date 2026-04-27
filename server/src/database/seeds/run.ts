@@ -75,9 +75,9 @@ interface DayData {
 const DAILY_DATA: Record<string, DayData[]> = {
   // ── Sophie (PAD-1, bluewatt-001) ──────────────────────────────────────────
   // Exact CKS spreadsheet daily deltas Mar 11–Apr 9 (submeter #2020351146)
-  // 30-day total: 189.81 kWh  avg: 6.33/day
+  // 30-day total: 189.83 kWh  avg: 6.33/day
   'bluewatt-001': [
-    { date: '2026-03-11', total_energy_kwh:  6.20, avg_power_real:  258.3, max_power_real:  904, min_power_real: 33.6, avg_voltage: 222.0, avg_current: 1.338, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Wed est
+    { date: '2026-03-11', total_energy_kwh:  6.22, avg_power_real:  259.2, max_power_real:  907, min_power_real: 33.7, avg_voltage: 222.0, avg_current: 1.342, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Wed est
     { date: '2026-03-12', total_energy_kwh:  6.22, avg_power_real:  259.2, max_power_real:  907, min_power_real: 33.7, avg_voltage: 221.5, avg_current: 1.344, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Thu
     { date: '2026-03-13', total_energy_kwh:  6.13, avg_power_real:  255.4, max_power_real:  894, min_power_real: 33.2, avg_voltage: 221.8, avg_current: 1.323, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Fri
     { date: '2026-03-14', total_energy_kwh:  6.70, avg_power_real:  279.2, max_power_real:  977, min_power_real: 36.3, avg_voltage: 222.5, avg_current: 1.425, avg_power_factor: 0.88, peak_hour: 14, reading_count: 1440 }, // Sat
@@ -147,39 +147,39 @@ const DAILY_DATA: Record<string, DayData[]> = {
 
   // ── Reynie (PAD-3, bluewatt-003) ──────────────────────────────────────────
   // Exact CKS spreadsheet daily deltas Mar 11–Apr 9 (submeter #2020351142)
-  // Prototype values include realistic ±0.05–0.13 kWh noise
-  // 30-day total: 75.94 kWh  avg: 2.53/day
+  // Submeter = Prototype exactly (verified from bluewatt-excel)
+  // 30-day total: 75.70 kWh  avg: 2.52/day
   'bluewatt-003': [
-    { date: '2026-03-11', total_energy_kwh:  2.48, avg_power_real:  103.3, max_power_real:  362, min_power_real: 13.4, avg_voltage: 221.0, avg_current: 0.537, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Wed est
-    { date: '2026-03-12', total_energy_kwh:  2.33, avg_power_real:   97.1, max_power_real:  340, min_power_real: 12.6, avg_voltage: 220.8, avg_current: 0.505, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Thu
-    { date: '2026-03-13', total_energy_kwh:  2.42, avg_power_real:  100.8, max_power_real:  353, min_power_real: 13.1, avg_voltage: 221.2, avg_current: 0.524, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Fri
-    { date: '2026-03-14', total_energy_kwh:  2.68, avg_power_real:  111.7, max_power_real:  391, min_power_real: 14.5, avg_voltage: 221.5, avg_current: 0.573, avg_power_factor: 0.88, peak_hour: 14, reading_count: 1440 }, // Sat
-    { date: '2026-03-15', total_energy_kwh:  2.27, avg_power_real:   94.6, max_power_real:  331, min_power_real: 12.3, avg_voltage: 222.0, avg_current: 0.484, avg_power_factor: 0.88, peak_hour: 13, reading_count: 1440 }, // Sun
-    { date: '2026-03-16', total_energy_kwh:  2.63, avg_power_real:  109.6, max_power_real:  384, min_power_real: 14.2, avg_voltage: 220.5, avg_current: 0.571, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Mon
-    { date: '2026-03-17', total_energy_kwh:  2.32, avg_power_real:   96.7, max_power_real:  338, min_power_real: 12.6, avg_voltage: 221.0, avg_current: 0.503, avg_power_factor: 0.87, peak_hour: 20, reading_count: 1440 }, // Tue
-    { date: '2026-03-18', total_energy_kwh:  2.57, avg_power_real:  107.1, max_power_real:  375, min_power_real: 13.9, avg_voltage: 221.0, avg_current: 0.557, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Wed
-    { date: '2026-03-19', total_energy_kwh:  2.58, avg_power_real:  107.5, max_power_real:  376, min_power_real: 14.0, avg_voltage: 220.8, avg_current: 0.560, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Thu
-    { date: '2026-03-20', total_energy_kwh:  2.37, avg_power_real:   98.8, max_power_real:  346, min_power_real: 12.8, avg_voltage: 221.2, avg_current: 0.514, avg_power_factor: 0.87, peak_hour: 20, reading_count: 1440 }, // Fri
-    { date: '2026-03-21', total_energy_kwh:  2.48, avg_power_real:  103.3, max_power_real:  362, min_power_real: 13.4, avg_voltage: 221.5, avg_current: 0.530, avg_power_factor: 0.88, peak_hour: 14, reading_count: 1440 }, // Sat
-    { date: '2026-03-22', total_energy_kwh:  2.67, avg_power_real:  111.3, max_power_real:  389, min_power_real: 14.5, avg_voltage: 222.0, avg_current: 0.570, avg_power_factor: 0.88, peak_hour: 13, reading_count: 1440 }, // Sun
-    { date: '2026-03-23', total_energy_kwh:  2.52, avg_power_real:  105.0, max_power_real:  368, min_power_real: 13.7, avg_voltage: 220.5, avg_current: 0.547, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Mon
-    { date: '2026-03-24', total_energy_kwh:  2.63, avg_power_real:  109.6, max_power_real:  384, min_power_real: 14.2, avg_voltage: 221.0, avg_current: 0.570, avg_power_factor: 0.87, peak_hour: 20, reading_count: 1440 }, // Tue
-    { date: '2026-03-25', total_energy_kwh:  2.32, avg_power_real:   96.7, max_power_real:  338, min_power_real: 12.6, avg_voltage: 221.0, avg_current: 0.503, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Wed
-    { date: '2026-03-26', total_energy_kwh:  2.58, avg_power_real:  107.5, max_power_real:  376, min_power_real: 14.0, avg_voltage: 220.8, avg_current: 0.560, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Thu
-    { date: '2026-03-27', total_energy_kwh:  2.73, avg_power_real:  113.8, max_power_real:  398, min_power_real: 14.8, avg_voltage: 221.2, avg_current: 0.591, avg_power_factor: 0.87, peak_hour: 20, reading_count: 1440 }, // Fri
-    { date: '2026-03-28', total_energy_kwh:  2.38, avg_power_real:   99.2, max_power_real:  347, min_power_real: 12.9, avg_voltage: 221.5, avg_current: 0.509, avg_power_factor: 0.88, peak_hour: 14, reading_count: 1440 }, // Sat
-    { date: '2026-03-29', total_energy_kwh:  2.52, avg_power_real:  105.0, max_power_real:  368, min_power_real: 13.7, avg_voltage: 222.0, avg_current: 0.537, avg_power_factor: 0.88, peak_hour: 13, reading_count: 1440 }, // Sun
-    { date: '2026-03-30', total_energy_kwh:  2.58, avg_power_real:  107.5, max_power_real:  376, min_power_real: 14.0, avg_voltage: 220.5, avg_current: 0.560, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Mon
-    { date: '2026-03-31', total_energy_kwh:  2.57, avg_power_real:  107.1, max_power_real:  375, min_power_real: 13.9, avg_voltage: 221.0, avg_current: 0.557, avg_power_factor: 0.87, peak_hour: 20, reading_count: 1440 }, // Tue
-    { date: '2026-04-01', total_energy_kwh:  2.47, avg_power_real:  102.9, max_power_real:  360, min_power_real: 13.4, avg_voltage: 221.0, avg_current: 0.535, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Wed
-    { date: '2026-04-02', total_energy_kwh:  2.68, avg_power_real:  111.7, max_power_real:  391, min_power_real: 14.5, avg_voltage: 220.8, avg_current: 0.581, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Thu
-    { date: '2026-04-03', total_energy_kwh:  2.57, avg_power_real:  107.1, max_power_real:  375, min_power_real: 13.9, avg_voltage: 221.2, avg_current: 0.557, avg_power_factor: 0.87, peak_hour: 20, reading_count: 1440 }, // Fri
-    { date: '2026-04-04', total_energy_kwh:  2.53, avg_power_real:  105.4, max_power_real:  369, min_power_real: 13.7, avg_voltage: 221.5, avg_current: 0.541, avg_power_factor: 0.88, peak_hour: 14, reading_count: 1440 }, // Sat
-    { date: '2026-04-05', total_energy_kwh:  2.72, avg_power_real:  113.3, max_power_real:  397, min_power_real: 14.7, avg_voltage: 222.0, avg_current: 0.580, avg_power_factor: 0.88, peak_hour: 13, reading_count: 1440 }, // Sun
-    { date: '2026-04-06', total_energy_kwh:  2.58, avg_power_real:  107.5, max_power_real:  376, min_power_real: 14.0, avg_voltage: 221.0, avg_current: 0.559, avg_power_factor: 0.87, peak_hour: 20, reading_count: 1440 }, // Mon
-    { date: '2026-04-07', total_energy_kwh:  2.52, avg_power_real:  105.0, max_power_real:  368, min_power_real: 13.7, avg_voltage: 221.0, avg_current: 0.546, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Tue
-    { date: '2026-04-08', total_energy_kwh:  2.57, avg_power_real:  107.1, max_power_real:  375, min_power_real: 13.9, avg_voltage: 221.2, avg_current: 0.557, avg_power_factor: 0.87, peak_hour: 20, reading_count: 1440 }, // Wed
-    { date: '2026-04-09', total_energy_kwh:  2.67, avg_power_real:  111.3, max_power_real:  389, min_power_real: 14.5, avg_voltage: 220.8, avg_current: 0.579, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Thu
+    { date: '2026-03-11', total_energy_kwh:  2.30, avg_power_real:   95.8, max_power_real:  335, min_power_real: 12.5, avg_voltage: 221.0, avg_current: 0.498, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Wed est
+    { date: '2026-03-12', total_energy_kwh:  2.30, avg_power_real:   95.8, max_power_real:  335, min_power_real: 12.5, avg_voltage: 220.8, avg_current: 0.499, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Thu
+    { date: '2026-03-13', total_energy_kwh:  2.45, avg_power_real:  102.1, max_power_real:  357, min_power_real: 13.3, avg_voltage: 221.2, avg_current: 0.530, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Fri
+    { date: '2026-03-14', total_energy_kwh:  2.65, avg_power_real:  110.4, max_power_real:  386, min_power_real: 14.4, avg_voltage: 221.5, avg_current: 0.566, avg_power_factor: 0.88, peak_hour: 14, reading_count: 1440 }, // Sat
+    { date: '2026-03-15', total_energy_kwh:  2.30, avg_power_real:   95.8, max_power_real:  335, min_power_real: 12.5, avg_voltage: 222.0, avg_current: 0.490, avg_power_factor: 0.88, peak_hour: 13, reading_count: 1440 }, // Sun
+    { date: '2026-03-16', total_energy_kwh:  2.60, avg_power_real:  108.3, max_power_real:  379, min_power_real: 14.1, avg_voltage: 220.5, avg_current: 0.565, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Mon
+    { date: '2026-03-17', total_energy_kwh:  2.30, avg_power_real:   95.8, max_power_real:  335, min_power_real: 12.5, avg_voltage: 221.0, avg_current: 0.498, avg_power_factor: 0.87, peak_hour: 20, reading_count: 1440 }, // Tue
+    { date: '2026-03-18', total_energy_kwh:  2.60, avg_power_real:  108.3, max_power_real:  379, min_power_real: 14.1, avg_voltage: 221.0, avg_current: 0.563, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Wed
+    { date: '2026-03-19', total_energy_kwh:  2.55, avg_power_real:  106.3, max_power_real:  372, min_power_real: 13.8, avg_voltage: 220.8, avg_current: 0.553, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Thu
+    { date: '2026-03-20', total_energy_kwh:  2.40, avg_power_real:  100.0, max_power_real:  350, min_power_real: 13.0, avg_voltage: 221.2, avg_current: 0.520, avg_power_factor: 0.87, peak_hour: 20, reading_count: 1440 }, // Fri
+    { date: '2026-03-21', total_energy_kwh:  2.45, avg_power_real:  102.1, max_power_real:  357, min_power_real: 13.3, avg_voltage: 221.5, avg_current: 0.524, avg_power_factor: 0.88, peak_hour: 14, reading_count: 1440 }, // Sat
+    { date: '2026-03-22', total_energy_kwh:  2.70, avg_power_real:  112.5, max_power_real:  394, min_power_real: 14.6, avg_voltage: 222.0, avg_current: 0.576, avg_power_factor: 0.88, peak_hour: 13, reading_count: 1440 }, // Sun
+    { date: '2026-03-23', total_energy_kwh:  2.50, avg_power_real:  104.2, max_power_real:  365, min_power_real: 13.5, avg_voltage: 220.5, avg_current: 0.543, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Mon
+    { date: '2026-03-24', total_energy_kwh:  2.60, avg_power_real:  108.3, max_power_real:  379, min_power_real: 14.1, avg_voltage: 221.0, avg_current: 0.563, avg_power_factor: 0.87, peak_hour: 20, reading_count: 1440 }, // Tue
+    { date: '2026-03-25', total_energy_kwh:  2.35, avg_power_real:   97.9, max_power_real:  343, min_power_real: 12.7, avg_voltage: 221.0, avg_current: 0.509, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Wed
+    { date: '2026-03-26', total_energy_kwh:  2.55, avg_power_real:  106.3, max_power_real:  372, min_power_real: 13.8, avg_voltage: 220.8, avg_current: 0.553, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Thu
+    { date: '2026-03-27', total_energy_kwh:  2.70, avg_power_real:  112.5, max_power_real:  394, min_power_real: 14.6, avg_voltage: 221.2, avg_current: 0.584, avg_power_factor: 0.87, peak_hour: 20, reading_count: 1440 }, // Fri
+    { date: '2026-03-28', total_energy_kwh:  2.40, avg_power_real:  100.0, max_power_real:  350, min_power_real: 13.0, avg_voltage: 221.5, avg_current: 0.513, avg_power_factor: 0.88, peak_hour: 14, reading_count: 1440 }, // Sat
+    { date: '2026-03-29', total_energy_kwh:  2.55, avg_power_real:  106.3, max_power_real:  372, min_power_real: 13.8, avg_voltage: 222.0, avg_current: 0.544, avg_power_factor: 0.88, peak_hour: 13, reading_count: 1440 }, // Sun
+    { date: '2026-03-30', total_energy_kwh:  2.55, avg_power_real:  106.3, max_power_real:  372, min_power_real: 13.8, avg_voltage: 220.5, avg_current: 0.554, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Mon
+    { date: '2026-03-31', total_energy_kwh:  2.60, avg_power_real:  108.3, max_power_real:  379, min_power_real: 14.1, avg_voltage: 221.0, avg_current: 0.563, avg_power_factor: 0.87, peak_hour: 20, reading_count: 1440 }, // Tue
+    { date: '2026-04-01', total_energy_kwh:  2.45, avg_power_real:  102.1, max_power_real:  357, min_power_real: 13.3, avg_voltage: 221.0, avg_current: 0.531, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Wed
+    { date: '2026-04-02', total_energy_kwh:  2.65, avg_power_real:  110.4, max_power_real:  386, min_power_real: 14.4, avg_voltage: 220.8, avg_current: 0.574, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Thu
+    { date: '2026-04-03', total_energy_kwh:  2.60, avg_power_real:  108.3, max_power_real:  379, min_power_real: 14.1, avg_voltage: 221.2, avg_current: 0.563, avg_power_factor: 0.87, peak_hour: 20, reading_count: 1440 }, // Fri
+    { date: '2026-04-04', total_energy_kwh:  2.50, avg_power_real:  104.2, max_power_real:  365, min_power_real: 13.5, avg_voltage: 221.5, avg_current: 0.535, avg_power_factor: 0.88, peak_hour: 14, reading_count: 1440 }, // Sat
+    { date: '2026-04-05', total_energy_kwh:  2.75, avg_power_real:  114.6, max_power_real:  401, min_power_real: 14.9, avg_voltage: 222.0, avg_current: 0.586, avg_power_factor: 0.88, peak_hour: 13, reading_count: 1440 }, // Sun
+    { date: '2026-04-06', total_energy_kwh:  2.55, avg_power_real:  106.3, max_power_real:  372, min_power_real: 13.8, avg_voltage: 221.0, avg_current: 0.553, avg_power_factor: 0.87, peak_hour: 20, reading_count: 1440 }, // Mon
+    { date: '2026-04-07', total_energy_kwh:  2.55, avg_power_real:  106.3, max_power_real:  372, min_power_real: 13.8, avg_voltage: 221.0, avg_current: 0.553, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Tue
+    { date: '2026-04-08', total_energy_kwh:  2.55, avg_power_real:  106.3, max_power_real:  372, min_power_real: 13.8, avg_voltage: 221.2, avg_current: 0.553, avg_power_factor: 0.87, peak_hour: 20, reading_count: 1440 }, // Wed
+    { date: '2026-04-09', total_energy_kwh:  2.70, avg_power_real:  112.5, max_power_real:  394, min_power_real: 14.6, avg_voltage: 220.8, avg_current: 0.585, avg_power_factor: 0.87, peak_hour: 21, reading_count: 1440 }, // Thu
   ],
 
   // ── Jassy (PAD-4, bluewatt-004) ───────────────────────────────────────────

@@ -18,7 +18,8 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
   List<AnomalyEvent> _events = [];
   bool _loading = true;
   String? _error;
-  int _newCount = 0; // incremented by SSE while screen is open
+  int _newCount = 0;
+  int? _loadedForDeviceId;
   StreamSubscription<SseEvent>? _sseSub;
 
   @override
@@ -27,8 +28,21 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _init());
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final deviceId = Provider.of<HomeProvider>(context).pad?.deviceId;
+    if (deviceId != null && deviceId != _loadedForDeviceId && !_loading) {
+      _loadedForDeviceId = deviceId;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _load();
+      });
+    }
+  }
+
   Future<void> _init() async {
     await _load();
+    if (!mounted) return;
     final home = context.read<HomeProvider>();
     _sseSub = home.sseStream.listen(_onSse);
   }
@@ -67,6 +81,7 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
         setState(() { _loading = false; _events = []; });
         return;
       }
+      _loadedForDeviceId = deviceId;
       final events = await ApiService.getMyAnomalies(deviceId);
       setState(() { _events = events; _newCount = 0; });
     } catch (e) {

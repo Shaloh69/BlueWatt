@@ -21,6 +21,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
   String? _error;
   double _todayEnergy = 0;
   String _month = DateFormat('yyyy-MM').format(DateTime.now());
+  int? _loadedForDeviceId; // tracks which device we last loaded for
 
   StreamSubscription<SseEvent>? _sseSub;
 
@@ -30,8 +31,24 @@ class _ReportsScreenState extends State<ReportsScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _init());
   }
 
+  /// Re-runs whenever HomeProvider notifies. If the pad's deviceId becomes
+  /// available after the initial load (race with MainShell._init), trigger a
+  /// fresh data fetch so the screen doesn't stay permanently empty.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final deviceId = Provider.of<HomeProvider>(context).pad?.deviceId;
+    if (deviceId != null && deviceId != _loadedForDeviceId && !_loading) {
+      _loadedForDeviceId = deviceId;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _load();
+      });
+    }
+  }
+
   Future<void> _init() async {
     await _load();
+    if (!mounted) return;
     final home = context.read<HomeProvider>();
     _sseSub = home.sseStream.listen(_onSse);
   }
@@ -71,6 +88,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
         setState(() { _loading = false; _daily = []; });
         return;
       }
+      _loadedForDeviceId = deviceId;
       final results = await Future.wait([
         ApiService.getDailyReport(deviceId, month: _month),
         ApiService.getTodayEnergy(deviceId),
