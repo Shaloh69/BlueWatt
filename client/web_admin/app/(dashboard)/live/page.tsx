@@ -133,15 +133,7 @@ export default function LivePage() {
     fetchTodayEnergy(selectedDevice);
     const energyTimer = setInterval(() => fetchTodayEnergy(selectedDevice), 30_000);
 
-    // REST poll every 5 s — guarantees data refreshes even when SSE is down
-    const pollTimer = setInterval(() => {
-      powerApi.latest(selectedDevice).then(r => {
-        const d = r.data.data?.reading;
-        if (d) setReading(d);
-      }).catch(() => {});
-    }, 5_000);
-
-    return () => { clearInterval(energyTimer); clearInterval(pollTimer); };
+    return () => { clearInterval(energyTimer); };
   }, [selectedDevice, fetchTodayEnergy]);
 
   useEffect(() => () => { esRef.current?.close(); }, []);
