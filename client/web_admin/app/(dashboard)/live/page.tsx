@@ -73,10 +73,10 @@ export default function LivePage() {
     es.addEventListener("power_reading", (e) => {
       try {
         const d = JSON.parse(e.data);
+        setConnected(true); // flip Live on any event, not just the selected device's
         const current = selectedDeviceRef.current;
         if (d.device_id != null && current != null && Number(d.device_id) !== current) return;
         setReading(d);
-        setConnected(true);
         setReadingLog(prev => [d, ...prev].slice(0, MAX_LOG));
 
         if (d.energy_kwh != null && sessionStartEnergyRef.current === null) {
