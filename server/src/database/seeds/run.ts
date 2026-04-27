@@ -130,16 +130,16 @@ const DAILY_DATA: Record<string, DayData[]> = {
   'bluewatt-001': [
     {
       date: '2026-03-11',
-      total_energy_kwh: 6.22,
-      avg_power_real: 259.2,
-      max_power_real: 907,
-      min_power_real: 33.7,
+      total_energy_kwh: 0.0,
+      avg_power_real: 0,
+      max_power_real: 0,
+      min_power_real: 0,
       avg_voltage: 222.0,
-      avg_current: 1.342,
+      avg_current: 0,
       avg_power_factor: 0.87,
-      peak_hour: 21,
-      reading_count: 1440,
-    }, // Wed est
+      peak_hour: 0,
+      reading_count: 0,
+    }, // starting reading — no prior day to diff from
     {
       date: '2026-03-12',
       total_energy_kwh: 6.22,
@@ -700,16 +700,16 @@ const DAILY_DATA: Record<string, DayData[]> = {
   'bluewatt-002': [
     {
       date: '2026-03-11',
-      total_energy_kwh: 3.52,
-      avg_power_real: 146.7,
-      max_power_real: 513,
-      min_power_real: 19.1,
+      total_energy_kwh: 0.0,
+      avg_power_real: 0,
+      max_power_real: 0,
+      min_power_real: 0,
       avg_voltage: 220.5,
-      avg_current: 0.765,
+      avg_current: 0,
       avg_power_factor: 0.87,
-      peak_hour: 21,
-      reading_count: 1440,
-    }, // Wed
+      peak_hour: 0,
+      reading_count: 0,
+    }, // starting reading — no prior day to diff from
     {
       date: '2026-03-12',
       total_energy_kwh: 3.81,
@@ -1270,16 +1270,16 @@ const DAILY_DATA: Record<string, DayData[]> = {
   'bluewatt-003': [
     {
       date: '2026-03-11',
-      total_energy_kwh: 2.3,
-      avg_power_real: 95.8,
-      max_power_real: 335,
-      min_power_real: 12.5,
+      total_energy_kwh: 0.0,
+      avg_power_real: 0,
+      max_power_real: 0,
+      min_power_real: 0,
       avg_voltage: 221.0,
-      avg_current: 0.498,
+      avg_current: 0,
       avg_power_factor: 0.87,
-      peak_hour: 21,
-      reading_count: 1440,
-    }, // Wed est
+      peak_hour: 0,
+      reading_count: 0,
+    }, // starting reading — no prior day to diff from
     {
       date: '2026-03-12',
       total_energy_kwh: 2.3,
@@ -1630,12 +1630,12 @@ const DAILY_DATA: Record<string, DayData[]> = {
     }, // Thu
     {
       date: '2026-04-10',
-      total_energy_kwh: 3.1,
-      avg_power_real: 129.2,
-      max_power_real: 452,
-      min_power_real: 16.8,
+      total_energy_kwh: 2.6,
+      avg_power_real: 108.3,
+      max_power_real: 379,
+      min_power_real: 14.0,
       avg_voltage: 221.0,
-      avg_current: 0.672,
+      avg_current: 0.563,
       avg_power_factor: 0.87,
       peak_hour: 20,
       reading_count: 1440,
@@ -1840,16 +1840,16 @@ const DAILY_DATA: Record<string, DayData[]> = {
   'bluewatt-004': [
     {
       date: '2026-03-11',
-      total_energy_kwh: 11.9,
-      avg_power_real: 495.8,
-      max_power_real: 1735,
-      min_power_real: 64.5,
+      total_energy_kwh: 0.0,
+      avg_power_real: 0,
+      max_power_real: 0,
+      min_power_real: 0,
       avg_voltage: 222.0,
-      avg_current: 2.538,
+      avg_current: 0,
       avg_power_factor: 0.88,
-      peak_hour: 21,
-      reading_count: 1440,
-    }, // Wed est
+      peak_hour: 0,
+      reading_count: 0,
+    }, // starting reading — no prior day to diff from
     {
       date: '2026-03-12',
       total_energy_kwh: 11.9,
@@ -2200,12 +2200,12 @@ const DAILY_DATA: Record<string, DayData[]> = {
     }, // Thu
     {
       date: '2026-04-10',
-      total_energy_kwh: 8.5,
-      avg_power_real: 354.2,
-      max_power_real: 1240,
-      min_power_real: 46.0,
+      total_energy_kwh: 11.25,
+      avg_power_real: 468.8,
+      max_power_real: 1641,
+      min_power_real: 60.8,
       avg_voltage: 221.8,
-      avg_current: 1.814,
+      avg_current: 2.400,
       avg_power_factor: 0.88,
       peak_hour: 21,
       reading_count: 1440,
