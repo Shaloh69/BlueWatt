@@ -248,15 +248,6 @@ export default function LivePage() {
             {metricCard("Power Factor", Number(reading.power_factor).toFixed(2), "")}
             {metricCard("Frequency", Number(reading.frequency ?? 0).toFixed(1), "Hz")}
           </div>
-          {reading.energy_kwh !== undefined && (
-            <Card className="border border-default-200">
-              <CardBody className="text-center py-4">
-                <p className="text-xs text-default-400 uppercase tracking-wide mb-1">Meter Reading</p>
-                <p className="text-4xl font-bold text-primary">{Number(reading.energy_kwh).toFixed(3)}</p>
-                <p className="text-xs text-default-400 mt-1">kWh — cumulative since device start</p>
-              </CardBody>
-            </Card>
-          )}
           <p className="text-xs text-default-400 text-center">
             Last updated: {new Date(reading.timestamp).toLocaleTimeString()}
           </p>
