@@ -5,6 +5,7 @@ import { PadModel } from '../models/pad.model';
 import { AppError } from '../utils/AppError';
 import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from '../utils/logger';
 
 export const streamEvents = async (req: Request, res: Response): Promise<void> => {
   if (!req.user) {
@@ -30,11 +31,13 @@ export const streamEvents = async (req: Request, res: Response): Promise<void> =
   }
 
   sseService.addClient(clientId, req.user.id, res, deviceIds);
+  logger.info(`[SSE] Connected: "${req.user.email}" (id=${req.user.id}, role=${req.user.role}) client=${clientId.slice(0, 8)} watching devices [${deviceIds.join(', ')}] from ${req.ip}`);
 
   res.write(`event: connected\n`);
   res.write(`data: ${JSON.stringify({ clientId, message: 'Connected to real-time updates' })}\n\n`);
 
   req.on('close', () => {
     sseService.removeClient(clientId);
+    logger.info(`[SSE] Disconnected: "${req.user!.email}" (id=${req.user!.id}) client=${clientId.slice(0, 8)}`);
   });
 };

@@ -8,6 +8,7 @@ import { sendSuccess } from '../utils/apiResponse';
 import { asyncHandler } from '../utils/asyncHandler';
 import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
 import { RegisterRequest, LoginRequest } from '../types/api';
+import { logger } from '../utils/logger';
 
 // ── In-memory OTP store (15-minute expiry) ───────────────────────────────────
 interface OtpEntry { otp: string; expiresAt: number; }
@@ -28,6 +29,7 @@ export const register = asyncHandler(async (req: Request, res: Response, _next: 
   const passwordHash = await HashService.hashPassword(password);
 
   const user = await UserModel.create(email, passwordHash, full_name);
+  logger.info(`[Auth] Registered: "${email}" (id=${user.id}) from ${req.ip}`);
 
   const accessToken = AuthService.generateAccessToken(user);
   const refreshToken = AuthService.generateRefreshToken(user);
@@ -63,6 +65,8 @@ export const login = asyncHandler(async (req: Request, res: Response, _next: Nex
   if (!isPasswordValid) {
     throw new AppError('Invalid credentials', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.INVALID_CREDENTIALS);
   }
+
+  logger.info(`[Auth] Login:  "${user.email}" (id=${user.id}, role=${user.role}) from ${req.ip}`);
 
   const accessToken = AuthService.generateAccessToken(user);
   const refreshToken = AuthService.generateRefreshToken(user);

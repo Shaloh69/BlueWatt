@@ -70,13 +70,17 @@ export const authenticateApiKey = async (
       throw new AppError('No API key provided', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
     }
 
+    // Relay-command polls are very frequent (every ~5 s per device) — log at debug only
+    const isRelayPoll = req.method === 'GET' && req.path.includes('relay-command');
+    const logFn = isRelayPoll ? logger.debug.bind(logger) : logger.info.bind(logger);
+
     const masked = apiKey.length > 12
       ? `${apiKey.slice(0, 6)}...${apiKey.slice(-4)}`
       : apiKey;
-    logger.info(`[ESP] Key received: "${masked}"  len=${apiKey.length}  expected=67  ${req.method} ${req.path}`);
+    logFn(`[ESP] Key received: "${masked}"  ${req.method} ${req.path}`);
 
     if (!ApiKeyService.isValidFormat(apiKey)) {
-      logger.warn(`[ESP] Format check FAILED — len=${apiKey.length} prefix="${apiKey.slice(0, 3)}" key_part_len=${apiKey.length - 3}`);
+      logger.warn(`[ESP] Format check FAILED — len=${apiKey.length} prefix="${apiKey.slice(0, 3)}"`);
       throw new AppError('Invalid API key format', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
     }
 
@@ -84,9 +88,6 @@ export const authenticateApiKey = async (
 
     if (deviceKeys.length === 0) {
       logger.warn(`[Auth] No active device keys in DB — register a device first`);
-    } else {
-      const summary = deviceKeys.map(k => `key#${k.id}→device#${k.device_id}`).join(', ');
-      logger.info(`[Auth] ${deviceKeys.length} active key(s) found: [${summary}]`);
     }
 
     let matchedDeviceId: number | null = null;
@@ -139,7 +140,7 @@ export const authenticateApiKey = async (
       throw new AppError('Device is not active', HTTP_STATUS.FORBIDDEN, ERROR_CODES.DEVICE_INACTIVE);
     }
 
-    logger.info(`[ESP] Device "${device.device_id}" connected (ID: ${device.id}, IP: ${req.ip}) → ${req.method} ${req.path}`);
+    logFn(`[ESP] Device "${device.device_id}" connected (ID: ${device.id}, IP: ${req.ip}) → ${req.method} ${req.path}`);
 
     req.device = device;
     req.deviceId = device.id;
