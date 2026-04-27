@@ -34,6 +34,8 @@ export default function LivePage() {
   const [todayKwh, setTodayKwh] = useState<number | null>(null);
   const sessionStartEnergyRef = useRef<number | null>(null);
   const esRef = useRef<EventSource | null>(null);
+  // Ref always holds the current selectedDevice — avoids stale closure in SSE handler
+  const selectedDeviceRef = useRef<number | null>(null);
 
   useEffect(() => {
     devicesApi.list().then(r => {
@@ -43,31 +45,36 @@ export default function LivePage() {
     }).catch(() => {});
   }, []);
 
-  /** Fetch today's energy from the server and update state */
+  // Keep ref in sync with state
+  useEffect(() => {
+    selectedDeviceRef.current = selectedDevice;
+  }, [selectedDevice]);
+
   const fetchTodayEnergy = useCallback((deviceId: number) => {
     powerApi.todayEnergy(deviceId)
       .then(r => setTodayKwh(Number(r.data.data?.energy_kwh_today ?? 0)))
       .catch(() => {});
   }, []);
 
-  const connectSSE = useCallback((deviceId: number) => {
+  // Opens a single SSE connection — does NOT take deviceId.
+  // Filtering is done via selectedDeviceRef so it always reflects current selection
+  // without needing to tear down and re-open the connection on every device switch.
+  const connectSSE = useCallback(() => {
     if (esRef.current) { esRef.current.close(); esRef.current = null; }
     setConnected(false);
-    sessionStartEnergyRef.current = null;
 
     const token = typeof window !== "undefined" ? localStorage.getItem("bw_token") : null;
     const url = `${BASE_URL}/sse/events${token ? `?token=${token}` : ""}`;
     const es = new EventSource(url);
     esRef.current = es;
 
-    // Flip to "Live" as soon as the SSE handshake completes
     es.addEventListener("connected", () => setConnected(true));
 
     es.addEventListener("power_reading", (e) => {
       try {
         const d = JSON.parse(e.data);
-        // Filter: only update display for the currently selected device
-        if (d.device_id != null && Number(d.device_id) !== deviceId) return;
+        const current = selectedDeviceRef.current;
+        if (d.device_id != null && current != null && Number(d.device_id) !== current) return;
         setReading(d);
         setConnected(true);
         setReadingLog(prev => [d, ...prev].slice(0, MAX_LOG));
@@ -86,27 +93,30 @@ export default function LivePage() {
     return () => { es.close(); };
   }, []);
 
+  // Connect SSE once on mount — not on every device switch
+  useEffect(() => {
+    const cleanup = connectSSE();
+    return cleanup;
+  }, [connectSSE]);
+
+  // On device switch: reset display state + fetch latest snapshot + energy timer
   useEffect(() => {
     if (!selectedDevice) return;
 
-    // Reset state when switching devices
     setTodayKwh(null);
     setReadingLog([]);
+    setReading(null);
     sessionStartEnergyRef.current = null;
 
-    // Load latest reading immediately
     powerApi.latest(selectedDevice).then(r => {
       const d = r.data.data?.reading;
       if (d) setReading(d);
     }).catch(() => {});
 
-    // Fetch today's energy once now, then every 30 s — not on every reading
     fetchTodayEnergy(selectedDevice);
     const energyTimer = setInterval(() => fetchTodayEnergy(selectedDevice), 30_000);
-
-    const cleanup = connectSSE(selectedDevice);
-    return () => { cleanup(); clearInterval(energyTimer); };
-  }, [selectedDevice, connectSSE, fetchTodayEnergy]);
+    return () => clearInterval(energyTimer);
+  }, [selectedDevice, fetchTodayEnergy]);
 
   useEffect(() => () => { esRef.current?.close(); }, []);
 
@@ -146,7 +156,10 @@ export default function LivePage() {
           </Chip>
         </div>
         <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />}
-          onPress={() => { if (selectedDevice) { connectSSE(selectedDevice); fetchTodayEnergy(selectedDevice); } }}>
+          onPress={() => {
+            connectSSE();
+            if (selectedDevice) fetchTodayEnergy(selectedDevice);
+          }}>
           Reconnect
         </Button>
       </div>
