@@ -34,6 +34,7 @@ export default function LivePage() {
   const [todayKwh, setTodayKwh] = useState<number | null>(null);
   const sessionStartEnergyRef = useRef<number | null>(null);
   const esRef = useRef<EventSource | null>(null);
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Ref always holds the current selectedDevice — avoids stale closure in SSE handler
   const selectedDeviceRef = useRef<number | null>(null);
 
@@ -93,9 +94,20 @@ export default function LivePage() {
     es.addEventListener("relay_state", () => {
       devicesApi.list().then(r => setDevices(r.data.data?.devices ?? [])).catch(() => {});
     });
-    es.onerror = () => setConnected(false);
+    es.onerror = () => {
+      setConnected(false);
+      // Built-in EventSource retry is unreliable across Render cold-starts.
+      // Explicitly recreate the connection after 5 s if this ES is still current.
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      reconnectTimerRef.current = setTimeout(() => {
+        if (esRef.current === es) connectSSE();
+      }, 5000);
+    };
 
-    return () => { es.close(); };
+    return () => {
+      es.close();
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+    };
   }, []);
 
   // Connect SSE once on mount — not on every device switch
