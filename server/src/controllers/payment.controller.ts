@@ -11,12 +11,12 @@ import { sseService } from '../services/sse.service';
 
 /**
  * POST /payments/submit
- * Tenant submits a payment receipt image + reference number.
+ * Tenant submits 1–3 receipt images + reference number.
  * Multipart form fields:
  *   - billing_period_id (number)
  *   - reference_number  (string, required)
  *   - payment_method    (string: 'gcash' | 'maya' | 'bank_transfer' | other)
- *   - receipt           (image file, required)
+ *   - receipts[]        (1–3 image files, required)
  */
 export const submitPayment = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
@@ -33,9 +33,10 @@ export const submitPayment = asyncHandler(
       );
     }
 
-    if (!req.file) {
+    const files = req.files as Express.Multer.File[] | undefined;
+    if (!files || files.length === 0) {
       throw new AppError(
-        'Receipt image is required',
+        'At least one receipt image is required',
         HTTP_STATUS.BAD_REQUEST,
         ERROR_CODES.VALIDATION_ERROR
       );
@@ -65,13 +66,19 @@ export const submitPayment = asyncHandler(
       );
     }
 
-    // Upload receipt image to Supabase
-    const receiptUrl = await supabaseService.uploadReceiptImage(
-      req.file.buffer,
-      req.file.originalname,
-      req.file.mimetype,
-      req.user.id
-    );
+    // Upload all receipt images to Supabase and collect URLs
+    const receiptUrls: string[] = [];
+    for (const file of files) {
+      const url = await supabaseService.uploadReceiptImage(
+        file.buffer,
+        file.originalname,
+        file.mimetype,
+        req.user.id
+      );
+      receiptUrls.push(url);
+    }
+    // Store as JSON array so the existing TEXT column holds multiple URLs
+    const receiptUrl = JSON.stringify(receiptUrls);
 
     const payment = await PaymentModel.submitReceipt(
       bill.id,

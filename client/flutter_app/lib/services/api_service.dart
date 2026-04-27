@@ -300,20 +300,18 @@ class ApiService {
     required int billingPeriodId,
     required String paymentMethod,
     required String referenceNumber,
-    required File receiptImage,
+    required List<File> receiptImages,
   }) async {
+    assert(receiptImages.isNotEmpty && receiptImages.length <= 3);
     final token = await StorageService.getToken();
-    final request = http.MultipartRequest(
-      'POST',
-      _uri('/payments/submit'),
-    );
+    final request = http.MultipartRequest('POST', _uri('/payments/submit'));
     if (token != null) request.headers['Authorization'] = 'Bearer $token';
     request.fields['billing_period_id'] = billingPeriodId.toString();
     request.fields['payment_method'] = paymentMethod;
     request.fields['reference_number'] = referenceNumber;
-    request.files.add(
-      await http.MultipartFile.fromPath('receipt', receiptImage.path),
-    );
+    for (final image in receiptImages) {
+      request.files.add(await http.MultipartFile.fromPath('receipts', image.path));
+    }
     final streamed = await request.send().timeout(
       _timeout,
       onTimeout: () => throw ApiException('Upload timed out. Please try again.'),

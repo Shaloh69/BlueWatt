@@ -89,7 +89,7 @@ class BillingProvider extends ChangeNotifier {
     required int billingPeriodId,
     required String paymentMethod,
     required String referenceNumber,
-    required File receiptImage,
+    required List<File> receiptImages,
   }) async {
     _submitting = true;
     notifyListeners();
@@ -98,7 +98,7 @@ class BillingProvider extends ChangeNotifier {
         billingPeriodId: billingPeriodId,
         paymentMethod: paymentMethod,
         referenceNumber: referenceNumber,
-        receiptImage: receiptImage,
+        receiptImages: receiptImages,
       );
       await load();
     } finally {

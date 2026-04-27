@@ -18,8 +18,8 @@ import {
 
 const router = Router();
 
-// Tenant submits receipt image + reference number
-router.post('/submit', authenticateJWT, upload.single('receipt'), submitPayment);
+// Tenant submits 1–3 receipt images + reference number
+router.post('/submit', authenticateJWT, upload.array('receipts', 3), submitPayment);
 
 // Admin: list all receipts pending verification
 router.get('/pending-verification', authenticateJWT, requireAdmin, getPendingVerification);
