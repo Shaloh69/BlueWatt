@@ -9,11 +9,8 @@ import { logger } from '../utils/logger';
 
 export const streamEvents = async (req: Request, res: Response): Promise<void> => {
   if (!req.user) {
-    throw new AppError(
-      'User not authenticated',
-      HTTP_STATUS.UNAUTHORIZED,
-      ERROR_CODES.UNAUTHORIZED
-    );
+    res.status(401).json({ message: 'Unauthenticated' });
+    return;
   }
 
   res.setHeader('Content-Type', 'text/event-stream');
@@ -23,24 +20,32 @@ export const streamEvents = async (req: Request, res: Response): Promise<void> =
 
   const clientId = uuidv4();
 
-  // Admin: devices they own. Tenant: device linked to their pad.
-  const ownedDevices = await DeviceModel.findByUserId(req.user.id);
-  const deviceIds = ownedDevices.map((d) => d.id);
-
-  if (req.user.role !== 'admin') {
-    const pad = await PadModel.findByTenantId(req.user.id);
-    if (pad?.device_id && !deviceIds.includes(pad.device_id)) {
-      deviceIds.push(pad.device_id);
+  // Admin: receives events for ALL devices (no filter).
+  // Tenant: restricted to their pad's device.
+  let deviceIds: number[] | undefined = undefined;
+  try {
+    if (req.user.role !== 'admin') {
+      const ownedDevices = await DeviceModel.findByUserId(req.user.id);
+      deviceIds = ownedDevices.map((d) => d.id);
+      const pad = await PadModel.findByTenantId(req.user.id);
+      if (pad?.device_id && !deviceIds.includes(pad.device_id)) {
+        deviceIds.push(pad.device_id);
+      }
     }
+  } catch (err) {
+    logger.error('[SSE] Setup error during device lookup:', err);
+    res.status(500).end();
+    return;
   }
 
   sseService.addClient(clientId, req.user.id, res, deviceIds);
   logger.info(
-    `[SSE] Connected: "${req.user.email}" (id=${req.user.id}, role=${req.user.role}) client=${clientId.slice(0, 8)} watching devices [${deviceIds.join(', ')}] from ${req.ip}`
+    `[SSE] Connected: "${req.user.email}" (id=${req.user.id}, role=${req.user.role}) client=${clientId.slice(0, 8)} watching devices [${deviceIds ? deviceIds.join(', ') : 'ALL'}] from ${req.ip}`
   );
 
   res.write(`event: connected\n`);
   res.write(`data: ${JSON.stringify({ clientId, message: 'Connected to real-time updates' })}\n\n`);
+  (res as any).flush?.();
 
   req.on('close', () => {
     sseService.removeClient(clientId);

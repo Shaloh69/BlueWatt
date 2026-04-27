@@ -26,7 +26,13 @@ app.use(
   })
 );
 
-app.use(compression());
+app.use(compression({
+  // SSE streams must not be compressed — buffering breaks event delivery
+  filter: (req, res) => {
+    if (req.path.includes('/sse')) return false;
+    return compression.filter(req, res);
+  },
+}));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));

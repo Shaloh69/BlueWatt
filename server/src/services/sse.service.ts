@@ -25,6 +25,7 @@ class SSEService {
       this.clients.forEach((client) => {
         try {
           client.res.write('event: ping\ndata: {}\n\n');
+          (client.res as any).flush?.();
         } catch {
           this.removeClient(client.id);
         }
@@ -42,13 +43,18 @@ class SSEService {
     logger.info(`SSE client disconnected: ${clientId}`);
   }
 
+  private writeEvent(client: SSEClient, event: string, data: any): void {
+    client.res.write(`event: ${event}\n`);
+    client.res.write(`data: ${JSON.stringify(data)}\n\n`);
+    (client.res as any).flush?.();
+  }
+
   sendToUser(userId: number, event: string, data: any): void {
     let sentCount = 0;
     this.clients.forEach((client) => {
       if (client.userId === userId) {
         try {
-          client.res.write(`event: ${event}\n`);
-          client.res.write(`data: ${JSON.stringify(data)}\n\n`);
+          this.writeEvent(client, event, data);
           sentCount++;
         } catch (error) {
           logger.error(`Failed to send SSE to client ${client.id}:`, error);
@@ -64,10 +70,9 @@ class SSEService {
   sendToDevice(deviceId: number, event: string, data: any): void {
     let sentCount = 0;
     this.clients.forEach((client) => {
-      if (client.deviceIds && client.deviceIds.includes(deviceId)) {
+      if (!client.deviceIds || client.deviceIds.includes(deviceId)) {
         try {
-          client.res.write(`event: ${event}\n`);
-          client.res.write(`data: ${JSON.stringify(data)}\n\n`);
+          this.writeEvent(client, event, data);
           sentCount++;
         } catch (error) {
           logger.error(`Failed to send SSE to client ${client.id}:`, error);
@@ -84,8 +89,7 @@ class SSEService {
     let sentCount = 0;
     this.clients.forEach((client) => {
       try {
-        client.res.write(`event: ${event}\n`);
-        client.res.write(`data: ${JSON.stringify(data)}\n\n`);
+        this.writeEvent(client, event, data);
         sentCount++;
       } catch (error) {
         logger.error(`Failed to send SSE to client ${client.id}:`, error);

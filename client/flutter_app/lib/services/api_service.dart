@@ -314,14 +314,11 @@ class ApiService {
     request.files.add(
       await http.MultipartFile.fromPath('receipt', receiptImage.path),
     );
-    final streamed = await request.send();
+    final streamed = await request.send().timeout(
+      _timeout,
+      onTimeout: () => throw ApiException('Upload timed out. Please try again.'),
+    );
     final res = await http.Response.fromStream(streamed);
-    if (res.statusCode >= 400) {
-      final decoded = jsonDecode(res.body) as Map<String, dynamic>;
-      throw ApiException(
-        decoded['message'] as String? ?? 'Payment submission failed',
-        res.statusCode,
-      );
-    }
+    if (res.statusCode >= 400) _body(res);
   }
 }

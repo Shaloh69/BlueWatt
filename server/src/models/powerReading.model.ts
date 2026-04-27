@@ -120,6 +120,13 @@ export class PowerReadingModel {
    * PZEM energy register is near-zero (fresh power-on) or not reported.
    */
   static async energyToday(deviceId: number): Promise<number> {
+    // Midnight in Philippine Standard Time (UTC+8)
+    const now = new Date();
+    const phtNow = new Date(now.getTime() + 8 * 3600 * 1000);
+    const midnightPHT = new Date(Date.UTC(
+      phtNow.getUTCFullYear(), phtNow.getUTCMonth(), phtNow.getUTCDate()
+    ) - 8 * 3600 * 1000);
+
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT
          COALESCE(MAX(energy_kwh) - MIN(energy_kwh), 0)           AS kwh_delta,
@@ -127,8 +134,8 @@ export class PowerReadingModel {
          COALESCE(UNIX_TIMESTAMP(MAX(timestamp))
                 - UNIX_TIMESTAMP(MIN(timestamp)), 0)               AS span_seconds
        FROM power_readings
-       WHERE device_id = ? AND DATE(timestamp) = CURDATE()`,
-      [deviceId]
+       WHERE device_id = ? AND timestamp >= ?`,
+      [deviceId, midnightPHT]
     );
     const r = rows[0] as any;
     const delta = Math.max(0, Number(r.kwh_delta) || 0);
