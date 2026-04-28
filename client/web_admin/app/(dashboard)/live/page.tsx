@@ -247,6 +247,7 @@ export default function LivePage() {
             {metricCard("Apparent Power", Number(reading.power_apparent).toFixed(1), "VA")}
             {metricCard("Power Factor", Number(reading.power_factor).toFixed(2), "")}
             {metricCard("Frequency", Number(reading.frequency ?? 0).toFixed(1), "Hz")}
+            {metricCard("Meter Reading", reading.energy_kwh != null ? Number(reading.energy_kwh).toFixed(4) : "—", "kWh", "text-purple-400")}
           </div>
           <p className="text-xs text-default-400 text-center">
             Last updated: {new Date(reading.timestamp).toLocaleTimeString()}
