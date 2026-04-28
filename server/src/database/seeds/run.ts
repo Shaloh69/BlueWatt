@@ -2773,10 +2773,10 @@ async function seedAnomalyEvents() {
        (device_id, timestamp, anomaly_type, severity,
         current_value, voltage_value, power_value,
         relay_tripped, is_resolved, resolved_at, resolved_by)
-     VALUES (?, '2026-04-28 10:06:00', 'short_circuit', 'critical', 52.4, 198.5, 10405.4, 1, 1, '2026-04-28 10:36:00', ?)`,
+     VALUES (?, '2026-04-28 02:06:00', 'short_circuit', 'critical', 52.4, 198.5, 10405.4, 1, 1, '2026-04-28 02:36:00', ?)`,
     [deviceDbId, adminId]
   );
-  console.log('  ✓ Anomaly seeded: PAD-4 short_circuit  |  2026-04-28 10:06  →  resolved 10:36');
+  console.log('  ✓ Anomaly seeded: PAD-4 short_circuit  |  2026-04-28 10:06 PHT  →  resolved 10:36');
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────

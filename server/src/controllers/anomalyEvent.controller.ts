@@ -100,8 +100,10 @@ export const getAnomalyEvents = asyncHandler(
 
     const startTime = req.query.start_time
       ? new Date(req.query.start_time as string)
-      : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const endTime = req.query.end_time ? new Date(req.query.end_time as string) : new Date();
+      : new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+    const endTime = req.query.end_time
+      ? new Date(req.query.end_time as string)
+      : new Date(Date.now() + 24 * 60 * 60 * 1000);
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 100;
 
     const events = await AnomalyEventModel.findByDeviceAndTimeRange(
