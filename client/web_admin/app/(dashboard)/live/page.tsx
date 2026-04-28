@@ -194,25 +194,42 @@ export default function LivePage() {
         ))}
       </div>
 
-      {/* Today's energy — prominent real-time card */}
+      {/* Energy summary row */}
       {selectedDevice && (
-        <Card className="border border-primary/30 bg-primary/5">
-          <CardBody className="flex flex-row items-center gap-4 py-4">
-            <div className="p-2 rounded-xl bg-primary/10">
-              <Flame className="w-6 h-6 text-primary" />
-            </div>
-            <div className="flex-1">
-              <p className="text-xs text-default-400 uppercase tracking-wide">Energy Used Today</p>
-              <p className="text-3xl font-bold text-primary leading-tight">
-                {todayKwh !== null ? todayKwh.toFixed(3) : "—"}
-                <span className="text-base font-normal text-default-400 ml-1">kWh</span>
-              </p>
-            </div>
-            {connected && (
-              <Chip size="sm" color="success" variant="dot" className="self-start">live</Chip>
-            )}
-          </CardBody>
-        </Card>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Card className="border border-primary/30 bg-primary/5">
+            <CardBody className="flex flex-row items-center gap-4 py-4">
+              <div className="p-2 rounded-xl bg-primary/10">
+                <Flame className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs text-default-400 uppercase tracking-wide">Energy Used Today</p>
+                <p className="text-3xl font-bold text-primary leading-tight">
+                  {todayKwh !== null ? todayKwh.toFixed(3) : "—"}
+                  <span className="text-base font-normal text-default-400 ml-1">kWh</span>
+                </p>
+              </div>
+              {connected && (
+                <Chip size="sm" color="success" variant="dot" className="self-start">live</Chip>
+              )}
+            </CardBody>
+          </Card>
+
+          <Card className="border border-purple-500/30 bg-purple-500/5">
+            <CardBody className="flex flex-row items-center gap-4 py-4">
+              <div className="p-2 rounded-xl bg-purple-500/10">
+                <MonitorDot className="w-6 h-6 text-purple-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs text-default-400 uppercase tracking-wide">Meter Reading</p>
+                <p className="text-3xl font-bold text-purple-400 leading-tight">
+                  {reading?.energy_kwh != null ? Number(reading.energy_kwh).toFixed(4) : "—"}
+                  <span className="text-base font-normal text-default-400 ml-1">kWh</span>
+                </p>
+              </div>
+            </CardBody>
+          </Card>
+        </div>
       )}
 
       {/* Relay control */}
@@ -247,7 +264,6 @@ export default function LivePage() {
             {metricCard("Apparent Power", Number(reading.power_apparent).toFixed(1), "VA")}
             {metricCard("Power Factor", Number(reading.power_factor).toFixed(2), "")}
             {metricCard("Frequency", Number(reading.frequency ?? 0).toFixed(1), "Hz")}
-            {metricCard("Meter Reading", reading.energy_kwh != null ? Number(reading.energy_kwh).toFixed(4) : "—", "kWh", "text-purple-400")}
           </div>
           <p className="text-xs text-default-400 text-center">
             Last updated: {new Date(reading.timestamp).toLocaleTimeString()}

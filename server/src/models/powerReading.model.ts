@@ -127,6 +127,7 @@ export class PowerReadingModel {
       Date.UTC(phtNow.getUTCFullYear(), phtNow.getUTCMonth(), phtNow.getUTCDate()) - 8 * 3600 * 1000
     );
 
+    const fmt = (d: Date) => d.toISOString().slice(0, 19).replace('T', ' ');
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT
          COALESCE(MAX(energy_kwh) - MIN(energy_kwh), 0)           AS kwh_delta,
@@ -135,7 +136,7 @@ export class PowerReadingModel {
                 - UNIX_TIMESTAMP(MIN(timestamp)), 0)               AS span_seconds
        FROM power_readings
        WHERE device_id = ? AND timestamp >= ?`,
-      [deviceId, midnightPHT]
+      [deviceId, fmt(midnightPHT)]
     );
     const r = rows[0] as { kwh_delta: unknown; avg_power_w: unknown; span_seconds: unknown };
     const delta = Math.max(0, Number(r.kwh_delta) || 0);
