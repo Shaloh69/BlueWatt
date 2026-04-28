@@ -2768,8 +2768,8 @@ async function seedAnomalyEvents() {
   const deviceDbId = await getDeviceDbId('bluewatt-004');
   if (!deviceDbId || !adminId) throw new Error('PAD-4 device or admin not found');
 
-  const detectedAt = new Date('2026-04-08T10:06:00');
-  const resolvedAt = new Date('2026-04-08T10:36:00');
+  const detectedAt = new Date('2026-04-28T10:06:00');
+  const resolvedAt = new Date('2026-04-28T10:36:00');
 
   await pool.execute(
     `INSERT INTO anomaly_events
@@ -2779,7 +2779,7 @@ async function seedAnomalyEvents() {
      VALUES (?, ?, 'short_circuit', 'critical', 52.4, 198.5, 10405.4, 1, 1, ?, ?)`,
     [deviceDbId, detectedAt, resolvedAt, adminId]
   );
-  console.log('  ✓ Anomaly seeded: PAD-4 short_circuit  |  2026-04-08 10:06  →  resolved 10:36');
+  console.log('  ✓ Anomaly seeded: PAD-4 short_circuit  |  2026-04-28 10:06  →  resolved 10:36');
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
