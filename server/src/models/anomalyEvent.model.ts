@@ -44,14 +44,16 @@ export class AnomalyEventModel {
     endTime: Date,
     limit: number = 100
   ): Promise<AnomalyEvent[]> {
+    const fmt = (d: Date) => d.toISOString().slice(0, 19).replace('T', ' ');
+    const safeLimit = Math.max(1, Math.min(1000, Math.floor(limit)));
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT id, device_id, timestamp, anomaly_type, severity, current_value, voltage_value, power_value,
               relay_tripped, is_resolved, resolved_at, resolved_by, notes, created_at
        FROM anomaly_events
        WHERE device_id = ? AND timestamp BETWEEN ? AND ?
        ORDER BY timestamp DESC
-       LIMIT ?`,
-      [deviceId, startTime, endTime, limit]
+       LIMIT ${safeLimit}`,
+      [deviceId, fmt(startTime), fmt(endTime)]
     );
 
     return rows as AnomalyEvent[];
@@ -82,11 +84,12 @@ export class AnomalyEventModel {
     startTime: Date,
     endTime: Date
   ): Promise<number> {
+    const fmt = (d: Date) => d.toISOString().slice(0, 19).replace('T', ' ');
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT COUNT(*) as count
        FROM anomaly_events
        WHERE device_id = ? AND timestamp BETWEEN ? AND ?`,
-      [deviceId, startTime, endTime]
+      [deviceId, fmt(startTime), fmt(endTime)]
     );
 
     return rows[0].count;
