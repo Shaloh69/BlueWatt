@@ -103,12 +103,14 @@ export default function AnomaliesPage() {
                         </Chip>
                       </td>
                       <td className="py-3 px-3">
-                        {!e.is_resolved && (
-                          <Button size="sm" variant="flat" color="success" isIconOnly
-                            isLoading={resolving === e.id} onPress={() => handleResolve(e)} title="Mark resolved">
-                            <CheckCircle className="w-4 h-4" />
-                          </Button>
-                        )}
+                        <Button size="sm" variant="flat" color="success" isIconOnly
+                          isDisabled={e.is_resolved}
+                          isLoading={resolving === e.id}
+                          onPress={() => !e.is_resolved && handleResolve(e)}
+                          title="Mark resolved"
+                          className={e.is_resolved ? "opacity-30 cursor-not-allowed" : ""}>
+                          <CheckCircle className="w-4 h-4" />
+                        </Button>
                       </td>
                     </tr>
                   ))}
