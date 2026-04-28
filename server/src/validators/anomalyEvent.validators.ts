@@ -5,6 +5,7 @@ export const anomalyEventValidator = [
   body('device_id').trim().notEmpty().withMessage('Device ID is required'),
   body('timestamp').isInt({ min: 0 }).withMessage('Valid timestamp (Unix seconds) is required'),
   body('anomaly_type')
+    .toLowerCase()
     .isIn(ANOMALY_TYPES)
     .withMessage(`Anomaly type must be one of: ${ANOMALY_TYPES.join(', ')}`),
   body('current').isFloat({ min: 0 }).withMessage('Current must be a positive number'),
