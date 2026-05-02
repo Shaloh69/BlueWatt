@@ -21,8 +21,8 @@ export function startCronJobs(): void {
     }
   });
 
-  // ── Daily 00:10: aggregate yesterday for all devices ─────────────────────
-  cron.schedule('10 0 * * *', async () => {
+  // ── Daily 04:00 UTC (12:00 PM PHT): aggregate yesterday for all devices ───
+  cron.schedule('0 4 * * *', async () => {
     logger.info('[cron] Running daily aggregation');
     try {
       await AggregationService.runDailyForAllDevices();
@@ -31,8 +31,8 @@ export function startCronJobs(): void {
     }
   });
 
-  // ── 1st of month 00:20: aggregate last month ─────────────────────────────
-  cron.schedule('20 0 1 * *', async () => {
+  // ── 1st of month 04:05 UTC (12:05 PM PHT): aggregate last month ──────────
+  cron.schedule('5 4 1 * *', async () => {
     logger.info('[cron] Running monthly aggregation');
     try {
       await AggregationService.runMonthlyForAllDevices();
@@ -51,8 +51,8 @@ export function startCronJobs(): void {
     }
   });
 
-  // ── 1st of month 00:30: legacy pad billing (pads without stays) ──────────
-  cron.schedule('30 0 1 * *', async () => {
+  // ── 1st of month 04:10 UTC (12:10 PM PHT): legacy pad billing ────────────
+  cron.schedule('10 4 1 * *', async () => {
     logger.info('[cron] Auto-generating legacy monthly billing');
     try {
       await BillingService.autoGenerateAllPads();
