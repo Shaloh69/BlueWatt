@@ -63,7 +63,7 @@ const PADS = [
     device_serial: 'bluewatt-001',
     tenant_email: 'sophie-proto@test.com',
     rate_per_kwh: 11.98,
-    flat_rate: 2500.0,
+    flat_rate: 0,
     is_active: true,
   },
   {
@@ -72,7 +72,7 @@ const PADS = [
     device_serial: 'bluewatt-002',
     tenant_email: null,
     rate_per_kwh: 11.98,
-    flat_rate: 2000.0,
+    flat_rate: 0,
     is_active: false,
   },
   {
@@ -81,7 +81,7 @@ const PADS = [
     device_serial: 'bluewatt-003',
     tenant_email: 'reynie-proto@test.com',
     rate_per_kwh: 11.98,
-    flat_rate: 2000.0,
+    flat_rate: 0,
     is_active: true,
   },
   {
@@ -90,7 +90,7 @@ const PADS = [
     device_serial: 'bluewatt-004',
     tenant_email: 'jassy-proto@test.com',
     rate_per_kwh: 11.98,
-    flat_rate: 2000.0,
+    flat_rate: 0,
     is_active: true,
   },
 ];
