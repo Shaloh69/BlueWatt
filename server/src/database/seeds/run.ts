@@ -6,7 +6,7 @@
  *  - Cleanses all data, keeps admin account
  *  - 3 real tenants: Sophie (PAD-1), Reynie (PAD-3), Jassy (PAD-4)
  *  - 4 devices (bluewatt-001/002/003/004); PAD-2 inactive relay=off no tenant
- *  - Daily power aggregates Mar 11 – Apr 26 (CKS spreadsheet + Apr 26 meter photos)
+ *  - Daily power aggregates Mar 11 – May 1 (CKS spreadsheet + Apr 29–May 1 2nd attempt)
  *  - CKS meter readings:
  *      Sophie PAD-1 (#2020351146): Mar11=4515.7 → Apr26≈4829.7 kWh  (048297 display)
  *      PAD-2  inactive (relay off): voltage fluctuates 210–241 V  avg≈3.61/day
@@ -2878,7 +2878,7 @@ async function seedPowerAggregates() {
 
     const totalAll = days.reduce((s, d) => s + d.total_energy_kwh, 0);
     console.log(
-      `  ✓ Power data seeded: ${p.device_serial}  |  Mar 11 – Apr 10  |  ` +
+      `  ✓ Power data seeded: ${p.device_serial}  |  Mar 11 – May 1  |  ` +
         `${totalAll.toFixed(2)} kWh`
     );
   }
@@ -3022,7 +3022,7 @@ async function seedAnomalyEvents() {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log('\n🌱  BlueWatt Seeder — Real Meter Data (Mar 11 – Apr 26 2026)\n');
+  console.log('\n🌱  BlueWatt Seeder — Real Meter Data (Mar 11 – May 1 2026)\n');
   try {
     console.log('🗑️   Cleansing database (keeping admin)...');
     await cleanseDatabase();
@@ -3042,7 +3042,7 @@ async function main() {
     console.log('\n🏠  Seeding pads...');
     await seedPads();
 
-    console.log('\n⚡  Seeding power aggregates (Mar 11 – Apr 26)...');
+    console.log('\n⚡  Seeding power aggregates (Mar 11 – May 1)...');
     await seedPowerAggregates();
 
     console.log('\n🏨  Seeding stays...');
@@ -3062,8 +3062,8 @@ async function main() {
     console.log('  Reynie:  reynie-proto@test.com  /  Tenant@1234  →  PAD-3 (bluewatt-003)');
     console.log('  Jassy:   jassy-proto@test.com   /  Tenant@1234  →  PAD-4 (bluewatt-004)');
     console.log('─────────────────────────────────────────────────────────────────────');
-    console.log('  Rate: ₱11.98/kWh | Check-in: March 11 2026 | Data: Mar 11 – Apr 26');
-    console.log('  Billing cycle 1 (Mar 11 – Apr 10): electricity only.');
+    console.log('  Rate: ₱11.98/kWh | Check-in: March 11 2026 | Data: Mar 11 – May 1');
+    console.log('  Billing cycle 1 (Mar 11 – Apr 10): electricity only. No rent billing.');
     console.log('─────────────────────────────────────────────────────────────────────');
     console.log('  NOTE: Re-upload the GCash/Maya payment QR code in the admin panel.');
     console.log('─────────────────────────────────────────────────────────────────────\n');
