@@ -692,6 +692,66 @@ const DAILY_DATA: Record<string, DayData[]> = {
       peak_hour: 13,
       reading_count: 1440,
     }, // Sun
+    {
+      date: '2026-04-27',
+      total_energy_kwh: 7.65,
+      avg_power_real: 318.8,
+      max_power_real: 1116,
+      min_power_real: 41.4,
+      avg_voltage: 222.5,
+      avg_current: 1.628,
+      avg_power_factor: 0.88,
+      peak_hour: 20,
+      reading_count: 1440,
+    }, // Mon est
+    {
+      date: '2026-04-28',
+      total_energy_kwh: 7.82,
+      avg_power_real: 325.8,
+      max_power_real: 1140,
+      min_power_real: 42.4,
+      avg_voltage: 222.5,
+      avg_current: 1.664,
+      avg_power_factor: 0.88,
+      peak_hour: 20,
+      reading_count: 1440,
+    }, // Tue est
+    {
+      date: '2026-04-29',
+      total_energy_kwh: 0.0,
+      avg_power_real: 0,
+      max_power_real: 0,
+      min_power_real: 0,
+      avg_voltage: 222.0,
+      avg_current: 0,
+      avg_power_factor: 0.88,
+      peak_hour: 0,
+      reading_count: 0,
+    }, // Wed — new measurement baseline
+    {
+      date: '2026-04-30',
+      total_energy_kwh: 10.29,
+      avg_power_real: 428.8,
+      max_power_real: 1501,
+      min_power_real: 55.7,
+      avg_voltage: 222.0,
+      avg_current: 2.194,
+      avg_power_factor: 0.88,
+      peak_hour: 20,
+      reading_count: 1440,
+    }, // Thu — CKS 2nd attempt 11:36am
+    {
+      date: '2026-05-01',
+      total_energy_kwh: 6.76,
+      avg_power_real: 281.7,
+      max_power_real: 986,
+      min_power_real: 36.6,
+      avg_voltage: 222.0,
+      avg_current: 1.441,
+      avg_power_factor: 0.88,
+      peak_hour: 19,
+      reading_count: 1440,
+    }, // Fri — CKS 2nd attempt 11:36am
   ],
 
   // ── PAD-2 (bluewatt-002) — inactive, relay off, voltage fluctuates 210–241 V ─
@@ -1262,6 +1322,66 @@ const DAILY_DATA: Record<string, DayData[]> = {
       peak_hour: 13,
       reading_count: 1440,
     }, // Sun
+    {
+      date: '2026-04-27',
+      total_energy_kwh: 3.62,
+      avg_power_real: 150.8,
+      max_power_real: 528,
+      min_power_real: 19.6,
+      avg_voltage: 228.0,
+      avg_current: 0.750,
+      avg_power_factor: 0.88,
+      peak_hour: 20,
+      reading_count: 1440,
+    }, // Mon est
+    {
+      date: '2026-04-28',
+      total_energy_kwh: 3.58,
+      avg_power_real: 149.2,
+      max_power_real: 522,
+      min_power_real: 19.4,
+      avg_voltage: 228.0,
+      avg_current: 0.742,
+      avg_power_factor: 0.88,
+      peak_hour: 20,
+      reading_count: 1440,
+    }, // Tue est
+    {
+      date: '2026-04-29',
+      total_energy_kwh: 0.0,
+      avg_power_real: 0,
+      max_power_real: 0,
+      min_power_real: 0,
+      avg_voltage: 224.0,
+      avg_current: 0,
+      avg_power_factor: 0.88,
+      peak_hour: 0,
+      reading_count: 0,
+    }, // Wed — new measurement baseline
+    {
+      date: '2026-04-30',
+      total_energy_kwh: 3.68,
+      avg_power_real: 153.3,
+      max_power_real: 537,
+      min_power_real: 19.9,
+      avg_voltage: 224.0,
+      avg_current: 0.754,
+      avg_power_factor: 0.88,
+      peak_hour: 20,
+      reading_count: 1440,
+    }, // Thu — CKS 2nd attempt 11:36am
+    {
+      date: '2026-05-01',
+      total_energy_kwh: 3.54,
+      avg_power_real: 147.5,
+      max_power_real: 516,
+      min_power_real: 19.1,
+      avg_voltage: 224.0,
+      avg_current: 0.726,
+      avg_power_factor: 0.88,
+      peak_hour: 19,
+      reading_count: 1440,
+    }, // Fri — CKS 2nd attempt 11:36am
   ],
 
   // ── Reynie (PAD-3, bluewatt-003) ──────────────────────────────────────────
@@ -1832,6 +1952,66 @@ const DAILY_DATA: Record<string, DayData[]> = {
       peak_hour: 13,
       reading_count: 1440,
     }, // Sun
+    {
+      date: '2026-04-27',
+      total_energy_kwh: 3.05,
+      avg_power_real: 127.1,
+      max_power_real: 445,
+      min_power_real: 16.5,
+      avg_voltage: 221.5,
+      avg_current: 0.651,
+      avg_power_factor: 0.88,
+      peak_hour: 20,
+      reading_count: 1440,
+    }, // Mon est
+    {
+      date: '2026-04-28',
+      total_energy_kwh: 3.0,
+      avg_power_real: 125.0,
+      max_power_real: 437,
+      min_power_real: 16.2,
+      avg_voltage: 221.5,
+      avg_current: 0.641,
+      avg_power_factor: 0.88,
+      peak_hour: 20,
+      reading_count: 1440,
+    }, // Tue est
+    {
+      date: '2026-04-29',
+      total_energy_kwh: 0.0,
+      avg_power_real: 0,
+      max_power_real: 0,
+      min_power_real: 0,
+      avg_voltage: 221.0,
+      avg_current: 0,
+      avg_power_factor: 0.88,
+      peak_hour: 0,
+      reading_count: 0,
+    }, // Wed — new measurement baseline
+    {
+      date: '2026-04-30',
+      total_energy_kwh: 1.81,
+      avg_power_real: 75.4,
+      max_power_real: 264,
+      min_power_real: 9.7,
+      avg_voltage: 221.0,
+      avg_current: 0.386,
+      avg_power_factor: 0.88,
+      peak_hour: 20,
+      reading_count: 1440,
+    }, // Thu — CKS 2nd attempt 11:36am
+    {
+      date: '2026-05-01',
+      total_energy_kwh: 2.28,
+      avg_power_real: 95.0,
+      max_power_real: 332,
+      min_power_real: 12.3,
+      avg_voltage: 221.0,
+      avg_current: 0.487,
+      avg_power_factor: 0.88,
+      peak_hour: 19,
+      reading_count: 1440,
+    }, // Fri — CKS 2nd attempt 11:36am
   ],
 
   // ── Jassy (PAD-4, bluewatt-004) ───────────────────────────────────────────
@@ -2402,6 +2582,66 @@ const DAILY_DATA: Record<string, DayData[]> = {
       peak_hour: 13,
       reading_count: 1440,
     }, // Sun
+    {
+      date: '2026-04-27',
+      total_energy_kwh: 8.75,
+      avg_power_real: 364.6,
+      max_power_real: 1276,
+      min_power_real: 47.4,
+      avg_voltage: 222.5,
+      avg_current: 1.863,
+      avg_power_factor: 0.88,
+      peak_hour: 20,
+      reading_count: 1440,
+    }, // Mon est
+    {
+      date: '2026-04-28',
+      total_energy_kwh: 8.62,
+      avg_power_real: 359.2,
+      max_power_real: 1257,
+      min_power_real: 46.7,
+      avg_voltage: 222.5,
+      avg_current: 1.835,
+      avg_power_factor: 0.88,
+      peak_hour: 20,
+      reading_count: 1440,
+    }, // Tue est
+    {
+      date: '2026-04-29',
+      total_energy_kwh: 0.0,
+      avg_power_real: 0,
+      max_power_real: 0,
+      min_power_real: 0,
+      avg_voltage: 222.0,
+      avg_current: 0,
+      avg_power_factor: 0.88,
+      peak_hour: 0,
+      reading_count: 0,
+    }, // Wed — new measurement baseline
+    {
+      date: '2026-04-30',
+      total_energy_kwh: 6.23,
+      avg_power_real: 259.6,
+      max_power_real: 909,
+      min_power_real: 33.8,
+      avg_voltage: 222.0,
+      avg_current: 1.327,
+      avg_power_factor: 0.88,
+      peak_hour: 20,
+      reading_count: 1440,
+    }, // Thu — CKS 2nd attempt 11:36am
+    {
+      date: '2026-05-01',
+      total_energy_kwh: 2.29,
+      avg_power_real: 95.4,
+      max_power_real: 334,
+      min_power_real: 12.4,
+      avg_voltage: 222.0,
+      avg_current: 0.488,
+      avg_power_factor: 0.88,
+      peak_hour: 19,
+      reading_count: 1440,
+    }, // Fri — CKS 2nd attempt 11:36am
   ],
 };
 
