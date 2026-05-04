@@ -2237,6 +2237,10 @@ async function seedPads() {
 
 async function seedPowerAggregates() {
   for (const p of PADS) {
+    if (!p.device_serial) {
+      console.log(`  ↳ ${p.name} has no device — skipping power aggregates`);
+      continue;
+    }
     const deviceDbId = await getDeviceDbId(p.device_serial);
     if (!deviceDbId) {
       console.log(`  ↳ Device not found: ${p.device_serial} — skipping`);
@@ -2312,7 +2316,7 @@ async function seedPowerAggregates() {
       );
     }
 
-    const totalAll = days.reduce((s, d) => s + d.total_energy_kwh, 0);
+    const totalAll = days.reduce((s: number, d: DayData) => s + d.total_energy_kwh, 0);
     console.log(
       `  ✓ Power data seeded: ${p.device_serial}  |  Mar 11 – May 1  |  ` +
         `${totalAll.toFixed(2)} kWh`
