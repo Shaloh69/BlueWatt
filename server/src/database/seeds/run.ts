@@ -2320,7 +2320,7 @@ async function seedPowerAggregates() {
 
     const totalAll = days.reduce((s: number, d: DayData) => s + d.total_energy_kwh, 0);
     console.log(
-      `  ✓ Power data seeded: ${p.device_serial}  |  Mar 11 – May 1  |  ` +
+      `  ✓ Power data seeded: ${p.device_serial}  |  Mar 11 – May 3  |  ` +
         `${totalAll.toFixed(2)} kWh`
     );
   }
