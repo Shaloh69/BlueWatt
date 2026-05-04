@@ -688,7 +688,7 @@ const DAILY_DATA: Record<string, DayData[]> = {
     }, // Sun
     {
       date: '2026-04-27',
-      total_energy_kwh: 7.70,
+      total_energy_kwh: 7.7,
       avg_power_real: 320.8,
       max_power_real: 1123,
       min_power_real: 41.7,
@@ -1797,7 +1797,7 @@ const DAILY_DATA: Record<string, DayData[]> = {
       max_power_real: 1641,
       min_power_real: 60.8,
       avg_voltage: 221.8,
-      avg_current: 2.400,
+      avg_current: 2.4,
       avg_power_factor: 0.88,
       peak_hour: 21,
       reading_count: 1440,
@@ -2226,7 +2226,9 @@ async function seedPads() {
         p.is_active ? 1 : 0,
       ]
     );
-    const deviceLabel = p.device_serial ? `${p.device_serial}  @  ₱${p.rate_per_kwh}/kWh` : `no device  @  ₱${p.rate_per_kwh}/kWh`;
+    const deviceLabel = p.device_serial
+      ? `${p.device_serial}  @  ₱${p.rate_per_kwh}/kWh`
+      : `no device  @  ₱${p.rate_per_kwh}/kWh`;
     console.log(
       `  ✓ Pad created: ${p.name}  →  ${p.tenant_email ?? 'unassigned'}  (${deviceLabel}${p.is_active ? '' : '  [INACTIVE]'})`
     );
@@ -2423,7 +2425,17 @@ async function seedBillingPeriods() {
            (pad_id, stay_id, tenant_id, period_start, period_end,
             energy_kwh, rate_per_kwh, amount_due, flat_amount, cycle_number, bill_type, due_date)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 1, 'electricity', ?)`,
-        [padId, stayId, tenantId, cycleStart, cycleEnd, energyKwh, p.rate_per_kwh, energyAmount, dueDate]
+        [
+          padId,
+          stayId,
+          tenantId,
+          cycleStart,
+          cycleEnd,
+          energyKwh,
+          p.rate_per_kwh,
+          energyAmount,
+          dueDate,
+        ]
       );
       console.log(
         `  ✓ Electricity bill: ${p.tenant_email}  |  ${energyKwh.toFixed(2)} kWh  |  ₱${energyAmount}`
@@ -2437,7 +2449,6 @@ async function seedBillingPeriods() {
         `  ↻ Fixed 0.00 elec:  ${p.tenant_email}  |  ${energyKwh.toFixed(2)} kWh  |  ₱${energyAmount}`
       );
     }
-
   }
 }
 
@@ -2456,7 +2467,9 @@ async function seedAnomalyEvents() {
      VALUES (?, '2026-04-28 02:06:00', 'short_circuit', 'critical', 52.4, 198.5, 10405.4, 1, 1, '2026-04-28 02:36:00', ?)`,
     [deviceDbId, adminId]
   );
-  console.log('  ✓ Anomaly seeded: PAD-4 short_circuit  |  2026-04-28 10:06 PHT  →  resolved 10:36');
+  console.log(
+    '  ✓ Anomaly seeded: PAD-4 short_circuit  |  2026-04-28 10:06 PHT  →  resolved 10:36'
+  );
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
