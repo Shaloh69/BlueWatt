@@ -5,8 +5,8 @@ import { toast } from "@/lib/toast";
 import { Card, CardBody } from "@heroui/card";
 import { Chip } from "@heroui/chip";
 import { Button } from "@heroui/button";
-import { MonitorDot, Zap, RefreshCw, Wifi, WifiOff, Flame } from "lucide-react";
-import { devicesApi, powerApi, getErrorMessage } from "@/lib/api";
+import { MonitorDot, Zap, RefreshCw, Wifi, WifiOff } from "lucide-react";
+import { devicesApi, getErrorMessage } from "@/lib/api";
 import { Device } from "@/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api/v1";
@@ -31,7 +31,6 @@ export default function LivePage() {
   const [readingLog, setReadingLog] = useState<LiveReading[]>([]);
   const [connected, setConnected] = useState(false);
   const [relayPending, setRelayPending] = useState(false);
-  const [todayKwh, setTodayKwh] = useState<number | null>(null);
   const sessionStartEnergyRef = useRef<number | null>(null);
   const esRef = useRef<EventSource | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -51,11 +50,6 @@ export default function LivePage() {
     selectedDeviceRef.current = selectedDevice;
   }, [selectedDevice]);
 
-  const fetchTodayEnergy = useCallback((deviceId: number) => {
-    powerApi.todayEnergy(deviceId)
-      .then(r => setTodayKwh(Number(r.data.data?.energy_kwh_today ?? 0)))
-      .catch(() => {});
-  }, []);
 
   // Opens a single SSE connection — does NOT take deviceId.
   // Filtering is done via selectedDeviceRef so it always reflects current selection
@@ -116,11 +110,10 @@ export default function LivePage() {
     return cleanup;
   }, [connectSSE]);
 
-  // On device switch: reset display state + fetch latest snapshot + energy timer
+  // On device switch: reset display state + fetch latest snapshot
   useEffect(() => {
     if (!selectedDevice) return;
 
-    setTodayKwh(null);
     setReadingLog([]);
     setReading(null);
     sessionStartEnergyRef.current = null;
@@ -129,12 +122,7 @@ export default function LivePage() {
       const d = r.data.data?.reading;
       if (d) setReading(d);
     }).catch(() => {});
-
-    fetchTodayEnergy(selectedDevice);
-    const energyTimer = setInterval(() => fetchTodayEnergy(selectedDevice), 30_000);
-
-    return () => { clearInterval(energyTimer); };
-  }, [selectedDevice, fetchTodayEnergy]);
+  }, [selectedDevice]);
 
   useEffect(() => () => { esRef.current?.close(); }, []);
 
@@ -174,10 +162,7 @@ export default function LivePage() {
           </Chip>
         </div>
         <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />}
-          onPress={() => {
-            connectSSE();
-            if (selectedDevice) fetchTodayEnergy(selectedDevice);
-          }}>
+          onPress={() => connectSSE()}>
           Reconnect
         </Button>
       </div>
@@ -194,42 +179,25 @@ export default function LivePage() {
         ))}
       </div>
 
-      {/* Energy summary row */}
+      {/* Meter Reading */}
       {selectedDevice && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Card className="border border-primary/30 bg-primary/5">
-            <CardBody className="flex flex-row items-center gap-4 py-4">
-              <div className="p-2 rounded-xl bg-primary/10">
-                <Flame className="w-6 h-6 text-primary" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-default-400 uppercase tracking-wide">Energy Used Today</p>
-                <p className="text-3xl font-bold text-primary leading-tight">
-                  {todayKwh !== null ? todayKwh.toFixed(3) : "—"}
-                  <span className="text-base font-normal text-default-400 ml-1">kWh</span>
-                </p>
-              </div>
-              {connected && (
-                <Chip size="sm" color="success" variant="dot" className="self-start">live</Chip>
-              )}
-            </CardBody>
-          </Card>
-
-          <Card className="border border-purple-500/30 bg-purple-500/5">
-            <CardBody className="flex flex-row items-center gap-4 py-4">
-              <div className="p-2 rounded-xl bg-purple-500/10">
-                <MonitorDot className="w-6 h-6 text-purple-400" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs text-default-400 uppercase tracking-wide">Meter Reading</p>
-                <p className="text-3xl font-bold text-purple-400 leading-tight">
-                  {reading?.energy_kwh != null ? Number(reading.energy_kwh).toFixed(4) : "—"}
-                  <span className="text-base font-normal text-default-400 ml-1">kWh</span>
-                </p>
-              </div>
-            </CardBody>
-          </Card>
-        </div>
+        <Card className="border border-purple-500/30 bg-purple-500/5">
+          <CardBody className="flex flex-row items-center gap-4 py-4">
+            <div className="p-2 rounded-xl bg-purple-500/10">
+              <MonitorDot className="w-6 h-6 text-purple-400" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs text-default-400 uppercase tracking-wide">Meter Reading</p>
+              <p className="text-3xl font-bold text-purple-400 leading-tight">
+                {reading?.energy_kwh != null ? Number(reading.energy_kwh).toFixed(4) : "—"}
+                <span className="text-base font-normal text-default-400 ml-1">kWh</span>
+              </p>
+            </div>
+            {connected && (
+              <Chip size="sm" color="success" variant="dot" className="self-start">live</Chip>
+            )}
+          </CardBody>
+        </Card>
       )}
 
       {/* Relay control */}
