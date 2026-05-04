@@ -6,7 +6,7 @@ import { Card, CardBody } from "@heroui/card";
 import { Chip } from "@heroui/chip";
 import { Button } from "@heroui/button";
 import { MonitorDot, Zap, RefreshCw, Wifi, WifiOff } from "lucide-react";
-import { devicesApi, getErrorMessage } from "@/lib/api";
+import { devicesApi, powerApi, getErrorMessage } from "@/lib/api";
 import { Device } from "@/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api/v1";
