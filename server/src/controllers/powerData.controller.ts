@@ -78,10 +78,11 @@ export const submitPowerData = asyncHandler(
     // Notify all admin clients so the device card flips from Offline → Online in real time
     sseService.broadcastToAll('device_heartbeat', { device_id: device.id });
 
-    // Forward live reading to SSE subscribers of this device
+    // Forward live reading to SSE subscribers of this device.
+    // Use readingTimestamp (server-clamped) — raw ESP timestamp is ms since boot, not epoch.
     sseService.sendToDevice(device.id, 'power_reading', {
       device_id: device.id,
-      timestamp,
+      timestamp: readingTimestamp.toISOString(),
       voltage_rms,
       current_rms,
       power_real,
