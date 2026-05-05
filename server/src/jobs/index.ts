@@ -21,8 +21,8 @@ export function startCronJobs(): void {
     }
   });
 
-  // ── Daily 04:00 UTC (12:00 PM PHT): aggregate yesterday for all devices ───
-  cron.schedule('0 4 * * *', async () => {
+  // ── Daily 03:36 UTC (11:36 AM PHT): aggregate the just-closed 11:36am window ──
+  cron.schedule('36 3 * * *', async () => {
     logger.info('[cron] Running daily aggregation');
     try {
       await AggregationService.runDailyForAllDevices();
