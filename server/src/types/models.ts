@@ -120,7 +120,7 @@ export interface BillingPeriod {
   flat_amount: number;
   cycle_number?: number;
   bill_type: 'electricity' | 'rent';
-  status: 'unpaid' | 'paid' | 'overdue' | 'waived';
+  status: 'unpaid' | 'pending' | 'paid' | 'overdue' | 'waived';
   due_date: Date;
   paid_at?: Date;
   created_at: Date;
