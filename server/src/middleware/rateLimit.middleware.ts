@@ -13,9 +13,12 @@ export const generalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   handler: jsonHandler('Too many requests from this IP, please try again later'),
-  // SSE uses ?token= (EventSource can't set headers), authenticated API calls use Bearer
-  // req.path is full path at app level, e.g. /api/v1/sse/events
-  skip: (req) => !!req.headers.authorization || req.path.includes('/sse/'),
+  // Skip authenticated requests (have their own auth-level protection),
+  // SSE connections, and auth routes (which have their own authLimiter).
+  skip: (req) =>
+    !!req.headers.authorization ||
+    req.path.includes('/sse/') ||
+    req.path.includes('/auth/'),
 });
 
 export const authLimiter = rateLimit({

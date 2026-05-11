@@ -82,6 +82,36 @@ export const getAllDailyReport = asyncHandler(
     await assertDeviceAccess(deviceId, req.user);
 
     const data = await PowerAggregateModel.findAllDaily(deviceId);
+
+    // Inject today's live data if the daily cron hasn't aggregated it yet
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const hasToday = data.some((r) => {
+      const d = r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date).slice(0, 10);
+      return d === today;
+    });
+    if (!hasToday) {
+      const [liveRows] = await pool.execute<RowDataPacket[]>(
+        `SELECT
+         ? AS date,
+         COALESCE(AVG(voltage_rms), 0) AS avg_voltage,
+         COALESCE(AVG(current_rms), 0) AS avg_current,
+         COALESCE(AVG(power_real), 0) AS avg_power_real,
+         COALESCE(MAX(power_real), 0) AS max_power_real,
+         COALESCE(MIN(power_real), 0) AS min_power_real,
+         COALESCE(MAX(energy_kwh) - MIN(energy_kwh), 0) AS total_energy_kwh,
+         COALESCE(AVG(power_factor), 0) AS avg_power_factor,
+         COUNT(*) AS reading_count,
+         0 AS anomaly_count
+       FROM power_readings
+       WHERE device_id = ? AND DATE(timestamp) = ?`,
+        [today, deviceId, today]
+      );
+      if (liveRows.length > 0 && Number(liveRows[0].reading_count) > 0) {
+        data.unshift(liveRows[0] as any); // newest first
+      }
+    }
+
     sendSuccess(res, { device_id: deviceId, days: data });
   }
 );

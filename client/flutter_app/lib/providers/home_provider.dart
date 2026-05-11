@@ -63,17 +63,25 @@ class HomeProvider extends ChangeNotifier {
     try {
       _pad = await ApiService.getMyPad();
       await AppCache.set(cacheKey, _pad!.toJson());
-      if (_pad!.hasDevice) {
-        _reading = await ApiService.getLatestReading(_pad!.deviceId!);
-        _dailyRows = await ApiService.getAllDailyReport(_pad!.deviceId!);
-      }
     } catch (e) {
       if (_pad == null) _error = e.toString();
-      // If we have stale data, silently fail so the cached view stays up
-    } finally {
-      _loading = false;
-      notifyListeners();
     }
+
+    if (_pad?.hasDevice == true) {
+      // Fetch latest reading and daily rows independently — one failure won't
+      // block the other.
+      await Future.wait([
+        ApiService.getLatestReading(_pad!.deviceId!)
+            .then((r) { _reading = r; })
+            .catchError((_) {}),
+        ApiService.getAllDailyReport(_pad!.deviceId!)
+            .then((rows) { _dailyRows = rows; })
+            .catchError((_) {}),
+      ]);
+    }
+
+    _loading = false;
+    notifyListeners();
   }
 
   Future<String?> disablePad() => _sendRelay('off');

@@ -23,6 +23,10 @@ class ApiException implements Exception {
 class ApiService {
   static const _timeout = Duration(seconds: 60); // Render free tier cold-start can take 30-50 s
 
+  /// Called whenever the server returns 401. Wire this up in MainShell to
+  /// trigger automatic logout so stale tokens don't keep the user stuck.
+  static void Function()? onUnauthorized;
+
   // ── Internals ──────────────────────────────────────────────────────────────
 
   static Future<Map<String, String>> _headers() async {
@@ -48,6 +52,7 @@ class ApiService {
       );
     }
     if (res.statusCode >= 400) {
+      if (res.statusCode == 401) onUnauthorized?.call();
       throw ApiException(
         decoded['message'] as String? ?? 'Request failed',
         res.statusCode,
@@ -282,7 +287,7 @@ class ApiService {
     ).timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
     if (res.statusCode == 404) return [];
     final body = _body(res);
-    final list = body['data']['daily'] as List<dynamic>? ?? [];
+    final list = body['data']['days'] as List<dynamic>? ?? [];
     return list.map((e) => e as Map<String, dynamic>).toList();
   }
 
@@ -293,7 +298,7 @@ class ApiService {
     ).timeout(_timeout, onTimeout: () => throw ApiException('Connection timed out'));
     if (res.statusCode == 404) return 0;
     final body = _body(res);
-    return (body['data']['today_energy_kwh'] as num?)?.toDouble() ?? 0;
+    return (body['data']['energy_kwh_today'] as num?)?.toDouble() ?? 0;
   }
 
   static Future<void> submitPayment({

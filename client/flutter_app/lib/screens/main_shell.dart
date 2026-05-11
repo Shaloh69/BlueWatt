@@ -4,6 +4,7 @@ import '../config/constants.dart';
 import '../providers/billing_provider.dart';
 import '../providers/home_provider.dart';
 import '../providers/auth_provider.dart';
+import '../services/api_service.dart';
 import 'home/home_screen.dart';
 import 'bills/bills_screen.dart';
 import 'anomalies/anomaly_screen.dart';
@@ -53,7 +54,19 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
+    // Auto-logout: if the server returns 401 (stale/invalid token), log out
+    // immediately so the user lands back on the login screen.
+    ApiService.onUnauthorized = () {
+      if (!mounted) return;
+      context.read<AuthProvider>().logout();
+    };
     WidgetsBinding.instance.addPostFrameCallback((_) => _init());
+  }
+
+  @override
+  void dispose() {
+    ApiService.onUnauthorized = null;
+    super.dispose();
   }
 
   Future<void> _init() async {

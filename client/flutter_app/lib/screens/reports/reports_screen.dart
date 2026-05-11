@@ -59,24 +59,16 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final deviceId = event.data['device_id'];
     if (home.pad?.deviceId == null || deviceId != home.pad!.deviceId) return;
 
-    final energyKwh = (event.data['energy_kwh'] as num?)?.toDouble();
-    if (energyKwh == null) return;
+    // Only refresh today's energy when viewing the current month.
+    // energy_kwh from SSE is the cumulative PZEM total, not today's delta —
+    // so we re-fetch the actual daily delta from the API.
+    final currentMonth = DateFormat('yyyy-MM').format(DateTime.now());
+    if (_month != currentMonth) return;
 
-    // Update today's bar in _daily list
-    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    setState(() {
-      _todayEnergy = energyKwh;
-      final idx = _daily.indexWhere((d) => (d['date'] as String?)?.startsWith(today) ?? false);
-      if (idx >= 0) {
-        final updated = Map<String, dynamic>.from(_daily[idx]);
-        updated['total_energy_kwh'] = energyKwh;
-        _daily = List.from(_daily)..[idx] = updated;
-      } else if (_daily.isNotEmpty) {
-        final updated = List<Map<String, dynamic>>.from(_daily);
-        updated.add({'date': today, 'total_energy_kwh': energyKwh});
-        _daily = updated;
-      }
-    });
+    ApiService.getTodayEnergy(home.pad!.deviceId!).then((kwh) {
+      if (!mounted) return;
+      setState(() { _todayEnergy = kwh; });
+    }).catchError((_) {});
   }
 
   Future<void> _load() async {
@@ -138,9 +130,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Today energy card
-                      _TodayCard(energy: _todayEnergy),
-                      const SizedBox(height: 20),
+                      // Today energy card — only relevant for the current month
+                      if (_month == DateFormat('yyyy-MM').format(DateTime.now())) ...[
+                        _TodayCard(energy: _todayEnergy),
+                        const SizedBox(height: 20),
+                      ],
 
                       // Daily bar chart
                       if (_daily.isEmpty)
@@ -251,6 +245,15 @@ class _LiveDot extends StatelessWidget {
 
 // ── Daily bar chart ───────────────────────────────────────────────────────────
 
+// mysql2 returns DECIMAL columns as strings; parse both num and String safely.
+double _parseKwh(dynamic v) {
+  if (v == null) return 0.0;
+  if (v is num) return v.toDouble();
+  return double.tryParse(v.toString()) ?? 0.0;
+}
+
+String _dateStr(dynamic v) => v?.toString() ?? '';
+
 class _DailyChart extends StatelessWidget {
   const _DailyChart({required this.daily, required this.month});
   final List<Map<String, dynamic>> daily;
@@ -259,10 +262,10 @@ class _DailyChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sorted = List<Map<String, dynamic>>.from(daily)
-      ..sort((a, b) => (a['date'] as String).compareTo(b['date'] as String));
+      ..sort((a, b) => _dateStr(a['date']).compareTo(_dateStr(b['date'])));
 
     final maxY = sorted.fold<double>(0, (m, d) {
-      final v = (d['total_energy_kwh'] as num?)?.toDouble() ?? 0;
+      final v = _parseKwh(d['total_energy_kwh']);
       return v > m ? v : m;
     });
     final yMax = maxY == 0 ? 1.0 : (maxY * 1.25);
@@ -270,7 +273,7 @@ class _DailyChart extends StatelessWidget {
     final bars = sorted.asMap().entries.map((entry) {
       final i = entry.key;
       final d = entry.value;
-      final kwh = (d['total_energy_kwh'] as num?)?.toDouble() ?? 0;
+      final kwh = _parseKwh(d['total_energy_kwh']);
       final dateStr = d['date'] as String? ?? '';
       final isToday = dateStr.startsWith(DateFormat('yyyy-MM-dd').format(DateTime.now()));
       return BarChartGroupData(
@@ -331,8 +334,8 @@ class _DailyChart extends StatelessWidget {
                       getTitlesWidget: (v, _) {
                         final idx = v.toInt();
                         if (idx < 0 || idx >= sorted.length) return const SizedBox.shrink();
-                        final dateStr = sorted[idx]['date'] as String? ?? '';
-                        final day = dateStr.length >= 10 ? dateStr.substring(8, 10) : '';
+                        final raw = _dateStr(sorted[idx]['date']);
+                        final day = raw.length >= 10 ? raw.substring(8, 10) : '';
                         return Text(day, style: const TextStyle(fontSize: 9, color: kTextMuted));
                       },
                     ),
@@ -344,8 +347,8 @@ class _DailyChart extends StatelessWidget {
                   touchTooltipData: BarTouchTooltipData(
                     getTooltipColor: (_) => kNavy700,
                     getTooltipItem: (group, _, rod, __) {
-                      final dateStr = sorted[group.x.toInt()]['date'] as String? ?? '';
-                      final day = dateStr.length >= 10 ? dateStr.substring(5) : dateStr;
+                      final raw = _dateStr(sorted[group.x.toInt()]['date']);
+                      final day = raw.length >= 10 ? raw.substring(5, 10) : raw;
                       return BarTooltipItem(
                         '$day\n${rod.toY.toStringAsFixed(3)} kWh',
                         const TextStyle(color: kTextBody, fontSize: 11),
