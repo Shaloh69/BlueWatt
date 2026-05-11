@@ -6,6 +6,12 @@ import { AppError } from '../utils/AppError';
 import { sendSuccess } from '../utils/apiResponse';
 import { asyncHandler } from '../utils/asyncHandler';
 import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
+import { cache } from '../services/cache.service';
+
+/** Drop all billing cache entries so the next GET sees fresh data. */
+function bustBillingCache(): void {
+  cache.invalidate('billing:');
+}
 
 /** GET /billing — admin: all billing periods */
 export const listAllBilling = asyncHandler(
@@ -76,6 +82,7 @@ export const generateBilling = asyncHandler(
     }
     const periodDate = new Date(period_start);
     await BillingService.generateBilling(parseInt(pad_id, 10), periodDate);
+    bustBillingCache();
     sendSuccess(res, { message: 'Billing period generated' }, HTTP_STATUS.CREATED);
   }
 );
@@ -87,6 +94,7 @@ export const markBillingPaid = asyncHandler(
     if (!bill)
       throw new AppError('Billing period not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
     await BillingPeriodModel.markPaid(bill.id);
+    bustBillingCache();
     sendSuccess(res, { message: 'Bill marked as paid' });
   }
 );
@@ -98,6 +106,7 @@ export const waiveBilling = asyncHandler(
     if (!bill)
       throw new AppError('Billing period not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
     await BillingPeriodModel.waive(bill.id);
+    bustBillingCache();
     sendSuccess(res, { message: 'Bill waived' });
   }
 );
@@ -109,6 +118,7 @@ export const deleteBilling = asyncHandler(
     if (!bill)
       throw new AppError('Billing period not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
     await BillingPeriodModel.delete(bill.id);
+    bustBillingCache();
     sendSuccess(res, { id: bill.id }, HTTP_STATUS.OK, 'Bill deleted');
   }
 );
