@@ -6,7 +6,7 @@
  *  - Cleanses all data, keeps admin account
  *  - 3 real tenants: Sophie (PAD-1), Reynie (PAD-3), Jassy (PAD-4)
  *  - 4 devices (bluewatt-001/002/003/004); PAD-2 inactive relay=off no tenant
- *  - Daily power aggregates Mar 11 – May 4 (CKS 2nd attempt 11:36am, manual submeter values)
+ *  - Daily power aggregates Mar 11 – May 5 (CKS 2nd attempt 11:36am, manual submeter values)
  *  - CKS meter readings:
  *      Sophie PAD-1 (#2020351146): Mar11=4515.7 → Apr26≈4829.7 kWh  (048297 display)
  *      PAD-2  inactive (relay off): voltage fluctuates 210–241 V  avg≈3.61/day
@@ -47,6 +47,7 @@ const DEVICES = [
     device_name: 'PAD-4 Meter',
     location: 'Unit PAD-4',
     description: 'ESP32 meter — Jassy  (CKS #2020351141)',
+    energy_offset: 197.774, // PZEM counter reset on ~May 10 2026; offset restores continuity
   },
 ];
 
@@ -782,6 +783,18 @@ const DAILY_DATA: Record<string, DayData[]> = {
       peak_hour: 20,
       reading_count: 1440,
     }, // Mon — CKS manual submeter
+    {
+      date: '2026-05-05',
+      total_energy_kwh: 9.244,
+      avg_power_real: 385.2,
+      max_power_real: 1349,
+      min_power_real: 44.5,
+      avg_voltage: 222.0,
+      avg_current: 1.972,
+      avg_power_factor: 0.88,
+      peak_hour: 20,
+      reading_count: 1440,
+    }, // Tue — CKS manual submeter
   ],
 
   // ── Reynie (PAD-3, bluewatt-003) ──────────────────────────────────────────
@@ -1448,6 +1461,18 @@ const DAILY_DATA: Record<string, DayData[]> = {
       peak_hour: 20,
       reading_count: 1440,
     }, // Mon — CKS manual submeter
+    {
+      date: '2026-05-05',
+      total_energy_kwh: 2.058,
+      avg_power_real: 85.8,
+      max_power_real: 300,
+      min_power_real: 9.9,
+      avg_voltage: 221.0,
+      avg_current: 0.441,
+      avg_power_factor: 0.88,
+      peak_hour: 20,
+      reading_count: 1440,
+    }, // Tue — CKS manual submeter
   ],
 
   // ── Jassy (PAD-4, bluewatt-004) ───────────────────────────────────────────
@@ -2092,12 +2117,12 @@ const DAILY_DATA: Record<string, DayData[]> = {
     }, // Sat — CKS manual submeter
     {
       date: '2026-05-03',
-      total_energy_kwh: 0.4,
-      avg_power_real: 16.7,
-      max_power_real: 58,
-      min_power_real: 2.2,
+      total_energy_kwh: 0.54,
+      avg_power_real: 22.5,
+      max_power_real: 78,
+      min_power_real: 3.0,
       avg_voltage: 222.0,
-      avg_current: 0.086,
+      avg_current: 0.115,
       avg_power_factor: 0.88,
       peak_hour: 19,
       reading_count: 1440,
@@ -2114,6 +2139,18 @@ const DAILY_DATA: Record<string, DayData[]> = {
       peak_hour: 20,
       reading_count: 1440,
     }, // Mon — CKS manual submeter
+    {
+      date: '2026-05-05',
+      total_energy_kwh: 6.617,
+      avg_power_real: 275.7,
+      max_power_real: 965,
+      min_power_real: 32.1,
+      avg_voltage: 222.0,
+      avg_current: 1.411,
+      avg_power_factor: 0.88,
+      peak_hour: 20,
+      reading_count: 1440,
+    }, // Tue — CKS manual submeter
   ],
 };
 
@@ -2152,9 +2189,7 @@ async function cleanseDatabase() {
     'relay_commands',
     'anomaly_events',
     'power_aggregates_hourly',
-    'power_aggregates_daily',
     'power_aggregates_monthly',
-    'power_readings',
     'device_keys',
     'payment_qr_codes',
     'pads',
@@ -2164,6 +2199,10 @@ async function cleanseDatabase() {
     await pool.execute(`TRUNCATE TABLE ${t}`);
     console.log(`  ✓ Truncated: ${t}`);
   }
+  // Delete only seeded daily rows — preserve live aggregates (May 6+)
+  await pool.execute(`DELETE FROM power_aggregates_daily WHERE date <= '2026-05-05'`);
+  console.log('  ✓ Cleared seeded rows from power_aggregates_daily (live data preserved)');
+  // power_readings is intentionally kept — live ESP readings must not be wiped
   await pool.execute("DELETE FROM users WHERE role != 'admin'");
   console.log('  ✓ Deleted non-admin users (admin account kept)');
   await pool.execute('SET FOREIGN_KEY_CHECKS = 1');
@@ -2199,8 +2238,8 @@ async function seedDevices() {
       continue;
     }
     await pool.execute(
-      'INSERT INTO devices (owner_id, device_id, device_name, location, description) VALUES (?, ?, ?, ?, ?)',
-      [adminId, d.device_id, d.device_name, d.location, d.description]
+      'INSERT INTO devices (owner_id, device_id, device_name, location, description, energy_offset) VALUES (?, ?, ?, ?, ?, ?)',
+      [adminId, d.device_id, d.device_name, d.location, d.description, (d as any).energy_offset ?? 0]
     );
     console.log(`  ✓ Device created: ${d.device_id}  (${d.device_name})`);
   }
@@ -2356,7 +2395,7 @@ async function seedPowerAggregates() {
 
     const totalAll = days.reduce((s: number, d: DayData) => s + d.total_energy_kwh, 0);
     console.log(
-      `  ✓ Power data seeded: ${p.device_serial}  |  Mar 11 – May 4  |  ` +
+      `  ✓ Power data seeded: ${p.device_serial}  |  Mar 11 – May 5  |  ` +
         `${totalAll.toFixed(2)} kWh`
     );
   }
@@ -2511,7 +2550,7 @@ async function seedAnomalyEvents() {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log('\n🌱  BlueWatt Seeder — Real Meter Data (Mar 11 – May 4 2026)\n');
+  console.log('\n🌱  BlueWatt Seeder — Real Meter Data (Mar 11 – May 5 2026)\n');
   try {
     console.log('🗑️   Cleansing database (keeping admin)...');
     await cleanseDatabase();
@@ -2531,7 +2570,7 @@ async function main() {
     console.log('\n🏠  Seeding pads...');
     await seedPads();
 
-    console.log('\n⚡  Seeding power aggregates (Mar 11 – May 4)...');
+    console.log('\n⚡  Seeding power aggregates (Mar 11 – May 5)...');
     await seedPowerAggregates();
 
     console.log('\n🏨  Seeding stays...');
@@ -2551,7 +2590,7 @@ async function main() {
     console.log('  Reynie:  reynie-proto@test.com  /  Tenant@1234  →  PAD-3 (bluewatt-003)');
     console.log('  Jassy:   jassy-proto@test.com   /  Tenant@1234  →  PAD-4 (bluewatt-004)');
     console.log('─────────────────────────────────────────────────────────────────────');
-    console.log('  Rate: ₱11.98/kWh | Check-in: March 11 2026 | Data: Mar 11 – May 4');
+    console.log('  Rate: ₱11.98/kWh | Check-in: March 11 2026 | Data: Mar 11 – May 5');
     console.log('  Billing cycle 1 (Mar 11 – Apr 10): electricity only. No rent billing.');
     console.log('─────────────────────────────────────────────────────────────────────');
     console.log('  NOTE: Re-upload the GCash/Maya payment QR code in the admin panel.');

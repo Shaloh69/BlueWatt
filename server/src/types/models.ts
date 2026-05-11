@@ -23,6 +23,7 @@ export interface Device {
   device_image_url?: string;
   last_seen_at?: Date;
   firmware_version?: string;
+  energy_offset: number;
   created_at: Date;
   updated_at: Date;
 }

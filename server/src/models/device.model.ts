@@ -36,7 +36,7 @@ export class DeviceModel {
   static async findByDeviceId(deviceId: string): Promise<Device | null> {
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT id, owner_id, device_id, device_name, location, description, is_active, relay_status,
-              last_seen_at, firmware_version, created_at, updated_at
+              last_seen_at, firmware_version, energy_offset, created_at, updated_at
        FROM devices WHERE device_id = ?`,
       [deviceId]
     );

@@ -61,6 +61,11 @@ export const submitPowerData = asyncHandler(
       );
     }
 
+    // Apply per-device energy offset to correct for PZEM counter resets.
+    // Offset is 0 for all devices unless explicitly set (e.g. after a hardware reset).
+    const adjustedEnergy =
+      energy_kwh != null ? energy_kwh + (Number(device.energy_offset) || 0) : energy_kwh;
+
     await PowerReadingModel.create(
       device.id,
       readingTimestamp,
@@ -69,7 +74,7 @@ export const submitPowerData = asyncHandler(
       power_apparent,
       power_real,
       power_factor,
-      energy_kwh,
+      adjustedEnergy,
       frequency
     );
 
@@ -88,7 +93,7 @@ export const submitPowerData = asyncHandler(
       power_real,
       power_apparent,
       power_factor,
-      energy_kwh,
+      energy_kwh: adjustedEnergy,
       frequency,
     });
 
