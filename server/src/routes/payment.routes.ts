@@ -6,6 +6,7 @@ import {
   getPendingVerification,
   approvePayment,
   rejectPayment,
+  deletePayment,
   getPaymentStatus,
   getMyPaymentHistory,
   getAllPayments,
@@ -24,9 +25,10 @@ router.post('/submit', authenticateJWT, upload.array('receipts', 3), submitPayme
 // Admin: list all receipts pending verification
 router.get('/pending-verification', authenticateJWT, requireAdmin, getPendingVerification);
 
-// Admin: approve or reject a submitted receipt
+// Admin: approve, reject, or delete a payment record
 router.put('/:id/approve', authenticateJWT, requireAdmin, approvePayment);
 router.put('/:id/reject', authenticateJWT, requireAdmin, rejectPayment);
+router.delete('/:id', authenticateJWT, requireAdmin, deletePayment);
 
 // Payment status for a bill (tenant sees own, admin sees all)
 router.get('/billing/:billId', authenticateJWT, getPaymentStatus);

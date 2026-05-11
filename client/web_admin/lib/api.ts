@@ -112,6 +112,7 @@ export const paymentsApi = {
     api.post("/payments/qr-codes", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
+  deletePayment: (id: number) => api.delete(`/payments/${id}`),
   toggleQr: (id: number) => api.put(`/payments/qr-codes/${id}/toggle`, {}),
   deleteQr: (id: number) => api.delete(`/payments/qr-codes/${id}`),
 };

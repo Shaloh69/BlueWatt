@@ -88,6 +88,10 @@ export class PaymentModel {
     );
   }
 
+  static async delete(id: number): Promise<void> {
+    await pool.execute(`DELETE FROM payments WHERE id = ?`, [id]);
+  }
+
   /** Admin rejects: marks payment failed + stores reason */
   static async reject(id: number, adminId: number, reason: string): Promise<void> {
     await pool.execute(

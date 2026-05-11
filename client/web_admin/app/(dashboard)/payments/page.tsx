@@ -58,6 +58,7 @@ export default function PaymentsPage() {
 
   const [rejectTarget, setRejectTarget] = useState<Payment | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<Payment | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [qrLabel, setQrLabel] = useState("GCash / Maya");
@@ -88,6 +89,21 @@ export default function PaymentsPage() {
       toast.info("Payment rejected");
       setRejectTarget(null);
       setRejectReason("");
+      reloadPayments();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setSaving(true);
+    try {
+      await paymentsApi.deletePayment(deleteTarget.id);
+      toast.info("Payment record deleted");
+      setDeleteTarget(null);
       reloadPayments();
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -279,18 +295,24 @@ export default function PaymentsPage() {
                         {p.receipt_url && <ReceiptLinks raw={p.receipt_url} />}
                       </td>
                       <td className="py-3 px-3">
-                        {p.status === "pending_verification" && (
-                          <div className="flex gap-1">
-                            <Button size="sm" color="success" variant="flat" isIconOnly isLoading={saving}
-                              onPress={() => handleApprove(p)} title="Approve">
-                              <CheckCircle className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" color="danger" variant="flat" isIconOnly
-                              onPress={() => setRejectTarget(p)} title="Reject">
-                              <XCircle className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        )}
+                        <div className="flex gap-1">
+                          {p.status === "pending_verification" && (
+                            <>
+                              <Button size="sm" color="success" variant="flat" isIconOnly isLoading={saving}
+                                onPress={() => handleApprove(p)} title="Approve">
+                                <CheckCircle className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" color="danger" variant="flat" isIconOnly
+                                onPress={() => setRejectTarget(p)} title="Reject">
+                                <XCircle className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
+                          <Button size="sm" color="danger" variant="light" isIconOnly
+                            onPress={() => setDeleteTarget(p)} title="Delete record">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -312,6 +334,22 @@ export default function PaymentsPage() {
           <ModalFooter>
             <Button variant="flat" onPress={() => setRejectTarget(null)}>Cancel</Button>
             <Button color="danger" isLoading={saving} onPress={handleReject}>Reject</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <Modal isOpen={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)} classNames={modalClassNames}>
+        <ModalContent>
+          <ModalHeader>Delete Payment Record</ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-default-500">
+              Permanently delete the payment record from <strong>{deleteTarget?.tenant_name}</strong> (₱{Number(deleteTarget?.amount).toFixed(2)}, ref: {deleteTarget?.reference_number ?? "—"})?
+            </p>
+            <p className="text-xs text-warning mt-2">If the bill was pending, it will be restored to unpaid so the tenant can resubmit.</p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="flat" onPress={() => setDeleteTarget(null)}>Cancel</Button>
+            <Button color="danger" isLoading={saving} onPress={handleDelete}>Delete</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

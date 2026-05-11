@@ -251,6 +251,29 @@ export const getMyPaymentHistory = asyncHandler(
   }
 );
 
+/**
+ * DELETE /payments/:id — admin: permanently delete a payment record
+ * If the bill is still marked pending (no other active payment), restores it to unpaid/overdue.
+ */
+export const deletePayment = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    const payment = await PaymentModel.findById(parseInt(req.params.id, 10));
+    if (!payment)
+      throw new AppError('Payment not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
+
+    await PaymentModel.delete(payment.id);
+
+    // If the bill is still in pending state, restore it so the tenant can resubmit
+    const bill = await BillingPeriodModel.findById(payment.billing_period_id);
+    if (bill?.status === 'pending') {
+      await BillingPeriodModel.markUnpaidOrOverdue(payment.billing_period_id);
+    }
+    bustBillingCache();
+
+    sendSuccess(res, { message: 'Payment record deleted' });
+  }
+);
+
 /** GET /payments/admin/all — admin: all payments */
 export const getAllPayments = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
