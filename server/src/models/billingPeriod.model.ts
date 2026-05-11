@@ -56,7 +56,7 @@ export class BillingPeriodModel {
   }
 
   static async findById(id: number): Promise<BillingPeriod | null> {
-    const [rows] = await pool.execute<RowDataPacket[]>(
+    const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT b.*,
          (SELECT pr.rejection_reason FROM payments pr
           WHERE pr.billing_period_id = b.id AND pr.status = 'failed'
@@ -77,7 +77,7 @@ export class BillingPeriodModel {
   }
 
   static async findByTenant(tenantId: number, limit: number = 12): Promise<RowDataPacket[]> {
-    const [rows] = await pool.execute<RowDataPacket[]>(
+    const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT b.*, p.name AS pad_name,
          (SELECT pr.rejection_reason FROM payments pr
           WHERE pr.billing_period_id = b.id AND pr.status = 'failed'
