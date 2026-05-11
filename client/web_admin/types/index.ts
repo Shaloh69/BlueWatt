@@ -140,7 +140,7 @@ export interface BillingPeriod {
   amount_due: number;
   flat_amount: number;
   cycle_number?: number;
-  status: "unpaid" | "paid" | "overdue" | "waived";
+  status: "unpaid" | "pending" | "paid" | "overdue" | "waived";
   due_date: string;
   paid_at?: string;
   created_at: string;

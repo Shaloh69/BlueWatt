@@ -32,6 +32,9 @@ class BillCard extends StatelessWidget {
     } else if (bill.status == 'waived') {
       statusColor = kPurple;
       statusLabel = 'Waived';
+    } else if (bill.status == 'pending') {
+      statusColor = kPrimaryBlue;
+      statusLabel = 'Pending';
     } else {
       statusColor = kWarning;
       statusLabel = 'Unpaid';

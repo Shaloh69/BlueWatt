@@ -137,7 +137,68 @@ class BillDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          if (!liveBill.isPaid && !liveBill.isWaived)
+          if (liveBill.rejectionReason != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: kDanger.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: kDanger.withOpacity(0.3)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.error_outline, color: kDanger, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Payment Rejected',
+                          style: TextStyle(
+                              color: kDanger,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          liveBill.rejectionReason!,
+                          style: const TextStyle(
+                              color: kTextMuted, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (liveBill.isPending) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: kPrimaryBlue.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: kPrimaryBlue.withOpacity(0.3)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.hourglass_top_rounded, color: kPrimaryBlue, size: 20),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Your payment is being reviewed by the admin. You will be notified once it is approved.',
+                      style: TextStyle(color: kTextMuted, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (!liveBill.isPaid && !liveBill.isWaived && !liveBill.isPending)
             SizedBox(
               height: 50,
               child: ElevatedButton.icon(
@@ -225,6 +286,10 @@ class _StatusChip extends StatelessWidget {
       case 'waived':
         color = kPurple;
         label = 'Waived';
+        break;
+      case 'pending':
+        color = kPrimaryBlue;
+        label = 'Pending Review';
         break;
       default:
         color = kWarning;

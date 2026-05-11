@@ -19,6 +19,27 @@ import useSWR from "swr";
 const statusColor = (s: string) =>
   s === "paid" ? "success" : s === "failed" ? "danger" : s === "refunded" ? "secondary" : "warning";
 
+function ReceiptLinks({ raw }: { raw: string }) {
+  let urls: string[] = [];
+  try {
+    const parsed = JSON.parse(raw);
+    urls = Array.isArray(parsed) ? parsed : [raw];
+  } catch {
+    urls = [raw];
+  }
+  return (
+    <div className="flex gap-1">
+      {urls.map((url, i) => (
+        <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+          <Button size="sm" variant="flat" isIconOnly title={`Receipt ${i + 1}`}>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </Button>
+        </a>
+      ))}
+    </div>
+  );
+}
+
 interface QrCode {
   id: number;
   label: string;
@@ -247,14 +268,15 @@ export default function PaymentsPage() {
                       <td className="py-3 px-3 text-default-500 capitalize">{p.payment_method}</td>
                       <td className="py-3 px-3 font-mono text-xs text-default-400">{p.reference_number ?? "—"}</td>
                       <td className="py-3 px-3">
-                        <Chip size="sm" variant="flat" color={statusColor(p.status)}>{p.status}</Chip>
+                        <div className="flex flex-col gap-1">
+                          <Chip size="sm" variant="flat" color={statusColor(p.status)}>{p.status}</Chip>
+                          {p.rejection_reason && (
+                            <span className="text-xs text-danger/80 max-w-[160px] truncate" title={p.rejection_reason}>{p.rejection_reason}</span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-3">
-                        {p.receipt_url && (
-                          <a href={p.receipt_url} target="_blank" rel="noopener noreferrer">
-                            <Button size="sm" variant="flat" isIconOnly><ExternalLink className="w-3.5 h-3.5" /></Button>
-                          </a>
-                        )}
+                        {p.receipt_url && <ReceiptLinks raw={p.receipt_url} />}
                       </td>
                       <td className="py-3 px-3">
                         {p.status === "pending_verification" && (

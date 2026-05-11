@@ -57,7 +57,11 @@ export class BillingPeriodModel {
 
   static async findById(id: number): Promise<BillingPeriod | null> {
     const [rows] = await pool.execute<RowDataPacket[]>(
-      `SELECT * FROM billing_periods WHERE id = ?`,
+      `SELECT b.*,
+         (SELECT pr.rejection_reason FROM payments pr
+          WHERE pr.billing_period_id = b.id AND pr.status = 'failed'
+          ORDER BY pr.created_at DESC LIMIT 1) AS rejection_reason
+       FROM billing_periods b WHERE b.id = ?`,
       [id]
     );
     return rows.length > 0 ? (rows[0] as BillingPeriod) : null;
@@ -74,7 +78,10 @@ export class BillingPeriodModel {
 
   static async findByTenant(tenantId: number, limit: number = 12): Promise<RowDataPacket[]> {
     const [rows] = await pool.execute<RowDataPacket[]>(
-      `SELECT b.*, p.name AS pad_name
+      `SELECT b.*, p.name AS pad_name,
+         (SELECT pr.rejection_reason FROM payments pr
+          WHERE pr.billing_period_id = b.id AND pr.status = 'failed'
+          ORDER BY pr.created_at DESC LIMIT 1) AS rejection_reason
        FROM billing_periods b
        JOIN pads p ON p.id = b.pad_id
        WHERE b.tenant_id = ?
@@ -123,6 +130,19 @@ export class BillingPeriodModel {
     await pool.execute(`UPDATE billing_periods SET status = 'paid', paid_at = NOW() WHERE id = ?`, [
       id,
     ]);
+  }
+
+  static async markPending(id: number): Promise<void> {
+    await pool.execute(`UPDATE billing_periods SET status = 'pending' WHERE id = ?`, [id]);
+  }
+
+  static async markUnpaidOrOverdue(id: number): Promise<void> {
+    await pool.execute(
+      `UPDATE billing_periods
+       SET status = CASE WHEN due_date < CURDATE() THEN 'overdue' ELSE 'unpaid' END
+       WHERE id = ?`,
+      [id]
+    );
   }
 
   static async markOverdue(): Promise<number> {

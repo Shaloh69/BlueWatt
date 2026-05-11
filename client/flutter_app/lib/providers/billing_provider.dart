@@ -21,7 +21,7 @@ class BillingProvider extends ChangeNotifier {
 
   BillingPeriod? get unpaidBill {
     try {
-      return _bills.firstWhere((b) => !b.isPaid);
+      return _bills.firstWhere((b) => b.isUnpaid || b.isOverdue);
     } catch (_) {
       return null;
     }

@@ -41,8 +41,8 @@ export class PaymentModel {
        JOIN billing_periods b ON b.id = pay.billing_period_id
        JOIN pads p ON p.id = b.pad_id
        WHERE pay.tenant_id = ?
-       ORDER BY pay.created_at DESC LIMIT ?`,
-      [tenantId, limit]
+       ORDER BY pay.created_at DESC LIMIT ${Math.floor(limit)}`,
+      [tenantId]
     );
     return rows;
   }
@@ -73,8 +73,7 @@ export class PaymentModel {
        JOIN pads p ON p.id = b.pad_id
        JOIN users u ON u.id = pay.tenant_id
        LEFT JOIN users v ON v.id = pay.verified_by
-       ORDER BY pay.created_at DESC LIMIT ?`,
-      [limit]
+       ORDER BY pay.created_at DESC LIMIT ${Math.floor(limit)}`
     );
     return rows;
   }

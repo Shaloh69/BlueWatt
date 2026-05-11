@@ -7,11 +7,12 @@ class BillingPeriod {
   final double energyKwh;
   final double ratePerKwh;
   final double amountDue;
-  final String status; // unpaid | paid | overdue | waived
+  final String status; // unpaid | pending | paid | overdue | waived
   final String dueDate;
   final String? paidAt;
   final String? padName;
   final String billType; // electricity | rent
+  final String? rejectionReason;
 
   const BillingPeriod({
     required this.id,
@@ -27,6 +28,7 @@ class BillingPeriod {
     this.paidAt,
     this.padName,
     this.billType = 'electricity',
+    this.rejectionReason,
   });
 
   static double _d(dynamic v) =>
@@ -46,6 +48,7 @@ class BillingPeriod {
         paidAt: j['paid_at'] as String?,
         padName: j['pad_name'] as String?,
         billType: j['bill_type'] as String? ?? 'electricity',
+        rejectionReason: j['rejection_reason'] as String?,
       );
 
   Map<String, dynamic> toJson() => {
@@ -62,12 +65,14 @@ class BillingPeriod {
         'paid_at': paidAt,
         'pad_name': padName,
         'bill_type': billType,
+        'rejection_reason': rejectionReason,
       };
 
   bool get isPaid => status == 'paid';
   bool get isOverdue => status == 'overdue';
   bool get isWaived => status == 'waived';
   bool get isUnpaid => status == 'unpaid';
+  bool get isPending => status == 'pending';
   bool get isElectricity => billType == 'electricity';
   bool get isRent => billType == 'rent';
 }

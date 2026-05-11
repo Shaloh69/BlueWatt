@@ -8,6 +8,11 @@ import { sendSuccess } from '../utils/apiResponse';
 import { asyncHandler } from '../utils/asyncHandler';
 import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
 import { sseService } from '../services/sse.service';
+import { cache } from '../services/cache.service';
+
+function bustBillingCache(): void {
+  cache.invalidate('billing:');
+}
 
 /**
  * POST /payments/submit
@@ -65,6 +70,13 @@ export const submitPayment = asyncHandler(
         ERROR_CODES.DUPLICATE_ENTRY
       );
     }
+    if (bill.status === 'pending') {
+      throw new AppError(
+        'A payment for this bill is already pending verification',
+        HTTP_STATUS.CONFLICT,
+        ERROR_CODES.DUPLICATE_ENTRY
+      );
+    }
 
     // Upload all receipt images to Supabase and collect URLs
     const receiptUrls: string[] = [];
@@ -88,6 +100,10 @@ export const submitPayment = asyncHandler(
       String(reference_number).trim(),
       receiptUrl
     );
+
+    // Mark the bill as pending so the tenant sees the status change immediately
+    await BillingPeriodModel.markPending(bill.id);
+    bustBillingCache();
 
     // Notify all admins via SSE that a new receipt is pending review
     sseService.broadcastToAll('payment_submitted', {
@@ -146,6 +162,7 @@ export const approvePayment = asyncHandler(
 
     await PaymentModel.approve(payment.id, req.user.id);
     await BillingPeriodModel.markPaid(payment.billing_period_id);
+    bustBillingCache();
 
     sseService.sendToUser(payment.tenant_id, 'payment_received', {
       payment_id: payment.id,
@@ -191,6 +208,9 @@ export const rejectPayment = asyncHandler(
     }
 
     await PaymentModel.reject(payment.id, req.user.id, String(reason));
+    // Restore bill to unpaid or overdue so tenant can resubmit
+    await BillingPeriodModel.markUnpaidOrOverdue(payment.billing_period_id);
+    bustBillingCache();
 
     // Notify the tenant via SSE (if subscribed)
     sseService.sendToUser(payment.tenant_id, 'payment_rejected', {
