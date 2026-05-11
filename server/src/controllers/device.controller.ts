@@ -7,7 +7,7 @@ import { sendSuccess } from '../utils/apiResponse';
 import { asyncHandler } from '../utils/asyncHandler';
 import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
 import { DeviceRegistrationRequest } from '../types/api';
-import { bustCache } from '../middleware/cache.middleware';
+import { bustCacheAll } from '../middleware/cache.middleware';
 import { logger } from '../utils/logger';
 
 export const registerDevice = asyncHandler(
@@ -37,7 +37,7 @@ export const registerDevice = asyncHandler(
 
     await DeviceKeyModel.create(device.id, apiKey, 'Default Key');
 
-    bustCache('devices', req.user!.id);
+    bustCacheAll('devices');
 
     logger.info(
       `[Admin] Device registered — device_id="${device_id}" name="${device_name}" db_id=${device.id} by user=${req.user.id}`
@@ -146,7 +146,7 @@ export const updateDevice = asyncHandler(
     if (is_active !== undefined) changed.is_active = is_active;
 
     await DeviceModel.update(deviceId, { device_name, location, description, is_active });
-    bustCache('devices', req.user!.id);
+    bustCacheAll('devices');
 
     logger.info(
       `[Admin] Device updated — device_id="${device.device_id}" db_id=${deviceId} by user=${req.user!.id}: ${JSON.stringify(changed)}`
@@ -174,7 +174,7 @@ export const deleteDevice = asyncHandler(
     }
 
     await DeviceModel.delete(deviceId);
-    bustCache('devices', req.user!.id);
+    bustCacheAll('devices');
     logger.info(
       `[Admin] Device deleted — device_id="${device.device_id}" db_id=${deviceId} by user=${req.user!.id}`
     );
@@ -209,7 +209,7 @@ export const updateRelay = asyncHandler(
     const { relay_status } = req.body;
 
     await DeviceModel.update(deviceId, { relay_status });
-    bustCache('devices', req.user!.id);
+    bustCacheAll('devices');
 
     const updatedDevice = await DeviceModel.findById(deviceId);
 
@@ -244,7 +244,7 @@ export const regenerateDeviceKey = asyncHandler(
     const newApiKey = ApiKeyService.generateApiKey();
     await DeviceKeyModel.create(deviceId, newApiKey, 'Regenerated Key');
 
-    bustCache('devices', req.user.id);
+    bustCacheAll('devices');
     logger.info(
       `[Admin] API key regenerated for device#${deviceId} ("${device.device_id}") by user=${req.user.id}`
     );

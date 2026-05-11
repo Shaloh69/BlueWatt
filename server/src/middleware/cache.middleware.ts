@@ -46,12 +46,18 @@ export function cacheFor(ttlSeconds: number = 30, namespace?: string) {
 }
 
 /**
- * Call this after any write (POST / PUT / DELETE) to drop stale cache
- * entries for the given namespace and user.
- *
- * @param namespace  e.g. 'devices', 'pads', 'billing'
- * @param userId     req.user.id
+ * Drop cache entries for a specific user in a namespace.
+ * Use when only the acting user's view needs refreshing.
  */
 export function bustCache(namespace: string, userId: number | string): void {
   cache.invalidate(`${namespace}:user:${userId}:`);
+}
+
+/**
+ * Drop ALL cache entries for a namespace across every user.
+ * Use after admin writes that affect data visible to multiple users
+ * (e.g. pad assignments that tenants see in /pads/my).
+ */
+export function bustCacheAll(namespace: string): void {
+  cache.invalidate(`${namespace}:`);
 }

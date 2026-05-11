@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import '../config/constants.dart';
 import '../models/pad.dart';
 import '../models/power_reading.dart';
@@ -315,7 +316,12 @@ class ApiService {
     request.fields['payment_method'] = paymentMethod;
     request.fields['reference_number'] = referenceNumber;
     for (final image in receiptImages) {
-      request.files.add(await http.MultipartFile.fromPath('receipts', image.path));
+      // Always declare content-type as image/jpeg so the server accepts the
+      // file regardless of how image_picker named the temp file.
+      request.files.add(await http.MultipartFile.fromPath(
+        'receipts', image.path,
+        contentType: MediaType('image', 'jpeg'),
+      ));
     }
     final streamed = await request.send().timeout(
       _timeout,

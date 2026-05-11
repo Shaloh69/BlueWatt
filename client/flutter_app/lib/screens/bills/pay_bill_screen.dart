@@ -298,12 +298,12 @@ class _ReceiptSheetState extends State<_ReceiptSheet> {
   bool _submitting = false;
   static const _maxImages = 3;
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImage({bool camera = false}) async {
     if (_images.length >= _maxImages) return;
     final picker = ImagePicker();
     final picked = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
+      source: camera ? ImageSource.camera : ImageSource.gallery,
+      imageQuality: 85,  // forces JPEG output
     );
     if (picked != null && mounted) {
       setState(() => _images.add(File(picked.path)));
@@ -312,6 +312,38 @@ class _ReceiptSheetState extends State<_ReceiptSheet> {
 
   void _removeImage(int index) {
     setState(() => _images.removeAt(index));
+  }
+
+  Future<void> _showPickerDialog() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: kCardBg,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Container(width: 36, height: 4,
+              decoration: BoxDecoration(color: kBorderColor, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 12),
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined, color: kPrimaryBlue),
+              title: const Text('Take a Photo', style: TextStyle(color: Colors.white)),
+              onTap: () { Navigator.pop(ctx); _pickImage(camera: true); },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined, color: kPrimaryBlue),
+              title: const Text('Choose from Gallery', style: TextStyle(color: Colors.white)),
+              onTap: () { Navigator.pop(ctx); _pickImage(camera: false); },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _confirm() async {
@@ -409,7 +441,7 @@ class _ReceiptSheetState extends State<_ReceiptSheet> {
               // Add slot (shown if < 3 images)
               if (_images.length < _maxImages)
                 _AddSlot(
-                  onTap: _submitting ? null : _pickImage,
+                  onTap: _submitting ? null : () => _showPickerDialog(),
                   label: _images.isEmpty ? 'Add receipt' : 'Add more',
                 ),
             ],
