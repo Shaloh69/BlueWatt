@@ -122,9 +122,9 @@ class HomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
 
-                // Tenant relay disable button
-                if (pad.hasDevice && pad.relayStatus != 'tripped')
-                  _DisableButton(pad: pad),
+                // Tenant relay control — shown for all states when device is present
+                if (pad.hasDevice)
+                  _RelayButton(pad: pad),
 
                 const SizedBox(height: 16),
 
@@ -321,23 +321,28 @@ class _MetricsGrid extends StatelessWidget {
   }
 }
 
-class _DisableButton extends StatelessWidget {
+class _RelayButton extends StatelessWidget {
   final dynamic pad;
-  const _DisableButton({required this.pad});
+  const _RelayButton({required this.pad});
 
-  Future<void> _confirm(BuildContext context, bool isOff) async {
+  Future<void> _confirm(BuildContext context, String currentStatus) async {
+    final isRestoring = currentStatus == 'off' || currentStatus == 'tripped';
+    final isTripped   = currentStatus == 'tripped';
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1A2035),
         title: Text(
-          isOff ? 'Turn On Power?' : 'Turn Off Power?',
+          isRestoring ? 'Restore Power?' : 'Turn Off Power?',
           style: const TextStyle(color: Colors.white, fontSize: 16),
         ),
         content: Text(
-          isOff
-              ? 'This will restore power to your unit.'
-              : 'This will cut power to your unit.',
+          isTripped
+              ? 'The relay tripped due to a safety event. Restoring power will re-enable your unit.'
+              : isRestoring
+                  ? 'This will restore power to your unit.'
+                  : 'This will cut power to your unit.',
           style: const TextStyle(color: Color(0xFF8A9BB0), fontSize: 13),
         ),
         actions: [
@@ -349,9 +354,9 @@ class _DisableButton extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(
-              isOff ? 'Turn On' : 'Turn Off',
+              isRestoring ? 'Restore' : 'Turn Off',
               style: TextStyle(
-                color: isOff ? kSuccess : kDanger,
+                color: isRestoring ? kSuccess : kDanger,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -361,11 +366,12 @@ class _DisableButton extends StatelessWidget {
     );
     if (confirmed != true || !context.mounted) return;
     final home = context.read<HomeProvider>();
-    final err = isOff ? await home.enablePad() : await home.disablePad();
+    final isOn = !isRestoring;
+    final err = isOn ? await home.disablePad() : await home.enablePad();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(err ?? (isOff ? 'Power on command sent' : 'Power off command sent')),
+        content: Text(err ?? (isOn ? 'Power off command sent' : 'Power restore command sent')),
         backgroundColor: err != null ? kDanger : kSuccess,
       ),
     );
@@ -375,13 +381,33 @@ class _DisableButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<HomeProvider>(
       builder: (context, home, _) {
-        final isOff = pad.relayStatus == 'off';
-        final color = isOff ? kSuccess : kDanger;
+        final status = (home.pad?.relayStatus ?? pad.relayStatus) as String?;
+        final isOn      = status == 'on';
+        final isTripped = status == 'tripped';
+
+        final Color color;
+        final IconData icon;
+        final String label;
+
+        if (isTripped) {
+          color = kWarning;
+          icon  = Icons.warning_amber_rounded;
+          label = 'Relay Tripped — Tap to Restore';
+        } else if (isOn) {
+          color = kDanger;
+          icon  = Icons.power_settings_new;
+          label = 'Turn Off My Power';
+        } else {
+          color = kSuccess;
+          icon  = Icons.power;
+          label = 'Turn On My Power';
+        }
+
         return SizedBox(
           width: double.infinity,
           height: 44,
           child: OutlinedButton.icon(
-            onPressed: home.relayBusy ? null : () => _confirm(context, isOff),
+            onPressed: home.relayBusy ? null : () => _confirm(context, status ?? 'off'),
             style: OutlinedButton.styleFrom(
               foregroundColor: color,
               side: BorderSide(color: color.withOpacity(0.5)),
@@ -392,18 +418,10 @@ class _DisableButton extends StatelessWidget {
                 ? SizedBox(
                     width: 14,
                     height: 14,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: color))
-                : Icon(
-                    isOff ? Icons.power : Icons.power_settings_new,
-                    size: 16,
-                  ),
+                    child: CircularProgressIndicator(strokeWidth: 2, color: color))
+                : Icon(icon, size: 16),
             label: Text(
-              home.relayBusy
-                  ? 'Sending…'
-                  : isOff
-                      ? 'Turn On My Power'
-                      : 'Turn Off My Power',
+              home.relayBusy ? 'Sending…' : label,
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
