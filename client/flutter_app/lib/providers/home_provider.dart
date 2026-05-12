@@ -92,6 +92,7 @@ class HomeProvider extends ChangeNotifier {
 
   Future<String?> disablePad() => _sendRelay('off');
   Future<String?> enablePad() => _sendRelay('on');
+  Future<String?> resetRelay() => _sendRelay('reset');
 
   Future<String?> _sendRelay(String command) async {
     if (_relayBusy) return null;
@@ -100,6 +101,8 @@ class HomeProvider extends ChangeNotifier {
     try {
       await ApiService.sendRelayCommand(command);
       if (_pad != null) {
+        // 'reset' clears a trip and leaves the relay OFF
+        final newStatus = command == 'reset' ? 'off' : command;
         _pad = Pad(
           id: _pad!.id,
           name: _pad!.name,
@@ -109,7 +112,7 @@ class HomeProvider extends ChangeNotifier {
           ratePerKwh: _pad!.ratePerKwh,
           isActive: _pad!.isActive,
           deviceSerial: _pad!.deviceSerial,
-          relayStatus: command,
+          relayStatus: newStatus,
           lastSeenAt: _pad!.lastSeenAt,
         );
       }

@@ -9,7 +9,7 @@ import { Input, Textarea } from "@heroui/input";
 import { Tooltip } from "@heroui/tooltip";
 import {
   Cpu, Plus, RefreshCw, Wifi, WifiOff, ToggleLeft, ToggleRight,
-  Pencil, Building2, User, MapPin, Info, Trash2, Copy, Check, KeyRound,
+  Pencil, Building2, User, MapPin, Info, Trash2, Copy, Check, KeyRound, RotateCcw,
 } from "lucide-react";
 import { devicesApi, getErrorMessage } from "@/lib/api";
 import { useDevices, usePads, reloadDevices, reloadPads } from "@/lib/use-api";
@@ -57,7 +57,7 @@ export default function DevicesPage() {
   const isOnline = (d: Device) =>
     !!d.last_seen_at && Date.now() - new Date(d.last_seen_at).getTime() < 2 * 60 * 1000;
 
-  async function handleRelay(device: Device, command: "on" | "off") {
+  async function handleRelay(device: Device, command: "on" | "off" | "reset") {
     try {
       await devicesApi.issueRelayCommand(device.id, command);
       toast.success(`Relay ${command.toUpperCase()} sent to ${device.device_name}`);
@@ -271,11 +271,19 @@ export default function DevicesPage() {
 
                   {/* Actions */}
                   <div className="flex gap-2 pt-1 border-t border-default-200">
-                    <Tooltip content="Relay ON" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
-                      <Button size="sm" variant="flat" color="success" isIconOnly onPress={() => handleRelay(d, "on")}>
-                        <ToggleRight className="w-4 h-4" />
-                      </Button>
-                    </Tooltip>
+                    {d.relay_status === "tripped" ? (
+                      <Tooltip content="Reset Relay (clear trip)" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
+                        <Button size="sm" variant="flat" color="warning" isIconOnly onPress={() => handleRelay(d, "reset")}>
+                          <RotateCcw className="w-4 h-4" />
+                        </Button>
+                      </Tooltip>
+                    ) : (
+                      <Tooltip content="Relay ON" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
+                        <Button size="sm" variant="flat" color="success" isIconOnly onPress={() => handleRelay(d, "on")}>
+                          <ToggleRight className="w-4 h-4" />
+                        </Button>
+                      </Tooltip>
+                    )}
                     <Tooltip content="Relay OFF" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
                       <Button size="sm" variant="flat" color="default" isIconOnly onPress={() => handleRelay(d, "off")}>
                         <ToggleLeft className="w-4 h-4" />

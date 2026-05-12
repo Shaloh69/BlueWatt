@@ -367,7 +367,12 @@ class _RelayButton extends StatelessWidget {
     if (confirmed != true || !context.mounted) return;
     final home = context.read<HomeProvider>();
     final isOn = !isRestoring;
-    final err = isOn ? await home.disablePad() : await home.enablePad();
+    // TRIPPED → must send 'reset' first to clear the trip (ESP rejects 'on' from tripped state)
+    final err = isTripped
+        ? await home.resetRelay()
+        : isOn
+            ? await home.disablePad()
+            : await home.enablePad();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
