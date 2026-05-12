@@ -28,9 +28,20 @@ export const submitAnomalyEvent = asyncHandler(
       );
     }
 
-    const rawTs = new Date(timestamp * 1000);
+    const PROJECT_START = 1735689600; // 2026-01-01 00:00:00 UTC
+    const MYSQL_TS_MAX  = 2147483647; // 2038-01-19 03:14:07 UTC
+    const nowSec = Math.floor(Date.now() / 1000);
+    const tsValid =
+      typeof timestamp === 'number' &&
+      timestamp >= PROJECT_START &&
+      timestamp <= Math.min(nowSec + 60, MYSQL_TS_MAX);
     // ESP sends uptime seconds (not Unix epoch) when clock is not synced — fall back to server time
-    const eventTimestamp = rawTs.getFullYear() < 2020 ? new Date() : rawTs;
+    const eventTimestamp = tsValid ? new Date(timestamp * 1000) : new Date();
+    if (!tsValid) {
+      logger.warn(
+        `[ESP] Invalid anomaly timestamp from device "${device_id}" (${timestamp}) — using server time`
+      );
+    }
 
     const determinedSeverity = relay_tripped ? 'critical' : severity || 'medium';
 
