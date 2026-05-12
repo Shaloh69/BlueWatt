@@ -6,6 +6,7 @@ import { Card, CardBody } from "@heroui/card";
 import { Chip } from "@heroui/chip";
 import { Button } from "@heroui/button";
 import { MonitorDot, Zap, RefreshCw, Wifi, WifiOff } from "lucide-react";
+
 import { devicesApi, powerApi, getErrorMessage } from "@/lib/api";
 import { Device } from "@/types";
 
@@ -118,15 +119,19 @@ export default function LivePage() {
     setReading(null);
     sessionStartEnergyRef.current = null;
 
-    powerApi.latest(selectedDevice).then(r => {
-      const d = r.data.data?.reading;
-      if (d) setReading(d);
-    }).catch(() => {});
+    powerApi
+      .latest(selectedDevice)
+      .then((r) => {
+        const d = r.data.data?.reading;
+
+        if (d) setReading(d);
+      })
+      .catch(() => {});
   }, [selectedDevice]);
 
   useEffect(() => () => { esRef.current?.close(); }, []);
 
-  async function handleRelay(command: "on" | "off") {
+  async function handleRelay(command: "on" | "off" | "reset") {
     if (!selectedDevice) return;
     setRelayPending(true);
     try {
@@ -139,7 +144,7 @@ export default function LivePage() {
     }
   }
 
-  const device = devices.find(d => d.id === selectedDevice);
+  const device = devices.find((d) => d.id === selectedDevice);
 
   const metricCard = (label: string, value: string, unit: string, color = "text-foreground") => (
     <Card className="border border-default-200">
