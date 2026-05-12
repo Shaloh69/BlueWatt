@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -140,7 +141,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       if (_daily.isEmpty)
                         const _EmptyView()
                       else
-                        _DailyChart(daily: _daily, month: _month),
+                        _DailyChart(
+                          daily: _daily,
+                          month: _month,
+                          ratePerKwh: Provider.of<HomeProvider>(context).pad?.ratePerKwh ?? 0.0,
+                        ),
                     ],
                   ),
                 ),
@@ -255,9 +260,10 @@ double _parseKwh(dynamic v) {
 String _dateStr(dynamic v) => v?.toString() ?? '';
 
 class _DailyChart extends StatelessWidget {
-  const _DailyChart({required this.daily, required this.month});
+  const _DailyChart({required this.daily, required this.month, required this.ratePerKwh});
   final List<Map<String, dynamic>> daily;
   final String month;
+  final double ratePerKwh;
 
   @override
   Widget build(BuildContext context) {
@@ -282,8 +288,8 @@ class _DailyChart extends StatelessWidget {
           BarChartRodData(
             toY: kwh,
             color: isToday ? kPrimaryBlue : kPrimaryBlue.withOpacity(0.55),
-            width: 14,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+            width: 7,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
           ),
         ],
       );
@@ -335,8 +341,10 @@ class _DailyChart extends StatelessWidget {
                         final idx = v.toInt();
                         if (idx < 0 || idx >= sorted.length) return const SizedBox.shrink();
                         final raw = _dateStr(sorted[idx]['date']);
-                        final day = raw.length >= 10 ? raw.substring(8, 10) : '';
-                        return Text(day, style: const TextStyle(fontSize: 9, color: kTextMuted));
+                        final dayNum = raw.length >= 10 ? (int.tryParse(raw.substring(8, 10)) ?? 0) : 0;
+                        if (dayNum != 1 && dayNum % 5 != 0) return const SizedBox.shrink();
+                        final label = raw.length >= 10 ? raw.substring(8, 10) : '';
+                        return Text(label, style: const TextStyle(fontSize: 9, color: kTextMuted));
                       },
                     ),
                   ),
@@ -360,7 +368,124 @@ class _DailyChart extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          const Text('kWh per day', style: TextStyle(fontSize: 10, color: kTextMuted)),
+          const Text('kWh per day  •  tap a bar for details', style: TextStyle(fontSize: 10, color: kTextMuted)),
+          const SizedBox(height: 20),
+          _DailyTable(sorted: sorted, ratePerKwh: ratePerKwh),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Daily data table ──────────────────────────────────────────────────────────
+
+class _DailyTable extends StatelessWidget {
+  const _DailyTable({required this.sorted, required this.ratePerKwh});
+  final List<Map<String, dynamic>> sorted;
+  final double ratePerKwh;
+
+  @override
+  Widget build(BuildContext context) {
+    final totalKwh = sorted.fold<double>(0, (s, d) => s + _parseKwh(d['total_energy_kwh']));
+    final totalCost = totalKwh * ratePerKwh;
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: kBorderColor),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            decoration: BoxDecoration(
+              color: kPrimaryBlue.withOpacity(0.08),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(9)),
+            ),
+            child: const Row(
+              children: [
+                SizedBox(
+                  width: 44,
+                  child: Text('Day', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: kTextBody)),
+                ),
+                Expanded(
+                  child: Text('kWh', textAlign: TextAlign.right,
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: kTextBody)),
+                ),
+                Expanded(
+                  child: Text('Est. Cost', textAlign: TextAlign.right,
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: kTextBody)),
+                ),
+              ],
+            ),
+          ),
+          // Data rows
+          ...sorted.map((d) {
+            final raw = _dateStr(d['date']);
+            final day = raw.length >= 10 ? raw.substring(8, 10) : '—';
+            final kwh = _parseKwh(d['total_energy_kwh']);
+            final cost = kwh * ratePerKwh;
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: kBorderColor, width: 0.5)),
+              ),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 44,
+                    child: Text(day, style: const TextStyle(fontSize: 12, color: kTextMuted)),
+                  ),
+                  Expanded(
+                    child: Text(
+                      kwh.toStringAsFixed(3),
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(fontSize: 12, color: kTextBody, fontFeatures: [FontFeature.tabularFigures()]),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      '₱${cost.toStringAsFixed(2)}',
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(fontSize: 12, color: kTextBody),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+          // Total row
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            decoration: BoxDecoration(
+              color: kPrimaryBlue.withOpacity(0.06),
+              border: Border(top: BorderSide(color: kPrimaryBlue.withOpacity(0.25), width: 1)),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(9)),
+            ),
+            child: Row(
+              children: [
+                const SizedBox(
+                  width: 44,
+                  child: Text('Total', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: kTextBody)),
+                ),
+                Expanded(
+                  child: Text(
+                    totalKwh.toStringAsFixed(3),
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: kTextBody),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    '₱${totalCost.toStringAsFixed(2)}',
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: kPrimaryBlue),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

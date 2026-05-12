@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../config/constants.dart';
 import '../../models/anomaly_event.dart';
@@ -21,6 +22,17 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
   int _newCount = 0;
   int? _loadedForDeviceId;
   StreamSubscription<SseEvent>? _sseSub;
+
+  // 'all' | 'unresolved' | 'resolved'
+  String _filter = 'all';
+
+  List<AnomalyEvent> get _filtered {
+    switch (_filter) {
+      case 'unresolved': return _events.where((e) => !e.isResolved).toList();
+      case 'resolved':   return _events.where((e) => e.isResolved).toList();
+      default:           return _events;
+    }
+  }
 
   @override
   void initState() {
@@ -47,34 +59,38 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
     _sseSub = home.sseStream.listen(_onSse);
   }
 
+  static int _si(dynamic v) =>
+      v == null ? 0 : (v is int ? v : int.tryParse(v.toString()) ?? 0);
+  static double? _sdNull(dynamic v) =>
+      v == null ? null : (v is num ? v.toDouble() : double.tryParse(v.toString()));
+
   void _onSse(SseEvent event) {
     if (event.type == 'anomaly_resolved') {
-      final resolvedId = event.data['event_id'] as int?;
-      if (resolvedId != null) {
+      final resolvedId = _si(event.data['event_id']);
+      if (resolvedId != 0) {
         setState(() {
-          _events = _events.map((e) =>
-            e.id == resolvedId ? e.copyWithResolved() : e
-          ).toList();
+          _events = _events
+              .map((e) => e.id == resolvedId ? e.copyWithResolved() : e)
+              .toList();
         });
       }
       return;
     }
     if (event.type != 'anomaly') return;
     final home = context.read<HomeProvider>();
-    final deviceId = event.data['device_id'];
+    final deviceId = _si(event.data['device_id']);
     if (home.pad?.deviceId != null && deviceId == home.pad!.deviceId) {
-      // Prepend a lightweight event from the SSE payload
       final newEvent = AnomalyEvent(
-        id: event.data['id'] as int? ?? 0,
-        deviceId: deviceId as int? ?? 0,
+        id: _si(event.data['id']),
+        deviceId: deviceId,
         anomalyType: event.data['anomaly_type'] as String? ?? 'unknown',
         severity: event.data['severity'] as String? ?? 'low',
         relayTripped: event.data['relay_tripped'] == true,
         isResolved: false,
         timestamp: DateTime.now().toIso8601String(),
-        currentValue: (event.data['current_value'] as num?)?.toDouble(),
-        voltageValue: (event.data['voltage_value'] as num?)?.toDouble(),
-        powerValue: (event.data['power_value'] as num?)?.toDouble(),
+        currentValue: _sdNull(event.data['current_value']),
+        voltageValue: _sdNull(event.data['voltage_value']),
+        powerValue: _sdNull(event.data['power_value']),
       );
       setState(() {
         _events = [newEvent, ..._events];
@@ -94,6 +110,8 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
       }
       _loadedForDeviceId = deviceId;
       final events = await ApiService.getMyAnomalies(deviceId);
+      // newest first
+      events.sort((a, b) => b.timestamp.compareTo(a.timestamp));
       setState(() { _events = events; _newCount = 0; });
     } catch (e) {
       setState(() { _error = e.toString(); });
@@ -123,6 +141,9 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final filtered = _filtered;
+    final unresolvedCount = _events.where((e) => !e.isResolved).length;
+
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -145,31 +166,129 @@ class _AnomalyScreenState extends State<AnomalyScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _load,
-          ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _load),
         ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? _ErrorView(message: _error!, onRetry: _load)
-              : _events.isEmpty
-                  ? const _EmptyView()
-                  : RefreshIndicator(
-                      onRefresh: _load,
-                      color: kPrimaryBlue,
-                      child: ListView.separated(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _events.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
-                        itemBuilder: (_, i) => _AnomalyCard(
-                          event: _events[i],
-                          onResolve: () => _resolve(_events[i]),
-                        ),
+              : Column(
+                  children: [
+                    // ── Filter chips ─────────────────────────────────────
+                    Container(
+                      color: kNavy800,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      child: Row(
+                        children: [
+                          _FilterChip(
+                            label: 'All',
+                            count: _events.length,
+                            active: _filter == 'all',
+                            onTap: () => setState(() => _filter = 'all'),
+                          ),
+                          const SizedBox(width: 8),
+                          _FilterChip(
+                            label: 'Unresolved',
+                            count: unresolvedCount,
+                            active: _filter == 'unresolved',
+                            activeColor: kDanger,
+                            onTap: () => setState(() => _filter = 'unresolved'),
+                          ),
+                          const SizedBox(width: 8),
+                          _FilterChip(
+                            label: 'Resolved',
+                            count: _events.length - unresolvedCount,
+                            active: _filter == 'resolved',
+                            activeColor: kSuccess,
+                            onTap: () => setState(() => _filter = 'resolved'),
+                          ),
+                        ],
                       ),
                     ),
+                    // ── List ─────────────────────────────────────────────
+                    Expanded(
+                      child: filtered.isEmpty
+                          ? _EmptyView(filter: _filter)
+                          : RefreshIndicator(
+                              onRefresh: _load,
+                              color: kPrimaryBlue,
+                              child: ListView.separated(
+                                padding: const EdgeInsets.all(16),
+                                itemCount: filtered.length,
+                                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                                itemBuilder: (_, i) => _AnomalyCard(
+                                  event: filtered[i],
+                                  onResolve: () => _resolve(filtered[i]),
+                                ),
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+    );
+  }
+}
+
+// ── Filter chip ───────────────────────────────────────────────────────────────
+
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.count,
+    required this.active,
+    required this.onTap,
+    this.activeColor,
+  });
+  final String label;
+  final int count;
+  final bool active;
+  final Color? activeColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = activeColor ?? kPrimaryBlue;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: active ? color.withOpacity(0.15) : kCardBg,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: active ? color : kBorderColor),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: active ? FontWeight.w600 : FontWeight.normal,
+                color: active ? color : kTextMuted,
+              ),
+            ),
+            const SizedBox(width: 5),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(
+                color: active ? color.withOpacity(0.2) : kBorderColor.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '$count',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: active ? color : kTextMuted,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -203,25 +322,37 @@ class _AnomalyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _severityColor(event.severity);
-    final ts = DateTime.tryParse(event.timestamp);
+    final ts = DateTime.tryParse(event.timestamp)?.toLocal();
+    final dateStr = ts != null
+        ? DateFormat('MMM d, yyyy').format(ts)
+        : '—';
     final timeStr = ts != null
-        ? '${ts.month}/${ts.day} ${ts.hour.toString().padLeft(2, '0')}:${ts.minute.toString().padLeft(2, '0')}'
-        : event.timestamp;
+        ? DateFormat('hh:mm a').format(ts)
+        : '';
 
     return Container(
       decoration: BoxDecoration(
         color: kCardBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: event.isResolved ? kBorderColor : color.withOpacity(0.5)),
+        border: Border.all(
+          color: event.isResolved ? kBorderColor : color.withOpacity(0.5),
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── Header row ────────────────────────────────────────────
             Row(
               children: [
-                Icon(_severityIcon(event.severity), color: color, size: 18),
+                Icon(
+                  event.isResolved
+                      ? Icons.check_circle_rounded
+                      : _severityIcon(event.severity),
+                  color: event.isResolved ? kSuccess : color,
+                  size: 18,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -233,57 +364,96 @@ class _AnomalyCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                // Severity / status badge
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: (event.isResolved ? kTextMuted : color).withOpacity(0.15),
+                    color: (event.isResolved ? kSuccess : color).withOpacity(0.13),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    event.isResolved ? 'resolved' : event.severity,
+                    event.isResolved ? 'Resolved' : event.severity.toUpperCase(),
                     style: TextStyle(
                       fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: event.isResolved ? kTextMuted : color,
+                      fontWeight: FontWeight.w700,
+                      color: event.isResolved ? kSuccess : color,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+
+            const SizedBox(height: 10),
+
+            // ── Metrics row ───────────────────────────────────────────
+            if (event.currentValue != null ||
+                event.voltageValue != null ||
+                event.powerValue != null) ...[
+              Row(
+                children: [
+                  if (event.currentValue != null)
+                    _Metric('Current', '${event.currentValue!.toStringAsFixed(2)} A', color),
+                  if (event.voltageValue != null)
+                    _Metric('Voltage', '${event.voltageValue!.toStringAsFixed(1)} V', color),
+                  if (event.powerValue != null)
+                    _Metric('Power', '${event.powerValue!.toStringAsFixed(1)} W', color),
+                ],
+              ),
+              const SizedBox(height: 10),
+            ],
+
+            // ── Date / time + tags row ────────────────────────────────
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                if (event.currentValue != null) _Metric('I', '${event.currentValue!.toStringAsFixed(2)} A'),
-                if (event.voltageValue != null) _Metric('V', '${event.voltageValue!.toStringAsFixed(1)} V'),
-                if (event.powerValue != null)   _Metric('P', '${event.powerValue!.toStringAsFixed(1)} W'),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
+                const Icon(Icons.calendar_today_outlined, size: 12, color: kTextMuted),
+                const SizedBox(width: 4),
+                Text(dateStr, style: const TextStyle(fontSize: 11, color: kTextMuted)),
+                const SizedBox(width: 8),
+                const Icon(Icons.access_time_rounded, size: 12, color: kTextMuted),
+                const SizedBox(width: 4),
                 Text(timeStr, style: const TextStyle(fontSize: 11, color: kTextMuted)),
                 if (event.relayTripped) ...[
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: kDanger.withOpacity(0.15),
+                      color: kDanger.withOpacity(0.13),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Text('relay tripped', style: TextStyle(fontSize: 10, color: kDanger)),
-                  ),
-                ],
-                const Spacer(),
-                if (!event.isResolved)
-                  GestureDetector(
-                    onTap: onResolve,
-                    child: Text(
-                      'Mark resolved',
-                      style: TextStyle(fontSize: 11, color: kPrimaryBlue, fontWeight: FontWeight.w600),
+                    child: const Text(
+                      'Relay tripped',
+                      style: TextStyle(fontSize: 10, color: kDanger, fontWeight: FontWeight.w600),
                     ),
                   ),
+                ],
               ],
             ),
+
+            // ── Resolve button ────────────────────────────────────────
+            if (!event.isResolved) ...[
+              const SizedBox(height: 10),
+              const Divider(height: 1, color: kBorderColor),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: onResolve,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    const Icon(Icons.check_circle_outline_rounded, size: 14, color: kPrimaryBlue),
+                    const SizedBox(width: 5),
+                    Text(
+                      'Mark as Resolved',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: kPrimaryBlue,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -292,37 +462,51 @@ class _AnomalyCard extends StatelessWidget {
 }
 
 class _Metric extends StatelessWidget {
-  const _Metric(this.label, this.value);
+  const _Metric(this.label, this.value, this.color);
   final String label;
   final String value;
+  final Color color;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(right: 14),
-    child: RichText(
-      text: TextSpan(
-        children: [
-          TextSpan(text: '$label  ', style: const TextStyle(fontSize: 10, color: kTextMuted)),
-          TextSpan(text: value, style: const TextStyle(fontSize: 12, color: kTextBody, fontWeight: FontWeight.w600)),
-        ],
-      ),
+  Widget build(BuildContext context) => Expanded(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 9, color: kTextMuted)),
+        Text(
+          value,
+          style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.w700),
+        ),
+      ],
     ),
   );
 }
 
 class _EmptyView extends StatelessWidget {
-  const _EmptyView();
+  const _EmptyView({required this.filter});
+  final String filter;
+
   @override
-  Widget build(BuildContext context) => const Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.check_circle_outline_rounded, size: 56, color: kSuccess),
-        SizedBox(height: 12),
-        Text('No anomalies detected', style: TextStyle(color: kTextMuted, fontSize: 15)),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) {
+    final msg = filter == 'resolved'
+        ? 'No resolved anomalies'
+        : filter == 'unresolved'
+            ? 'No unresolved anomalies'
+            : 'No anomalies recorded yet';
+    final icon = filter == 'unresolved'
+        ? Icons.check_circle_outline_rounded
+        : Icons.history_rounded;
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 56, color: kSuccess),
+          const SizedBox(height: 12),
+          Text(msg, style: const TextStyle(color: kTextMuted, fontSize: 15)),
+        ],
+      ),
+    );
+  }
 }
 
 class _ErrorView extends StatelessWidget {

@@ -24,6 +24,7 @@ class NotificationService {
   );
 
   static int _id = 0;
+  static const int _unresolvedAnomalyId = 9000;
 
   static Future<void> init() async {
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -42,6 +43,21 @@ class NotificationService {
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
+  }
+
+  static Future<void> showUnresolvedAnomalyReminder(int count) async {
+    await _plugin.show(
+      _unresolvedAnomalyId,
+      count > 1 ? '⚠️ $count Unresolved Safety Alerts' : '⚠️ Unresolved Safety Alert',
+      count > 1
+          ? '$count anomalies are still unresolved. Please contact the admin immediately.'
+          : 'An anomaly is unresolved. Please contact the admin immediately.',
+      _details,
+    );
+  }
+
+  static Future<void> cancelUnresolvedAnomalyReminder() async {
+    await _plugin.cancel(_unresolvedAnomalyId);
   }
 
   static Future<void> showAnomalyAlert({

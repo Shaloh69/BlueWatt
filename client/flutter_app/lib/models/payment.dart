@@ -25,11 +25,16 @@ class Payment {
     required this.createdAt,
   });
 
+  static double _d(dynamic v) =>
+      v == null ? 0.0 : (v is num ? v.toDouble() : double.tryParse(v.toString()) ?? 0.0);
+  static int _i(dynamic v) =>
+      v == null ? 0 : (v is int ? v : int.tryParse(v.toString()) ?? 0);
+
   factory Payment.fromJson(Map<String, dynamic> j) => Payment(
-        id: j['id'] as int,
-        billingPeriodId: j['billing_period_id'] as int? ?? 0,
-        tenantId: j['tenant_id'] as int? ?? 0,
-        amount: (j['amount'] as num?)?.toDouble() ?? 0.0,
+        id: _i(j['id']),
+        billingPeriodId: _i(j['billing_period_id']),
+        tenantId: _i(j['tenant_id']),
+        amount: _d(j['amount']),
         paymentMethod: j['payment_method'] as String?,
         status: j['status'] as String? ?? 'pending',
         referenceNumber: j['reference_number'] as String?,

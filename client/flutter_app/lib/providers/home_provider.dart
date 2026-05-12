@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import '../models/anomaly_event.dart';
 import '../models/pad.dart';
 import '../models/power_reading.dart';
 import '../services/api_service.dart';
@@ -22,6 +23,7 @@ class HomeProvider extends ChangeNotifier {
   final SseService _sse = SseService();
   StreamSubscription<SseEvent>? _sseSub;
   StreamSubscription<bool>? _connectivitySub;
+  Timer? _anomalyReminderTimer;
 
   Pad? get pad => _pad;
   PowerReading? get reading => _reading;
@@ -82,6 +84,10 @@ class HomeProvider extends ChangeNotifier {
 
     _loading = false;
     notifyListeners();
+
+    if (_pad?.hasDevice == true) {
+      _startAnomalyReminderTimer();
+    }
   }
 
   Future<String?> disablePad() => _sendRelay('off');
@@ -115,6 +121,33 @@ class HomeProvider extends ChangeNotifier {
       _relayBusy = false;
       notifyListeners();
     }
+  }
+
+  void _startAnomalyReminderTimer() {
+    _anomalyReminderTimer?.cancel();
+    _checkUnresolvedAnomalies();
+    _anomalyReminderTimer = Timer.periodic(const Duration(minutes: 2), (_) {
+      _checkUnresolvedAnomalies();
+    });
+  }
+
+  Future<void> _checkUnresolvedAnomalies() async {
+    if (_pad?.deviceId == null) return;
+    try {
+      final all = await ApiService.getMyAnomalies(_pad!.deviceId!);
+      final unresolved = all.where((AnomalyEvent a) => !a.isResolved).toList();
+      if (unresolved.isNotEmpty) {
+        await NotificationService.showUnresolvedAnomalyReminder(unresolved.length);
+      } else {
+        await NotificationService.cancelUnresolvedAnomalyReminder();
+      }
+    } catch (_) {}
+  }
+
+  void _stopAnomalyReminderTimer() {
+    _anomalyReminderTimer?.cancel();
+    _anomalyReminderTimer = null;
+    NotificationService.cancelUnresolvedAnomalyReminder();
   }
 
   void connectSSE(String token) {
@@ -191,6 +224,8 @@ class HomeProvider extends ChangeNotifier {
             severity: event.data['severity'] as String? ?? 'low',
             relayTripped: relayTripped,
           );
+          // Immediately refresh the persistent reminder count
+          _checkUnresolvedAnomalies();
           if (relayTripped && _pad != null) {
             _pad = Pad(
               id: _pad!.id,
@@ -215,6 +250,7 @@ class HomeProvider extends ChangeNotifier {
     _sseSub?.cancel();
     _sse.disconnect();
     _isLive = false;
+    _stopAnomalyReminderTimer();
   }
 
   @override

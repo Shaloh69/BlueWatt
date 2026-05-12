@@ -34,10 +34,16 @@ class BillingPeriod {
   static double _d(dynamic v) =>
       v == null ? 0.0 : (v is num ? v.toDouble() : double.tryParse(v.toString()) ?? 0.0);
 
+  static int _i(dynamic v) =>
+      v == null ? 0 : (v is int ? v : int.tryParse(v.toString()) ?? 0);
+
+  static int? _iNull(dynamic v) =>
+      v == null ? null : (v is int ? v : int.tryParse(v.toString()));
+
   factory BillingPeriod.fromJson(Map<String, dynamic> j) => BillingPeriod(
-        id: j['id'] as int,
-        padId: j['pad_id'] as int? ?? 0,
-        tenantId: j['tenant_id'] as int?,
+        id: _i(j['id']),
+        padId: _i(j['pad_id']),
+        tenantId: _iNull(j['tenant_id']),
         periodStart: j['period_start'] as String? ?? '',
         periodEnd: j['period_end'] as String? ?? '',
         energyKwh: _d(j['energy_kwh']),

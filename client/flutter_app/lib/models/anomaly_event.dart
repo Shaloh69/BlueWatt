@@ -23,17 +23,22 @@ class AnomalyEvent {
     this.powerValue,
   });
 
+  static int _i(dynamic v) =>
+      v == null ? 0 : (v is int ? v : int.tryParse(v.toString()) ?? 0);
+  static double? _dNull(dynamic v) =>
+      v == null ? null : (v is num ? v.toDouble() : double.tryParse(v.toString()));
+
   factory AnomalyEvent.fromJson(Map<String, dynamic> j) => AnomalyEvent(
-        id: j['id'] as int? ?? 0,
-        deviceId: j['device_id'] as int? ?? 0,
+        id: _i(j['id']),
+        deviceId: _i(j['device_id']),
         anomalyType: j['anomaly_type'] as String? ?? '',
         severity: j['severity'] as String? ?? 'low',
         relayTripped: j['relay_tripped'] == true || j['relay_tripped'] == 1,
         isResolved: j['is_resolved'] == true || j['is_resolved'] == 1,
         timestamp: j['timestamp'] as String? ?? '',
-        currentValue: (j['current_value'] as num?)?.toDouble(),
-        voltageValue: (j['voltage_value'] as num?)?.toDouble(),
-        powerValue: (j['power_value'] as num?)?.toDouble(),
+        currentValue: _dNull(j['current_value']),
+        voltageValue: _dNull(j['voltage_value']),
+        powerValue: _dNull(j['power_value']),
       );
 
   AnomalyEvent copyWithResolved() => AnomalyEvent(

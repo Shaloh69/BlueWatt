@@ -28,7 +28,9 @@ export const submitAnomalyEvent = asyncHandler(
       );
     }
 
-    const eventTimestamp = new Date(timestamp * 1000);
+    const rawTs = new Date(timestamp * 1000);
+    // ESP sends uptime seconds (not Unix epoch) when clock is not synced — fall back to server time
+    const eventTimestamp = rawTs.getFullYear() < 2020 ? new Date() : rawTs;
 
     const determinedSeverity = relay_tripped ? 'critical' : severity || 'medium';
 
@@ -100,7 +102,7 @@ export const getAnomalyEvents = asyncHandler(
 
     const startTime = req.query.start_time
       ? new Date(req.query.start_time as string)
-      : new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+      : new Date(0); // epoch — return all records regardless of how old
     const endTime = req.query.end_time
       ? new Date(req.query.end_time as string)
       : new Date(Date.now() + 24 * 60 * 60 * 1000);
