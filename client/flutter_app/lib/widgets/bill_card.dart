@@ -16,9 +16,11 @@ class BillCard extends StatelessWidget {
 
     DateTime? startDate;
     DateTime? endDate;
+    DateTime? dueDate;
     try {
       startDate = DateTime.parse(bill.periodStart);
-      endDate = DateTime.parse(bill.periodEnd);
+      endDate   = DateTime.parse(bill.periodEnd);
+      if (bill.dueDate.isNotEmpty) dueDate = DateTime.parse(bill.dueDate);
     } catch (_) {}
 
     Color statusColor;
@@ -104,6 +106,16 @@ class BillCard extends StatelessWidget {
                         : 'Monthly rent',
                     style: const TextStyle(color: kTextMuted, fontSize: 12),
                   ),
+                  if (dueDate != null && !bill.isPaid && !bill.isWaived) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      'Due: ${dateFmt.format(dueDate)}',
+                      style: TextStyle(
+                        color: bill.isOverdue ? kDanger : kTextMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

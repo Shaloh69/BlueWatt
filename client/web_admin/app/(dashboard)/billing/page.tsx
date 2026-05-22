@@ -204,7 +204,11 @@ export default function BillingPage() {
               onChange={e => setForm(f => ({ ...f, period_start: e.target.value }))} />
             <Input label="Period End" type="date" value={form.period_end}
               onChange={e => setForm(f => ({ ...f, period_end: e.target.value }))} />
-            <Input label="Due Date" type="date" value={form.due_date}
+            <Input
+              label="Due Date (bill visible to tenant from this date)"
+              type="date"
+              value={form.due_date}
+              description="Tenant will see this bill starting on the due date."
               onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
           </ModalBody>
           <ModalFooter>

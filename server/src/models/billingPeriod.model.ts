@@ -85,6 +85,7 @@ export class BillingPeriodModel {
        FROM billing_periods b
        JOIN pads p ON p.id = b.pad_id
        WHERE b.tenant_id = ?
+         AND (b.due_date IS NULL OR b.due_date <= CURDATE())
        ORDER BY b.period_start DESC LIMIT ${Math.floor(limit)}`,
       [tenantId]
     );
@@ -139,7 +140,7 @@ export class BillingPeriodModel {
   static async markUnpaidOrOverdue(id: number): Promise<void> {
     await pool.execute(
       `UPDATE billing_periods
-       SET status = CASE WHEN due_date < CURDATE() THEN 'overdue' ELSE 'unpaid' END
+       SET status = CASE WHEN period_end < CURDATE() THEN 'overdue' ELSE 'unpaid' END
        WHERE id = ?`,
       [id]
     );
@@ -149,7 +150,7 @@ export class BillingPeriodModel {
     const [result] = await pool.execute<ResultSetHeader>(
       `UPDATE billing_periods
        SET status = 'overdue'
-       WHERE status = 'unpaid' AND due_date < CURDATE()`
+       WHERE status = 'unpaid' AND period_end < CURDATE()`
     );
     return result.affectedRows;
   }

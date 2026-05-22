@@ -67,10 +67,34 @@ class BillsScreen extends StatelessWidget {
             color: kPrimaryBlue,
             child: ListView.separated(
               padding: const EdgeInsets.all(16),
-              itemCount: billing.bills.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemCount: billing.bills.length + 1,
+              separatorBuilder: (_, i) =>
+                  i == 0 ? const SizedBox(height: 12) : const SizedBox(height: 10),
               itemBuilder: (context, i) {
-                final bill = billing.bills[i];
+                if (i == 0) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: kPrimaryBlue.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: kPrimaryBlue.withOpacity(0.2)),
+                    ),
+                    child: const Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.info_outline, color: kPrimaryBlue, size: 16),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Unpaid bills remain as "Unpaid" until the end of the billing period. After that, they become "Overdue".',
+                            style: TextStyle(color: kPrimaryBlue, fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                final bill = billing.bills[i - 1];
                 return BillCard(
                   bill: bill,
                   onTap: () => Navigator.push(
