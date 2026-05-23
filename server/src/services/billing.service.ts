@@ -6,28 +6,43 @@ import { logger } from '../utils/logger';
 
 export class BillingService {
   /**
-   * Generate (or re-generate) a billing period for a pad.
-   * periodStart: first day of the billing month, e.g. new Date('2026-03-01')
+   * Generate a billing period for a pad.
+   * periodStart: start of the billing window.
+   * opts.periodEnd: explicit end date (defaults to last day of periodStart's month).
+   * opts.dueDate: when the bill becomes visible to the tenant (defaults to periodEnd + 7 days).
+   * opts.allowDuplicate: skip the duplicate check (used for manual admin generation).
    */
-  static async generateBilling(padId: number, periodStart: Date): Promise<void> {
+  static async generateBilling(
+    padId: number,
+    periodStart: Date,
+    opts?: { periodEnd?: Date; dueDate?: Date; allowDuplicate?: boolean }
+  ): Promise<void> {
     const pad = await PadModel.findById(padId);
     if (!pad || !pad.is_active) throw new Error(`Pad ${padId} not found or inactive`);
 
-    const periodEnd = new Date(periodStart);
-    periodEnd.setMonth(periodEnd.getMonth() + 1);
-    periodEnd.setDate(0); // last day of the month
+    const periodEnd = opts?.periodEnd ?? (() => {
+      const d = new Date(periodStart);
+      d.setMonth(d.getMonth() + 1);
+      d.setDate(0);
+      return d;
+    })();
 
-    const dueDate = new Date(periodEnd);
-    dueDate.setDate(dueDate.getDate() + 7);
+    const dueDate = opts?.dueDate ?? (() => {
+      const d = new Date(periodEnd);
+      d.setDate(d.getDate() + 7);
+      return d;
+    })();
 
     const startStr = periodStart.toISOString().split('T')[0];
     const endStr = periodEnd.toISOString().split('T')[0];
 
-    // Skip if already exists
-    const exists = await BillingPeriodModel.existsForPeriod(padId, periodStart);
-    if (exists) {
-      logger.info(`Billing for pad ${padId} period ${startStr} already exists, skipping`);
-      return;
+    // Skip if already exists (bypassed for manual admin generation)
+    if (!opts?.allowDuplicate) {
+      const exists = await BillingPeriodModel.existsForPeriod(padId, periodStart);
+      if (exists) {
+        logger.info(`Billing for pad ${padId} period ${startStr} already exists, skipping`);
+        return;
+      }
     }
 
     // Get energy consumption from daily aggregates if device linked

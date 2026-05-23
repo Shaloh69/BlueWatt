@@ -69,10 +69,10 @@ export const getBillingById = asyncHandler(
   }
 );
 
-/** POST /billing/generate — admin: manually generate billing for a pad + month */
+/** POST /billing/generate — admin: manually generate billing for a pad + period */
 export const generateBilling = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
-    const { pad_id, period_start } = req.body;
+    const { pad_id, period_start, period_end, due_date } = req.body;
     if (!pad_id || !period_start) {
       throw new AppError(
         'pad_id and period_start required',
@@ -81,7 +81,11 @@ export const generateBilling = asyncHandler(
       );
     }
     const periodDate = new Date(period_start);
-    await BillingService.generateBilling(parseInt(pad_id, 10), periodDate);
+    await BillingService.generateBilling(parseInt(pad_id, 10), periodDate, {
+      periodEnd: period_end ? new Date(period_end) : undefined,
+      dueDate: due_date ? new Date(due_date) : undefined,
+      allowDuplicate: true,
+    });
     bustBillingCache();
     sendSuccess(res, { message: 'Billing period generated' }, HTTP_STATUS.CREATED);
   }

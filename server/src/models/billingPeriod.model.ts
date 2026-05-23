@@ -140,7 +140,7 @@ export class BillingPeriodModel {
   static async markUnpaidOrOverdue(id: number): Promise<void> {
     await pool.execute(
       `UPDATE billing_periods
-       SET status = CASE WHEN period_end < CURDATE() THEN 'overdue' ELSE 'unpaid' END
+       SET status = CASE WHEN LAST_DAY(due_date) < CURDATE() THEN 'overdue' ELSE 'unpaid' END
        WHERE id = ?`,
       [id]
     );
@@ -150,7 +150,7 @@ export class BillingPeriodModel {
     const [result] = await pool.execute<ResultSetHeader>(
       `UPDATE billing_periods
        SET status = 'overdue'
-       WHERE status = 'unpaid' AND period_end < CURDATE()`
+       WHERE status = 'unpaid' AND LAST_DAY(due_date) < CURDATE()`
     );
     return result.affectedRows;
   }
