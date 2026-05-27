@@ -63,7 +63,7 @@ export class BillingScheduleModel {
     return rows as BillingSchedule[];
   }
 
-  /** Active schedules whose next period has started (ready to process). */
+  /** Active schedules whose billing period has fully closed and is ready to generate. */
   static async findActiveDue(): Promise<RowDataPacket[]> {
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT s.*,
@@ -73,7 +73,18 @@ export class BillingScheduleModel {
               p.rate_per_kwh
        FROM billing_schedules s
        JOIN pads p ON p.id = s.pad_id
-       WHERE s.status = 'active' AND s.next_period_start <= CURDATE()`
+       WHERE s.status = 'active'
+         AND (
+           -- Rent: generate as soon as the period starts
+           (s.bill_type != 'electricity' AND s.next_period_start <= CURDATE())
+           OR
+           -- Electricity: wait for the full period to close so all readings are available
+           (s.bill_type = 'electricity' AND (
+             (s.frequency = 'daily'   AND s.next_period_start  < CURDATE())
+             OR (s.frequency = 'weekly'  AND DATE_ADD(s.next_period_start, INTERVAL 6 DAY) < CURDATE())
+             OR (s.frequency = 'monthly' AND LAST_DAY(s.next_period_start) < CURDATE())
+           ))
+         )`
     );
     return rows;
   }

@@ -19,10 +19,10 @@ import {
 
 // ── Refresh intervals ─────────────────────────────────────────────────────────
 
-const DEDUPE_MS = 10_000;
-const FAST = 10_000; // devices, anomalies, pending payments
-const MEDIUM = 15_000; // stays, pads, all payments, pad summary
-const SLOW = 30_000; // billing, schedules, tenants
+const DEDUPE_MS = 5_000;
+const FAST = 5_000; // devices, anomalies, pending payments
+const MEDIUM = 8_000; // stays, pads, all payments, pad summary
+const SLOW = 15_000; // billing, schedules, tenants
 
 // ── Devices ───────────────────────────────────────────────────────────────────
 

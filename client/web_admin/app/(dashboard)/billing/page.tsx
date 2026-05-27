@@ -230,6 +230,42 @@ export default function BillingPage() {
   );
   const [running, setRunning] = useState(false);
 
+  // ── Bill list filter / sort ────────────────────────────────────────────────
+  const [billSort, setBillSort] = useState<
+    "newest" | "oldest" | "pad" | "amount"
+  >("newest");
+  const [billFilter, setBillFilter] = useState<
+    "all" | "unpaid" | "paid" | "overdue" | "waived"
+  >("all");
+
+  const displayedBills = useMemo(() => {
+    let result = [...bills] as BillingPeriod[];
+    if (billFilter !== "all") {
+      result = result.filter((b) => b.status === billFilter);
+    }
+    switch (billSort) {
+      case "newest":
+        result.sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        );
+        break;
+      case "oldest":
+        result.sort(
+          (a, b) =>
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+        );
+        break;
+      case "pad":
+        result.sort((a, b) => (a.pad_name ?? "").localeCompare(b.pad_name ?? ""));
+        break;
+      case "amount":
+        result.sort((a, b) => Number(b.amount_due) - Number(a.amount_due));
+        break;
+    }
+    return result;
+  }, [bills, billSort, billFilter]);
+
   async function handleRunNow() {
     setRunning(true);
     try {
@@ -457,14 +493,57 @@ export default function BillingPage() {
         <CardHeader className="flex items-center gap-2 pb-0">
           <Receipt className="w-5 h-5 text-primary" />
           <h2 className="font-semibold text-foreground">All Billing Periods</h2>
+          <span className="ml-auto text-xs text-default-400">
+            {displayedBills.length} of {bills.length}
+          </span>
         </CardHeader>
         <CardBody>
+          {/* Filter / sort toolbar */}
+          <div className="flex gap-2 mb-3 flex-wrap">
+            <Select
+              size="sm"
+              aria-label="Sort bills"
+              selectedKeys={[billSort]}
+              onSelectionChange={(k) =>
+                setBillSort(
+                  String([...k][0] ?? "newest") as typeof billSort,
+                )
+              }
+              className="w-44"
+            >
+              <SelectItem key="newest">Newest first</SelectItem>
+              <SelectItem key="oldest">Oldest first</SelectItem>
+              <SelectItem key="pad">By Pad (A→Z)</SelectItem>
+              <SelectItem key="amount">Amount (high→low)</SelectItem>
+            </Select>
+            <Select
+              size="sm"
+              aria-label="Filter by status"
+              selectedKeys={[billFilter]}
+              onSelectionChange={(k) =>
+                setBillFilter(
+                  String([...k][0] ?? "all") as typeof billFilter,
+                )
+              }
+              className="w-36"
+            >
+              <SelectItem key="all">All statuses</SelectItem>
+              <SelectItem key="unpaid">Unpaid</SelectItem>
+              <SelectItem key="paid">Paid</SelectItem>
+              <SelectItem key="overdue">Overdue</SelectItem>
+              <SelectItem key="waived">Waived</SelectItem>
+            </Select>
+          </div>
           {loadingBills ? (
-            <TableSkeleton rows={5} cols={7} />
-          ) : bills.length === 0 ? (
+            <TableSkeleton rows={5} cols={8} />
+          ) : displayedBills.length === 0 ? (
             <div className="flex flex-col items-center py-12 text-center">
               <Receipt className="w-10 h-10 text-default-300 mb-3" />
-              <p className="text-default-400">No billing periods yet</p>
+              <p className="text-default-400">
+                {billFilter !== "all"
+                  ? `No ${billFilter} bills`
+                  : "No billing periods yet"}
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -478,6 +557,7 @@ export default function BillingPage() {
                       "Energy",
                       "Amount",
                       "Status",
+                      "Generated At",
                       "Actions",
                     ].map((h) => (
                       <th
@@ -490,7 +570,7 @@ export default function BillingPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {bills.map((b: BillingPeriod) => (
+                  {displayedBills.map((b: BillingPeriod) => (
                     <tr
                       key={b.id}
                       className="border-b border-default-100 hover:bg-default-50"
@@ -519,6 +599,15 @@ export default function BillingPage() {
                         >
                           {b.status}
                         </Chip>
+                      </td>
+                      <td className="py-3 px-3 text-xs text-default-400 whitespace-nowrap">
+                        {new Date(b.created_at).toLocaleString("en-PH", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </td>
                       <td className="py-3 px-3">
                         <div className="flex gap-1 flex-wrap">
