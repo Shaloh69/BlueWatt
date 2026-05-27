@@ -10,7 +10,7 @@ import { Switch } from "@heroui/switch";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import { Input } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
-import { Receipt, Plus, Trash2, CheckCircle, Download, CalendarClock, StopCircle, Info } from "lucide-react";
+import { Receipt, Plus, Trash2, CheckCircle, Download, CalendarClock, StopCircle, Info, Play } from "lucide-react";
 import { Tooltip } from "@heroui/tooltip";
 import { billingApi, billingSchedulesApi, getErrorMessage } from "@/lib/api";
 import { BillingPeriod, BillingSchedule } from "@/types";
@@ -172,6 +172,25 @@ export default function BillingPage() {
   }
 
   const activeSchedules = schedules.filter((s: BillingSchedule) => s.status === "active");
+  const [running, setRunning] = useState(false);
+
+  async function handleRunNow() {
+    setRunning(true);
+    try {
+      const res = await billingSchedulesApi.runNow();
+      const remaining = res.data.data?.remaining_due ?? 0;
+      toast.success(remaining === 0
+        ? "All due schedules processed — bills generated"
+        : `Processed. ${remaining} schedule(s) still have future periods.`
+      );
+      reloadBilling();
+      reloadSchedules();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setRunning(false);
+    }
+  }
 
   const nextUpdate = useMemo(() => {
     const now = new Date();
@@ -218,7 +237,15 @@ export default function BillingPage() {
           <CalendarClock className="w-5 h-5 text-secondary" />
           <h2 className="font-semibold text-foreground">Automated Billing</h2>
           {activeSchedules.length > 0 && (
-            <Chip size="sm" color="secondary" className="ml-auto">{activeSchedules.length} active</Chip>
+            <>
+              <Chip size="sm" color="secondary" className="ml-auto">{activeSchedules.length} active</Chip>
+              <Tooltip delay={3000} content="Process all due schedules now (runs immediately instead of waiting for :55)" placement="left">
+                <Button size="sm" variant="flat" color="secondary" isIconOnly isLoading={running}
+                  onPress={handleRunNow}>
+                  <Play className="w-3.5 h-3.5" />
+                </Button>
+              </Tooltip>
+            </>
           )}
         </CardHeader>
         <CardBody>

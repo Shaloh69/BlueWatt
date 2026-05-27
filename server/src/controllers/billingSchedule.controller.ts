@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { BillingScheduleModel } from '../models/billingSchedule.model';
 import { PadModel } from '../models/pad.model';
+import { BillingService } from '../services/billing.service';
 import { AppError } from '../utils/AppError';
 import { sendSuccess } from '../utils/apiResponse';
 import { asyncHandler } from '../utils/asyncHandler';
@@ -55,6 +56,15 @@ export const stopSchedule = asyncHandler(
     }
     await BillingScheduleModel.stop(id);
     sendSuccess(res, { message: 'Schedule stopped' });
+  }
+);
+
+/** POST /billing/schedules/run — manually trigger schedule processing immediately */
+export const runSchedules = asyncHandler(
+  async (_req: Request, res: Response, _next: NextFunction) => {
+    await BillingService.processSchedules();
+    const due = await BillingScheduleModel.findActiveDue();
+    sendSuccess(res, { processed: true, remaining_due: due.length });
   }
 );
 

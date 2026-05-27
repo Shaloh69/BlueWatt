@@ -15,6 +15,7 @@ import {
   createSchedule,
   stopSchedule,
   deleteSchedule,
+  runSchedules,
 } from '../controllers/billingSchedule.controller';
 import { cacheFor } from '../middleware/cache.middleware';
 
@@ -23,6 +24,7 @@ const router = Router();
 // ── Schedules (must be before /:id to avoid route conflict) ──────────────────
 router.get('/schedules', authenticateJWT, requireAdmin, listSchedules);
 router.post('/schedules', authenticateJWT, requireAdmin, createSchedule);
+router.post('/schedules/run', authenticateJWT, requireAdmin, runSchedules);
 router.put('/schedules/:id/stop', authenticateJWT, requireAdmin, stopSchedule);
 router.delete('/schedules/:id', authenticateJWT, requireAdmin, deleteSchedule);
 
