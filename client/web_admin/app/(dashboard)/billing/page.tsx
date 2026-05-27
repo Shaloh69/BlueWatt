@@ -34,6 +34,9 @@ export default function BillingPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ pad_id: "", period_start: "", period_end: "", due_date: "" });
 
+  // ── Create Bill type selector ─────────────────────────────────────────────
+  const [showCreate, setShowCreate] = useState(false);
+
   // ── Schedule creation ──────────────────────────────────────────────────────
   const [showSched, setShowSched] = useState(false);
   const [stopTarget, setStopTarget] = useState<BillingSchedule | null>(null);
@@ -184,13 +187,9 @@ export default function BillingPage() {
             onPress={() => { reloadBilling(); reloadSchedules(); }}>
             Refresh
           </Button>
-          <Button variant="flat" size="sm" color="secondary" startContent={<CalendarClock className="w-4 h-4" />}
-            onPress={() => setShowSched(true)}>
-            New Schedule
-          </Button>
           <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />}
-            onPress={() => setShowGen(true)}>
-            One-time Bill
+            onPress={() => setShowCreate(true)}>
+            Create Bill
           </Button>
         </div>
       </div>
@@ -337,6 +336,47 @@ export default function BillingPage() {
           )}
         </CardBody>
       </Card>
+
+      {/* ── Create Bill type selector ────────────────────────────────────────── */}
+      <Modal isOpen={showCreate} onOpenChange={setShowCreate} classNames={modalClassNames} size="sm">
+        <ModalContent>
+          <ModalHeader>Create Bill</ModalHeader>
+          <ModalBody className="space-y-3 pb-2">
+            <p className="text-default-500 text-sm">How do you want to bill?</p>
+            <button
+              className="w-full text-left rounded-xl border border-default-200 hover:border-primary hover:bg-primary-50 transition-colors px-4 py-3 group"
+              onClick={() => { setShowCreate(false); setShowGen(true); }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-primary-100 flex items-center justify-center shrink-0 group-hover:bg-primary-200 transition-colors">
+                  <Receipt className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-sm">One-time Bill</p>
+                  <p className="text-xs text-default-400 mt-0.5">Generate a single bill for a specific period</p>
+                </div>
+              </div>
+            </button>
+            <button
+              className="w-full text-left rounded-xl border border-default-200 hover:border-secondary hover:bg-secondary-50 transition-colors px-4 py-3 group"
+              onClick={() => { setShowCreate(false); setShowSched(true); }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-secondary-100 flex items-center justify-center shrink-0 group-hover:bg-secondary-200 transition-colors">
+                  <CalendarClock className="w-4 h-4 text-secondary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-sm">Automated Schedule</p>
+                  <p className="text-xs text-default-400 mt-0.5">Auto-generate bills daily, weekly, or monthly</p>
+                </div>
+              </div>
+            </button>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="flat" onPress={() => setShowCreate(false)}>Cancel</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       {/* ── Delete Bill modal ────────────────────────────────────────────────── */}
       <Modal isOpen={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)} classNames={modalClassNames}>
