@@ -1,6 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api/v1";
+const BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api/v1";
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -63,12 +64,13 @@ export const devicesApi = {
   get: (id: number) => api.get(`/devices/${id}`),
   register: (data: object) => api.post("/devices/register", data),
   update: (id: number, data: object) => api.put(`/devices/${id}`, data),
-  updateRelay: (id: number, data: object) => api.put(`/devices/${id}/relay`, data),
+  updateRelay: (id: number, data: object) =>
+    api.put(`/devices/${id}/relay`, data),
   issueRelayCommand: (id: number, command: string) =>
     api.post(`/devices/${id}/relay-command`, { command }),
-  getRelayHistory: (id: number) => api.get(`/devices/${id}/relay-command/history`),
-  getLatestReading: (id: number) =>
-    api.get(`/power-data/devices/${id}/latest`),
+  getRelayHistory: (id: number) =>
+    api.get(`/devices/${id}/relay-command/history`),
+  getLatestReading: (id: number) => api.get(`/power-data/devices/${id}/latest`),
   uploadImage: (id: number, formData: FormData) =>
     api.post(`/upload/device/${id}/image`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -153,8 +155,7 @@ export const anomalyApi = {
     api.get(`/anomaly-events/devices/${deviceId}/anomaly-events`),
   unresolved: (deviceId: number) =>
     api.get(`/anomaly-events/devices/${deviceId}/anomaly-events/unresolved`),
-  resolve: (id: number) =>
-    api.put(`/anomaly-events/${id}/resolve`, {}),
+  resolve: (id: number) => api.put(`/anomaly-events/${id}/resolve`, {}),
 };
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
@@ -193,8 +194,7 @@ export const staysApi = {
 export const powerApi = {
   latest: (deviceId: number) =>
     api.get(`/power-data/devices/${deviceId}/latest`),
-  stats: (deviceId: number) =>
-    api.get(`/power-data/devices/${deviceId}/stats`),
+  stats: (deviceId: number) => api.get(`/power-data/devices/${deviceId}/stats`),
   todayEnergy: (deviceId: number) =>
     api.get(`/power-data/devices/${deviceId}/today-energy`),
 };

@@ -6,9 +6,25 @@ import { modalClassNames } from "@/lib/modal-styles";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "@heroui/modal";
 import { Textarea } from "@heroui/input";
-import { CreditCard, CheckCircle, XCircle, ExternalLink, QrCode, Upload, Trash2, Eye, EyeOff } from "lucide-react";
+import {
+  CreditCard,
+  CheckCircle,
+  XCircle,
+  ExternalLink,
+  QrCode,
+  Upload,
+  Trash2,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { Tooltip } from "@heroui/tooltip";
 import { paymentsApi, getErrorMessage } from "@/lib/api";
 import { Payment } from "@/types";
@@ -18,7 +34,13 @@ import Image from "next/image";
 import useSWR from "swr";
 
 const statusColor = (s: string) =>
-  s === "paid" ? "success" : s === "failed" ? "danger" : s === "refunded" ? "secondary" : "warning";
+  s === "paid"
+    ? "success"
+    : s === "failed"
+      ? "danger"
+      : s === "refunded"
+        ? "secondary"
+        : "warning";
 
 function ReceiptLinks({ raw }: { raw: string }) {
   let urls: string[] = [];
@@ -32,7 +54,12 @@ function ReceiptLinks({ raw }: { raw: string }) {
     <div className="flex gap-1">
       {urls.map((url, i) => (
         <a key={i} href={url} target="_blank" rel="noopener noreferrer">
-          <Button size="sm" variant="flat" isIconOnly title={`Receipt ${i + 1}`}>
+          <Button
+            size="sm"
+            variant="flat"
+            isIconOnly
+            title={`Receipt ${i + 1}`}
+          >
             <ExternalLink className="w-3.5 h-3.5" />
           </Button>
         </a>
@@ -53,8 +80,8 @@ export default function PaymentsPage() {
   const { data: payments = [], isLoading: loading } = useAllPayments();
   const { data: qrCodes = [], mutate: reloadQr } = useSWR<QrCode[]>(
     "qr-codes",
-    () => paymentsApi.qrCodesAll().then(r => r.data.data?.qr_codes ?? []),
-    { revalidateOnFocus: false }
+    () => paymentsApi.qrCodesAll().then((r) => r.data.data?.qr_codes ?? []),
+    { revalidateOnFocus: false },
   );
 
   const [rejectTarget, setRejectTarget] = useState<Payment | null>(null);
@@ -65,8 +92,8 @@ export default function PaymentsPage() {
   const [qrLabel, setQrLabel] = useState("GCash / Maya");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const pending = payments.filter(p => p.status === "pending_verification");
-  const activeQr = qrCodes.find(q => q.is_active);
+  const pending = payments.filter((p) => p.status === "pending_verification");
+  const activeQr = qrCodes.find((q) => q.is_active);
 
   async function handleApprove(p: Payment) {
     setSaving(true);
@@ -83,7 +110,10 @@ export default function PaymentsPage() {
 
   async function handleReject() {
     if (!rejectTarget) return;
-    if (!rejectReason.trim()) { toast.warning("Rejection reason required"); return; }
+    if (!rejectReason.trim()) {
+      toast.warning("Rejection reason required");
+      return;
+    }
     setSaving(true);
     try {
       await paymentsApi.reject(rejectTarget.id, rejectReason);
@@ -153,7 +183,9 @@ export default function PaymentsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Payments</h1>
-          <p className="text-default-500 text-sm mt-0.5">{pending.length} pending verification</p>
+          <p className="text-default-500 text-sm mt-0.5">
+            {pending.length} pending verification
+          </p>
         </div>
       </div>
 
@@ -162,7 +194,11 @@ export default function PaymentsPage() {
         <CardHeader className="flex items-center gap-2 pb-0">
           <QrCode className="w-5 h-5 text-primary" />
           <h2 className="font-semibold text-foreground">Payment QR Code</h2>
-          {activeQr && <Chip size="sm" color="success" variant="flat" className="ml-auto">Active</Chip>}
+          {activeQr && (
+            <Chip size="sm" color="success" variant="flat" className="ml-auto">
+              Active
+            </Chip>
+          )}
         </CardHeader>
         <CardBody>
           <div className="flex flex-col lg:flex-row gap-6 items-start">
@@ -171,10 +207,18 @@ export default function PaymentsPage() {
               {activeQr ? (
                 <>
                   <div className="relative w-48 h-48 rounded-xl overflow-hidden border-2 border-success/40 bg-white">
-                    <Image src={activeQr.image_url} alt="Payment QR" fill className="object-contain p-2" unoptimized />
+                    <Image
+                      src={activeQr.image_url}
+                      alt="Payment QR"
+                      fill
+                      className="object-contain p-2"
+                      unoptimized
+                    />
                   </div>
                   <p className="text-xs text-default-400">{activeQr.label}</p>
-                  <p className="text-xs text-success font-medium">Shown to tenants during payment</p>
+                  <p className="text-xs text-success font-medium">
+                    Shown to tenants during payment
+                  </p>
                 </>
               ) : (
                 <div className="w-48 h-48 rounded-xl border-2 border-dashed border-default-300 flex flex-col items-center justify-center text-center p-4">
@@ -187,15 +231,20 @@ export default function PaymentsPage() {
             {/* Upload + manage */}
             <div className="flex-1 space-y-4">
               <div>
-                <p className="text-sm font-medium text-foreground mb-1">Upload new QR code</p>
-                <p className="text-xs text-default-400 mb-3">Upload your GCash, Maya, or bank QR image. Only one can be active at a time.</p>
+                <p className="text-sm font-medium text-foreground mb-1">
+                  Upload new QR code
+                </p>
+                <p className="text-xs text-default-400 mb-3">
+                  Upload your GCash, Maya, or bank QR image. Only one can be
+                  active at a time.
+                </p>
                 <div className="flex gap-2 items-center">
                   <input
                     ref={fileRef}
                     type="text"
                     placeholder="Label (e.g. GCash)"
                     value={qrLabel}
-                    onChange={e => setQrLabel(e.target.value)}
+                    onChange={(e) => setQrLabel(e.target.value)}
                     className="px-3 py-2 rounded-xl bg-content2 border border-default-200 text-sm text-foreground focus:outline-none focus:border-primary flex-1 max-w-[180px]"
                   />
                   <input
@@ -203,7 +252,10 @@ export default function PaymentsPage() {
                     accept="image/*"
                     className="hidden"
                     id="qr-upload"
-                    onChange={e => { if (e.target.files?.[0]) handleQrUpload(e.target.files[0]); }}
+                    onChange={(e) => {
+                      if (e.target.files?.[0])
+                        handleQrUpload(e.target.files[0]);
+                    }}
                   />
                   <Button
                     as="label"
@@ -222,26 +274,73 @@ export default function PaymentsPage() {
               {/* All QR codes */}
               {qrCodes.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs text-default-400 uppercase tracking-wide">Saved QR Codes</p>
-                  {qrCodes.map(qr => (
-                    <div key={qr.id} className="flex items-center gap-3 p-3 rounded-xl bg-default-50 border border-default-200">
+                  <p className="text-xs text-default-400 uppercase tracking-wide">
+                    Saved QR Codes
+                  </p>
+                  {qrCodes.map((qr) => (
+                    <div
+                      key={qr.id}
+                      className="flex items-center gap-3 p-3 rounded-xl bg-default-50 border border-default-200"
+                    >
                       <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-white border border-default-200 shrink-0">
-                        <Image src={qr.image_url} alt={qr.label} fill className="object-contain p-1" unoptimized />
+                        <Image
+                          src={qr.image_url}
+                          alt={qr.label}
+                          fill
+                          className="object-contain p-1"
+                          unoptimized
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{qr.label}</p>
-                        <p className="text-xs text-default-400">{new Date(qr.created_at).toLocaleDateString()}</p>
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {qr.label}
+                        </p>
+                        <p className="text-xs text-default-400">
+                          {new Date(qr.created_at).toLocaleDateString()}
+                        </p>
                       </div>
-                      <Chip size="sm" variant="flat" color={qr.is_active ? "success" : "default"}>
+                      <Chip
+                        size="sm"
+                        variant="flat"
+                        color={qr.is_active ? "success" : "default"}
+                      >
                         {qr.is_active ? "Active" : "Inactive"}
                       </Chip>
-                      <Tooltip delay={3000} content={qr.is_active ? "Deactivate — tenants won't see this QR" : "Activate — set as the payment QR shown to tenants"} placement="top">
-                        <Button size="sm" variant="flat" isIconOnly onPress={() => handleToggleQr(qr)}>
-                          {qr.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      <Tooltip
+                        delay={3000}
+                        content={
+                          qr.is_active
+                            ? "Deactivate — tenants won't see this QR"
+                            : "Activate — set as the payment QR shown to tenants"
+                        }
+                        placement="top"
+                      >
+                        <Button
+                          size="sm"
+                          variant="flat"
+                          isIconOnly
+                          onPress={() => handleToggleQr(qr)}
+                        >
+                          {qr.is_active ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
                         </Button>
                       </Tooltip>
-                      <Tooltip delay={3000} content="Delete this QR code permanently" placement="top" color="danger">
-                        <Button size="sm" variant="flat" color="danger" isIconOnly onPress={() => handleDeleteQr(qr)}>
+                      <Tooltip
+                        delay={3000}
+                        content="Delete this QR code permanently"
+                        placement="top"
+                        color="danger"
+                      >
+                        <Button
+                          size="sm"
+                          variant="flat"
+                          color="danger"
+                          isIconOnly
+                          onPress={() => handleDeleteQr(qr)}
+                        >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </Tooltip>
@@ -259,10 +358,16 @@ export default function PaymentsPage() {
         <CardHeader className="flex items-center gap-2 pb-0">
           <CreditCard className="w-5 h-5 text-primary" />
           <h2 className="font-semibold text-foreground">All Payments</h2>
-          {pending.length > 0 && <Chip size="sm" color="warning" className="ml-auto">{pending.length} pending</Chip>}
+          {pending.length > 0 && (
+            <Chip size="sm" color="warning" className="ml-auto">
+              {pending.length} pending
+            </Chip>
+          )}
         </CardHeader>
         <CardBody>
-          {loading ? <TableSkeleton rows={5} cols={7} /> : payments.length === 0 ? (
+          {loading ? (
+            <TableSkeleton rows={5} cols={7} />
+          ) : payments.length === 0 ? (
             <div className="flex flex-col items-center py-12 text-center">
               <CreditCard className="w-10 h-10 text-default-300 mb-3" />
               <p className="text-default-400">No payments yet</p>
@@ -272,24 +377,62 @@ export default function PaymentsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-default-200">
-                    {["Tenant", "Pad", "Amount", "Method", "Reference", "Status", "Receipt", "Actions"].map(h => (
-                      <th key={h} className="text-left py-2 px-3 text-default-500 font-medium text-xs uppercase tracking-wide">{h}</th>
+                    {[
+                      "Tenant",
+                      "Pad",
+                      "Amount",
+                      "Method",
+                      "Reference",
+                      "Status",
+                      "Receipt",
+                      "Actions",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="text-left py-2 px-3 text-default-500 font-medium text-xs uppercase tracking-wide"
+                      >
+                        {h}
+                      </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {payments.map(p => (
-                    <tr key={p.id} className="border-b border-default-100 hover:bg-default-50">
-                      <td className="py-3 px-3 font-medium text-foreground">{p.tenant_name ?? "—"}</td>
-                      <td className="py-3 px-3 text-default-500">{p.pad_name ?? "—"}</td>
-                      <td className="py-3 px-3 font-mono text-xs">₱{Number(p.amount).toFixed(2)}</td>
-                      <td className="py-3 px-3 text-default-500 capitalize">{p.payment_method}</td>
-                      <td className="py-3 px-3 font-mono text-xs text-default-400">{p.reference_number ?? "—"}</td>
+                  {payments.map((p) => (
+                    <tr
+                      key={p.id}
+                      className="border-b border-default-100 hover:bg-default-50"
+                    >
+                      <td className="py-3 px-3 font-medium text-foreground">
+                        {p.tenant_name ?? "—"}
+                      </td>
+                      <td className="py-3 px-3 text-default-500">
+                        {p.pad_name ?? "—"}
+                      </td>
+                      <td className="py-3 px-3 font-mono text-xs">
+                        ₱{Number(p.amount).toFixed(2)}
+                      </td>
+                      <td className="py-3 px-3 text-default-500 capitalize">
+                        {p.payment_method}
+                      </td>
+                      <td className="py-3 px-3 font-mono text-xs text-default-400">
+                        {p.reference_number ?? "—"}
+                      </td>
                       <td className="py-3 px-3">
                         <div className="flex flex-col gap-1">
-                          <Chip size="sm" variant="flat" color={statusColor(p.status)}>{p.status}</Chip>
+                          <Chip
+                            size="sm"
+                            variant="flat"
+                            color={statusColor(p.status)}
+                          >
+                            {p.status}
+                          </Chip>
                           {p.rejection_reason && (
-                            <span className="text-xs text-danger/80 max-w-[160px] truncate" title={p.rejection_reason}>{p.rejection_reason}</span>
+                            <span
+                              className="text-xs text-danger/80 max-w-[160px] truncate"
+                              title={p.rejection_reason}
+                            >
+                              {p.rejection_reason}
+                            </span>
                           )}
                         </div>
                       </td>
@@ -300,20 +443,54 @@ export default function PaymentsPage() {
                         <div className="flex gap-1">
                           {p.status === "pending_verification" && (
                             <>
-                              <Tooltip delay={3000} content="Approve this payment and mark the bill as paid" placement="top" color="success">
-                                <Button size="sm" color="success" variant="flat" isIconOnly isLoading={saving} onPress={() => handleApprove(p)}>
+                              <Tooltip
+                                delay={3000}
+                                content="Approve this payment and mark the bill as paid"
+                                placement="top"
+                                color="success"
+                              >
+                                <Button
+                                  size="sm"
+                                  color="success"
+                                  variant="flat"
+                                  isIconOnly
+                                  isLoading={saving}
+                                  onPress={() => handleApprove(p)}
+                                >
                                   <CheckCircle className="w-4 h-4" />
                                 </Button>
                               </Tooltip>
-                              <Tooltip delay={3000} content="Reject this payment and notify the tenant" placement="top" color="danger">
-                                <Button size="sm" color="danger" variant="flat" isIconOnly onPress={() => setRejectTarget(p)}>
+                              <Tooltip
+                                delay={3000}
+                                content="Reject this payment and notify the tenant"
+                                placement="top"
+                                color="danger"
+                              >
+                                <Button
+                                  size="sm"
+                                  color="danger"
+                                  variant="flat"
+                                  isIconOnly
+                                  onPress={() => setRejectTarget(p)}
+                                >
                                   <XCircle className="w-4 h-4" />
                                 </Button>
                               </Tooltip>
                             </>
                           )}
-                          <Tooltip delay={3000} content="Delete this payment record permanently" placement="left" color="danger">
-                            <Button size="sm" color="danger" variant="light" isIconOnly onPress={() => setDeleteTarget(p)}>
+                          <Tooltip
+                            delay={3000}
+                            content="Delete this payment record permanently"
+                            placement="left"
+                            color="danger"
+                          >
+                            <Button
+                              size="sm"
+                              color="danger"
+                              variant="light"
+                              isIconOnly
+                              onPress={() => setDeleteTarget(p)}
+                            >
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </Tooltip>
@@ -328,33 +505,62 @@ export default function PaymentsPage() {
         </CardBody>
       </Card>
 
-      <Modal isOpen={!!rejectTarget} onOpenChange={() => setRejectTarget(null)} classNames={modalClassNames}>
+      <Modal
+        isOpen={!!rejectTarget}
+        onOpenChange={() => setRejectTarget(null)}
+        classNames={modalClassNames}
+      >
         <ModalContent>
           <ModalHeader>Reject Payment</ModalHeader>
           <ModalBody>
-            <p className="text-sm text-default-500 mb-2">Payment from <strong>{rejectTarget?.tenant_name}</strong> — ₱{Number(rejectTarget?.amount).toFixed(2)}</p>
-            <Textarea label="Rejection Reason" placeholder="e.g. Reference number not found" value={rejectReason}
-              onChange={e => setRejectReason(e.target.value)} />
+            <p className="text-sm text-default-500 mb-2">
+              Payment from <strong>{rejectTarget?.tenant_name}</strong> — ₱
+              {Number(rejectTarget?.amount).toFixed(2)}
+            </p>
+            <Textarea
+              label="Rejection Reason"
+              placeholder="e.g. Reference number not found"
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+            />
           </ModalBody>
           <ModalFooter>
-            <Button variant="flat" onPress={() => setRejectTarget(null)}>Cancel</Button>
-            <Button color="danger" isLoading={saving} onPress={handleReject}>Reject</Button>
+            <Button variant="flat" onPress={() => setRejectTarget(null)}>
+              Cancel
+            </Button>
+            <Button color="danger" isLoading={saving} onPress={handleReject}>
+              Reject
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
 
-      <Modal isOpen={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)} classNames={modalClassNames}>
+      <Modal
+        isOpen={!!deleteTarget}
+        onOpenChange={() => setDeleteTarget(null)}
+        classNames={modalClassNames}
+      >
         <ModalContent>
           <ModalHeader>Delete Payment Record</ModalHeader>
           <ModalBody>
             <p className="text-sm text-default-500">
-              Permanently delete the payment record from <strong>{deleteTarget?.tenant_name}</strong> (₱{Number(deleteTarget?.amount).toFixed(2)}, ref: {deleteTarget?.reference_number ?? "—"})?
+              Permanently delete the payment record from{" "}
+              <strong>{deleteTarget?.tenant_name}</strong> (₱
+              {Number(deleteTarget?.amount).toFixed(2)}, ref:{" "}
+              {deleteTarget?.reference_number ?? "—"})?
             </p>
-            <p className="text-xs text-warning mt-2">If the bill was pending, it will be restored to unpaid so the tenant can resubmit.</p>
+            <p className="text-xs text-warning mt-2">
+              If the bill was pending, it will be restored to unpaid so the
+              tenant can resubmit.
+            </p>
           </ModalBody>
           <ModalFooter>
-            <Button variant="flat" onPress={() => setDeleteTarget(null)}>Cancel</Button>
-            <Button color="danger" isLoading={saving} onPress={handleDelete}>Delete</Button>
+            <Button variant="flat" onPress={() => setDeleteTarget(null)}>
+              Cancel
+            </Button>
+            <Button color="danger" isLoading={saving} onPress={handleDelete}>
+              Delete
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

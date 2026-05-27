@@ -48,7 +48,7 @@ export class AggregationService {
    */
   static async aggregateDay(deviceId: number, date: string): Promise<void> {
     // 11:36am PHT = 03:36 UTC
-    const windowEnd   = new Date(`${date}T03:36:00.000Z`);
+    const windowEnd = new Date(`${date}T03:36:00.000Z`);
     const windowStart = new Date(windowEnd.getTime() - 24 * 60 * 60 * 1000);
 
     const [rows] = await pool.execute<RowDataPacket[]>(
@@ -87,16 +87,16 @@ export class AggregationService {
     const peakHour = peakRows.length > 0 ? Number((peakRows[0] as any).hr) : undefined;
 
     await PowerAggregateModel.upsertDaily(deviceId, date, {
-      avg_voltage:      Number(r.avg_voltage) || 0,
-      avg_current:      Number(r.avg_current) || 0,
-      avg_power_real:   Number(r.avg_power_real) || 0,
-      max_power_real:   Number(r.max_power_real) || 0,
-      min_power_real:   Number(r.min_power_real) || 0,
+      avg_voltage: Number(r.avg_voltage) || 0,
+      avg_current: Number(r.avg_current) || 0,
+      avg_power_real: Number(r.avg_power_real) || 0,
+      max_power_real: Number(r.max_power_real) || 0,
+      min_power_real: Number(r.min_power_real) || 0,
       total_energy_kwh: Number(r.total_energy_kwh) || 0,
       avg_power_factor: Number(r.avg_power_factor) || 0,
-      peak_hour:        peakHour,
-      reading_count:    Number(r.reading_count),
-      anomaly_count:    Number((anomalyRows[0] as any).cnt) || 0,
+      peak_hour: peakHour,
+      reading_count: Number(r.reading_count),
+      anomaly_count: Number((anomalyRows[0] as any).cnt) || 0,
     });
   }
 

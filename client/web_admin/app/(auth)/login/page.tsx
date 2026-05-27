@@ -52,15 +52,21 @@ export default function LoginPage() {
           <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/40 mb-4">
             <Zap className="w-9 h-9 text-white" strokeWidth={2.5} />
           </div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">BlueWatt</h1>
-          <p className="text-default-500 mt-1 text-sm">Electrical Monitoring — Admin</p>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">
+            BlueWatt
+          </h1>
+          <p className="text-default-500 mt-1 text-sm">
+            Electrical Monitoring — Admin
+          </p>
         </div>
 
         <Card className="shadow-2xl border border-default-200/50 backdrop-blur-sm bg-content1/90">
           <CardHeader className="pb-0 pt-6 px-6">
             <div>
               <h2 className="text-xl font-semibold text-foreground">Sign in</h2>
-              <p className="text-default-500 text-sm mt-0.5">Enter your credentials to continue</p>
+              <p className="text-default-500 text-sm mt-0.5">
+                Enter your credentials to continue
+              </p>
             </div>
           </CardHeader>
           <CardBody className="px-6 pb-6 pt-4">
@@ -73,7 +79,10 @@ export default function LoginPage() {
                 onValueChange={setEmail}
                 startContent={<Mail className="w-4 h-4 text-default-400" />}
                 variant="bordered"
-                classNames={{ inputWrapper: "border-default-300 hover:border-primary focus-within:border-primary" }}
+                classNames={{
+                  inputWrapper:
+                    "border-default-300 hover:border-primary focus-within:border-primary",
+                }}
                 isDisabled={loading}
               />
               <Input
@@ -84,12 +93,23 @@ export default function LoginPage() {
                 onValueChange={setPassword}
                 startContent={<Lock className="w-4 h-4 text-default-400" />}
                 endContent={
-                  <button type="button" onClick={() => setShowPass((p) => !p)} className="text-default-400 hover:text-primary transition-colors">
-                    {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  <button
+                    type="button"
+                    onClick={() => setShowPass((p) => !p)}
+                    className="text-default-400 hover:text-primary transition-colors"
+                  >
+                    {showPass ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 }
                 variant="bordered"
-                classNames={{ inputWrapper: "border-default-300 hover:border-primary focus-within:border-primary" }}
+                classNames={{
+                  inputWrapper:
+                    "border-default-300 hover:border-primary focus-within:border-primary",
+                }}
                 isDisabled={loading}
               />
               <Button

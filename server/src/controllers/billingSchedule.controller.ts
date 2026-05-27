@@ -18,7 +18,8 @@ export const listSchedules = asyncHandler(
 /** POST /billing/schedules */
 export const createSchedule = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
-    const { pad_id, bill_type, frequency, due_date_offset_days, flat_amount, start_date } = req.body;
+    const { pad_id, bill_type, frequency, due_date_offset_days, flat_amount, start_date } =
+      req.body;
 
     if (!pad_id || !bill_type || !frequency || !start_date) {
       throw new AppError(

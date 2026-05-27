@@ -6,14 +6,31 @@ import { Button } from "@heroui/button";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Chip } from "@heroui/chip";
 import { Input } from "@heroui/input";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import {
-  Users, Plus, Cpu, Trash2, MapPin,
-  Wifi, WifiOff, ChevronRight,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "@heroui/modal";
+import {
+  Users,
+  Plus,
+  Cpu,
+  Trash2,
+  MapPin,
+  Wifi,
+  WifiOff,
+  ChevronRight,
 } from "lucide-react";
 import { Tooltip } from "@heroui/tooltip";
 import { adminApi, getErrorMessage } from "@/lib/api";
-import { useTenants, useDevices, reloadTenants, reloadDevices } from "@/lib/use-api";
+import {
+  useTenants,
+  useDevices,
+  reloadTenants,
+  reloadDevices,
+} from "@/lib/use-api";
 import { Tenant, Device } from "@/types";
 import { toast } from "@/lib/toast";
 import { modalClassNames } from "@/lib/modal-styles";
@@ -62,12 +79,19 @@ function DeviceCard({
             selected ? "bg-primary/20" : "bg-default-200",
           ].join(" ")}
         >
-          <Cpu className={["w-5 h-5", selected ? "text-primary" : "text-default-400"].join(" ")} />
+          <Cpu
+            className={[
+              "w-5 h-5",
+              selected ? "text-primary" : "text-default-400",
+            ].join(" ")}
+          />
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="font-semibold text-foreground text-sm truncate">{device.device_name}</p>
+            <p className="font-semibold text-foreground text-sm truncate">
+              {device.device_name}
+            </p>
             <span
               className={[
                 "w-2 h-2 rounded-full shrink-0",
@@ -75,11 +99,15 @@ function DeviceCard({
               ].join(" ")}
             />
           </div>
-          <p className="text-xs text-default-400 font-mono mt-0.5">{device.device_id}</p>
+          <p className="text-xs text-default-400 font-mono mt-0.5">
+            {device.device_id}
+          </p>
           {device.location && (
             <div className="flex items-center gap-1 mt-1">
               <MapPin className="w-3 h-3 text-default-400 shrink-0" />
-              <p className="text-xs text-default-400 truncate">{device.location}</p>
+              <p className="text-xs text-default-400 truncate">
+                {device.location}
+              </p>
             </div>
           )}
         </div>
@@ -95,7 +123,9 @@ function DeviceCard({
 
       {selected && (
         <div className="mt-2 pt-2 border-t border-primary/20">
-          <p className="text-xs text-primary font-medium">Selected — this tenant will be linked to this ESP</p>
+          <p className="text-xs text-primary font-medium">
+            Selected — this tenant will be linked to this ESP
+          </p>
         </div>
       )}
     </button>
@@ -122,11 +152,19 @@ export default function TenantsPage() {
   const [selectedDeviceId, setSelectedDeviceId] = useState<number | null>(null);
   const [step, setStep] = useState<1 | 2>(1);
 
-  function load() { reloadTenants(); reloadDevices(); }
-
+  function load() {
+    reloadTenants();
+    reloadDevices();
+  }
 
   function resetCreate() {
-    setForm({ email: "", full_name: "", password: "", pad_name: "", rate_per_kwh: "11.50" });
+    setForm({
+      email: "",
+      full_name: "",
+      password: "",
+      pad_name: "",
+      rate_per_kwh: "11.50",
+    });
     setSelectedDeviceId(null);
     setStep(1);
     setShowCreate(false);
@@ -153,7 +191,9 @@ export default function TenantsPage() {
         full_name: form.full_name.trim(),
         password: form.password,
         pad_name: form.pad_name.trim() || undefined,
-        rate_per_kwh: form.pad_name.trim() ? parseFloat(form.rate_per_kwh) : undefined,
+        rate_per_kwh: form.pad_name.trim()
+          ? parseFloat(form.rate_per_kwh)
+          : undefined,
         device_id: selectedDeviceId ?? undefined,
       });
       toast.success(`Tenant "${form.full_name}" created`);
@@ -178,7 +218,8 @@ export default function TenantsPage() {
   }
 
   // Step 1 validation
-  const step1Valid = form.email.trim() && form.full_name.trim() && form.password.length >= 8;
+  const step1Valid =
+    form.email.trim() && form.full_name.trim() && form.password.length >= 8;
 
   return (
     <div className="space-y-6">
@@ -186,11 +227,22 @@ export default function TenantsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Tenants</h1>
-          <p className="text-default-500 text-sm mt-0.5">{tenants.length} account{tenants.length !== 1 ? "s" : ""}</p>
+          <p className="text-default-500 text-sm mt-0.5">
+            {tenants.length} account{tenants.length !== 1 ? "s" : ""}
+          </p>
         </div>
         <div className="flex gap-2">
-          <Tooltip delay={3000} content="Create a new tenant account" placement="bottom">
-            <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />} onPress={() => setShowCreate(true)}>
+          <Tooltip
+            delay={3000}
+            content="Create a new tenant account"
+            placement="bottom"
+          >
+            <Button
+              color="primary"
+              size="sm"
+              startContent={<Plus className="w-4 h-4" />}
+              onPress={() => setShowCreate(true)}
+            >
               Create Tenant
             </Button>
           </Tooltip>
@@ -210,7 +262,9 @@ export default function TenantsPage() {
             <div className="flex flex-col items-center py-12 text-center">
               <Users className="w-10 h-10 text-default-300 mb-3" />
               <p className="text-default-400 font-medium">No tenants yet</p>
-              <p className="text-default-300 text-sm mt-1">Create your first tenant account above</p>
+              <p className="text-default-300 text-sm mt-1">
+                Create your first tenant account above
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -219,22 +273,47 @@ export default function TenantsPage() {
                   key={t.id}
                   className="flex items-center gap-3 p-3 rounded-xl border border-default-100 hover:bg-default-50 transition-colors"
                 >
-                  <Avatar name={t.full_name} src={t.profile_image_url} color="primary" size="sm" />
+                  <Avatar
+                    name={t.full_name}
+                    src={t.profile_image_url}
+                    color="primary"
+                    size="sm"
+                  />
 
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground text-sm truncate">{t.full_name}</p>
-                    <p className="text-xs text-default-400 truncate">{t.email}</p>
+                    <p className="font-medium text-foreground text-sm truncate">
+                      {t.full_name}
+                    </p>
+                    <p className="text-xs text-default-400 truncate">
+                      {t.email}
+                    </p>
                   </div>
 
                   {/* Pad */}
                   <div className="hidden sm:flex flex-col items-end gap-0.5 min-w-0">
                     {t.pad_name ? (
                       <>
-                        <Chip size="sm" variant="flat" color="primary" className="text-xs">{t.pad_name}</Chip>
-                        <p className="text-[10px] text-default-400">₱{Number(t.rate_per_kwh).toFixed(2)}/kWh</p>
+                        <Chip
+                          size="sm"
+                          variant="flat"
+                          color="primary"
+                          className="text-xs"
+                        >
+                          {t.pad_name}
+                        </Chip>
+                        <p className="text-[10px] text-default-400">
+                          ₱{Number(t.rate_per_kwh).toFixed(2)}/kWh
+                        </p>
                       </>
                     ) : (
-                      <Chip size="sm" variant="flat" color="default" className="text-xs">No pad</Chip>
+                      <Chip
+                        size="sm"
+                        variant="flat"
+                        color="default"
+                        className="text-xs"
+                      >
+                        No pad
+                      </Chip>
                     )}
                   </div>
 
@@ -244,18 +323,26 @@ export default function TenantsPage() {
                       <>
                         <Cpu className="w-3.5 h-3.5 text-primary shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-xs text-foreground truncate">{t.device_name}</p>
-                          <p className="text-[10px] font-mono text-default-400 truncate">{t.device_serial}</p>
+                          <p className="text-xs text-foreground truncate">
+                            {t.device_name}
+                          </p>
+                          <p className="text-[10px] font-mono text-default-400 truncate">
+                            {t.device_serial}
+                          </p>
                         </div>
                         <span
                           className={[
                             "w-2 h-2 rounded-full shrink-0",
-                            isDeviceOnline(undefined) ? "bg-success" : "bg-default-400",
+                            isDeviceOnline(undefined)
+                              ? "bg-success"
+                              : "bg-default-400",
                           ].join(" ")}
                         />
                       </>
                     ) : (
-                      <span className="text-xs text-default-400">No device</span>
+                      <span className="text-xs text-default-400">
+                        No device
+                      </span>
                     )}
                   </div>
 
@@ -268,8 +355,19 @@ export default function TenantsPage() {
                     </p>
                   </div>
 
-                  <Tooltip delay={3000} content="Remove this tenant account" placement="left" color="danger">
-                    <Button size="sm" isIconOnly variant="light" color="danger" onPress={() => setConfirmDelete(t)}>
+                  <Tooltip
+                    delay={3000}
+                    content="Remove this tenant account"
+                    placement="left"
+                    color="danger"
+                  >
+                    <Button
+                      size="sm"
+                      isIconOnly
+                      variant="light"
+                      color="danger"
+                      onPress={() => setConfirmDelete(t)}
+                    >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </Tooltip>
@@ -283,7 +381,9 @@ export default function TenantsPage() {
       {/* ── Create Tenant Modal ── */}
       <Modal
         isOpen={showCreate}
-        onOpenChange={(open) => { if (!open) resetCreate(); }}
+        onOpenChange={(open) => {
+          if (!open) resetCreate();
+        }}
         size="2xl"
         scrollBehavior="inside"
         classNames={modalClassNames}
@@ -292,7 +392,9 @@ export default function TenantsPage() {
           <ModalHeader>
             <div className="flex items-center gap-2">
               <span>Create Tenant</span>
-              <Chip size="sm" variant="flat" color="primary">Step {step} of 2</Chip>
+              <Chip size="sm" variant="flat" color="primary">
+                Step {step} of 2
+              </Chip>
             </div>
           </ModalHeader>
 
@@ -300,7 +402,9 @@ export default function TenantsPage() {
             {step === 1 ? (
               /* ── Step 1: Account details ── */
               <div className="space-y-4">
-                <p className="text-sm text-default-400">Enter the tenant&apos;s account credentials.</p>
+                <p className="text-sm text-default-400">
+                  Enter the tenant&apos;s account credentials.
+                </p>
                 <Input
                   label="Full Name"
                   placeholder="Juan dela Cruz"
@@ -329,9 +433,12 @@ export default function TenantsPage() {
                 />
 
                 <div className="border-t border-default-200 pt-4">
-                  <p className="text-sm text-default-500 font-medium mb-3">Unit / Pad (optional)</p>
+                  <p className="text-sm text-default-500 font-medium mb-3">
+                    Unit / Pad (optional)
+                  </p>
                   <p className="text-xs text-default-400 mb-3">
-                    Fill this in to create a unit for this tenant. Leave blank to assign later from the Pads page.
+                    Fill this in to create a unit for this tenant. Leave blank
+                    to assign later from the Pads page.
                   </p>
                   <Input
                     label="Unit Name"
@@ -358,12 +465,16 @@ export default function TenantsPage() {
               <div className="space-y-4">
                 <div>
                   <p className="text-sm text-default-400">
-                    Select which ESP meter to link <span className="text-foreground font-medium">{form.full_name}</span> to.
-                    {" "}Multiple tenants can share the same device.
+                    Select which ESP meter to link{" "}
+                    <span className="text-foreground font-medium">
+                      {form.full_name}
+                    </span>{" "}
+                    to. Multiple tenants can share the same device.
                   </p>
                   {selectedDeviceId && (
                     <p className="text-xs text-primary mt-1">
-                      ✓ Device selected — tenant will monitor readings from this ESP
+                      ✓ Device selected — tenant will monitor readings from this
+                      ESP
                     </p>
                   )}
                 </div>
@@ -384,8 +495,12 @@ export default function TenantsPage() {
                       <WifiOff className="w-5 h-5 text-default-400" />
                     </div>
                     <div>
-                      <p className="font-medium text-sm text-foreground">No device for now</p>
-                      <p className="text-xs text-default-400">Assign an ESP later from the Pads page</p>
+                      <p className="font-medium text-sm text-foreground">
+                        No device for now
+                      </p>
+                      <p className="text-xs text-default-400">
+                        Assign an ESP later from the Pads page
+                      </p>
                     </div>
                   </div>
                 </button>
@@ -394,8 +509,12 @@ export default function TenantsPage() {
                 {devices.length === 0 ? (
                   <div className="flex flex-col items-center py-8 text-center border border-default-200 rounded-xl">
                     <Cpu className="w-8 h-8 text-default-300 mb-2" />
-                    <p className="text-default-400 text-sm">No devices registered yet</p>
-                    <p className="text-default-300 text-xs mt-1">Register an ESP first from the Devices page</p>
+                    <p className="text-default-400 text-sm">
+                      No devices registered yet
+                    </p>
+                    <p className="text-default-300 text-xs mt-1">
+                      Register an ESP first from the Devices page
+                    </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -414,7 +533,10 @@ export default function TenantsPage() {
           </ModalBody>
 
           <ModalFooter>
-            <Button variant="flat" onPress={step === 1 ? resetCreate : () => setStep(1)}>
+            <Button
+              variant="flat"
+              onPress={step === 1 ? resetCreate : () => setStep(1)}
+            >
               {step === 1 ? "Cancel" : "Back"}
             </Button>
 
@@ -439,7 +561,9 @@ export default function TenantsPage() {
       {/* ── Confirm Delete Modal ── */}
       <Modal
         isOpen={!!confirmDelete}
-        onOpenChange={(open) => { if (!open) setConfirmDelete(null); }}
+        onOpenChange={(open) => {
+          if (!open) setConfirmDelete(null);
+        }}
         size="sm"
         classNames={modalClassNames}
       >
@@ -448,14 +572,21 @@ export default function TenantsPage() {
           <ModalBody>
             <p className="text-default-400 text-sm">
               Are you sure you want to remove{" "}
-              <span className="text-foreground font-semibold">{confirmDelete?.full_name}</span>?
-              Their account will be deleted and unassigned from all pads.
-              This cannot be undone.
+              <span className="text-foreground font-semibold">
+                {confirmDelete?.full_name}
+              </span>
+              ? Their account will be deleted and unassigned from all pads. This
+              cannot be undone.
             </p>
           </ModalBody>
           <ModalFooter>
-            <Button variant="flat" onPress={() => setConfirmDelete(null)}>Cancel</Button>
-            <Button color="danger" onPress={() => confirmDelete && handleDelete(confirmDelete)}>
+            <Button variant="flat" onPress={() => setConfirmDelete(null)}>
+              Cancel
+            </Button>
+            <Button
+              color="danger"
+              onPress={() => confirmDelete && handleDelete(confirmDelete)}
+            >
               Delete
             </Button>
           </ModalFooter>

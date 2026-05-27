@@ -10,16 +10,27 @@ import { Tooltip } from "@heroui/tooltip";
 import { anomalyApi, getErrorMessage } from "@/lib/api";
 import { AnomalyEvent } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
-import { useDevices, useAnomalyEvents, reloadAnomalyEvents } from "@/lib/use-api";
+import {
+  useDevices,
+  useAnomalyEvents,
+  reloadAnomalyEvents,
+} from "@/lib/use-api";
 
 const severityColor = (s: string) =>
-  s === "critical" ? "danger" : s === "high" ? "warning" : s === "medium" ? "secondary" : "default";
+  s === "critical"
+    ? "danger"
+    : s === "high"
+      ? "warning"
+      : s === "medium"
+        ? "secondary"
+        : "default";
 
 export default function AnomaliesPage() {
   const { data: devices = [] } = useDevices();
   const [selectedDevice, setSelectedDevice] = useState<number | null>(null);
   const [resolving, setResolving] = useState<number | null>(null);
-  const { data: events = [], isLoading: loading } = useAnomalyEvents(selectedDevice);
+  const { data: events = [], isLoading: loading } =
+    useAnomalyEvents(selectedDevice);
 
   useEffect(() => {
     if (devices.length > 0 && !selectedDevice) setSelectedDevice(devices[0].id);
@@ -38,24 +49,29 @@ export default function AnomaliesPage() {
     }
   }
 
-  const unresolved = events.filter(e => !e.is_resolved).length;
+  const unresolved = events.filter((e) => !e.is_resolved).length;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Anomalies</h1>
-          <p className="text-default-500 text-sm mt-0.5">{unresolved} unresolved</p>
+          <p className="text-default-500 text-sm mt-0.5">
+            {unresolved} unresolved
+          </p>
         </div>
       </div>
 
       {/* Device selector */}
       <div className="flex gap-2 flex-wrap">
-        {devices.map(d => (
-          <Button key={d.id} size="sm"
+        {devices.map((d) => (
+          <Button
+            key={d.id}
+            size="sm"
             variant={selectedDevice === d.id ? "solid" : "flat"}
             color={selectedDevice === d.id ? "primary" : "default"}
-            onPress={() => setSelectedDevice(d.id)}>
+            onPress={() => setSelectedDevice(d.id)}
+          >
             {d.device_name}
           </Button>
         ))}
@@ -65,50 +81,109 @@ export default function AnomaliesPage() {
         <CardHeader className="flex items-center gap-2 pb-0">
           <AlertTriangle className="w-5 h-5 text-warning" />
           <h2 className="font-semibold text-foreground">Anomaly Events</h2>
-          {unresolved > 0 && <Chip size="sm" color="danger" className="ml-auto">{unresolved} unresolved</Chip>}
+          {unresolved > 0 && (
+            <Chip size="sm" color="danger" className="ml-auto">
+              {unresolved} unresolved
+            </Chip>
+          )}
         </CardHeader>
         <CardBody>
-          {loading ? <TableSkeleton rows={5} cols={5} /> : events.length === 0 ? (
+          {loading ? (
+            <TableSkeleton rows={5} cols={5} />
+          ) : events.length === 0 ? (
             <div className="flex flex-col items-center py-12 text-center">
               <AlertTriangle className="w-10 h-10 text-default-300 mb-3" />
-              <p className="text-default-400">{selectedDevice ? "No anomalies recorded" : "Select a device"}</p>
+              <p className="text-default-400">
+                {selectedDevice ? "No anomalies recorded" : "Select a device"}
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-default-200">
-                    {["Time", "Type", "Severity", "Relay Tripped", "Status", "Action"].map(h => (
-                      <th key={h} className="text-left py-2 px-3 text-default-500 font-medium text-xs uppercase tracking-wide">{h}</th>
+                    {[
+                      "Time",
+                      "Type",
+                      "Severity",
+                      "Relay Tripped",
+                      "Status",
+                      "Action",
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        className="text-left py-2 px-3 text-default-500 font-medium text-xs uppercase tracking-wide"
+                      >
+                        {h}
+                      </th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {events.map(e => (
-                    <tr key={e.id} className="border-b border-default-100 hover:bg-default-50">
-                      <td className="py-3 px-3 text-xs text-default-400">{new Date(e.timestamp).toLocaleString()}</td>
-                      <td className="py-3 px-3 font-medium text-foreground capitalize">{e.anomaly_type.replace(/_/g, " ")}</td>
-                      <td className="py-3 px-3">
-                        <Chip size="sm" variant="flat" color={severityColor(e.severity)}>{e.severity}</Chip>
+                  {events.map((e) => (
+                    <tr
+                      key={e.id}
+                      className="border-b border-default-100 hover:bg-default-50"
+                    >
+                      <td className="py-3 px-3 text-xs text-default-400">
+                        {new Date(e.timestamp).toLocaleString()}
+                      </td>
+                      <td className="py-3 px-3 font-medium text-foreground capitalize">
+                        {e.anomaly_type.replace(/_/g, " ")}
                       </td>
                       <td className="py-3 px-3">
-                        <Chip size="sm" variant="flat" color={e.relay_tripped ? "danger" : "default"}>
+                        <Chip
+                          size="sm"
+                          variant="flat"
+                          color={severityColor(e.severity)}
+                        >
+                          {e.severity}
+                        </Chip>
+                      </td>
+                      <td className="py-3 px-3">
+                        <Chip
+                          size="sm"
+                          variant="flat"
+                          color={e.relay_tripped ? "danger" : "default"}
+                        >
                           {e.relay_tripped ? "Yes" : "No"}
                         </Chip>
                       </td>
                       <td className="py-3 px-3">
-                        <Chip size="sm" variant="flat" color={e.is_resolved ? "success" : "warning"}>
+                        <Chip
+                          size="sm"
+                          variant="flat"
+                          color={e.is_resolved ? "success" : "warning"}
+                        >
                           {e.is_resolved ? "Resolved" : "Open"}
                         </Chip>
                       </td>
                       <td className="py-3 px-3">
-                        <Tooltip delay={3000} content={e.is_resolved ? "Already resolved" : "Mark this anomaly as resolved"} placement="left" color={e.is_resolved ? "default" : "success"}>
+                        <Tooltip
+                          delay={3000}
+                          content={
+                            e.is_resolved
+                              ? "Already resolved"
+                              : "Mark this anomaly as resolved"
+                          }
+                          placement="left"
+                          color={e.is_resolved ? "default" : "success"}
+                        >
                           <span>
-                            <Button size="sm" variant="flat" color="success" isIconOnly
+                            <Button
+                              size="sm"
+                              variant="flat"
+                              color="success"
+                              isIconOnly
                               isDisabled={e.is_resolved}
                               isLoading={resolving === e.id}
                               onPress={() => !e.is_resolved && handleResolve(e)}
-                              className={e.is_resolved ? "opacity-30 cursor-not-allowed" : ""}>
+                              className={
+                                e.is_resolved
+                                  ? "opacity-30 cursor-not-allowed"
+                                  : ""
+                              }
+                            >
                               <CheckCircle className="w-4 h-4" />
                             </Button>
                           </span>

@@ -79,17 +79,14 @@ export class BillingScheduleModel {
   }
 
   static async updateNextPeriod(id: number, nextPeriodStart: string): Promise<void> {
-    await pool.execute(
-      `UPDATE billing_schedules SET next_period_start = ? WHERE id = ?`,
-      [nextPeriodStart, id]
-    );
+    await pool.execute(`UPDATE billing_schedules SET next_period_start = ? WHERE id = ?`, [
+      nextPeriodStart,
+      id,
+    ]);
   }
 
   static async stop(id: number): Promise<void> {
-    await pool.execute(
-      `UPDATE billing_schedules SET status = 'stopped' WHERE id = ?`,
-      [id]
-    );
+    await pool.execute(`UPDATE billing_schedules SET status = 'stopped' WHERE id = ?`, [id]);
   }
 
   static async delete(id: number): Promise<void> {

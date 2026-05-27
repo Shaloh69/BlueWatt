@@ -16,9 +16,7 @@ export const generalLimiter = rateLimit({
   // Skip authenticated requests (have their own auth-level protection),
   // SSE connections, and auth routes (which have their own authLimiter).
   skip: (req) =>
-    !!req.headers.authorization ||
-    req.path.includes('/sse/') ||
-    req.path.includes('/auth/'),
+    !!req.headers.authorization || req.path.includes('/sse/') || req.path.includes('/auth/'),
 });
 
 export const authLimiter = rateLimit({

@@ -19,10 +19,10 @@ import {
 
 // ── Refresh intervals ─────────────────────────────────────────────────────────
 
-const DEDUPE_MS   = 10_000;
-const FAST        = 10_000;  // devices, anomalies, pending payments
-const MEDIUM      = 15_000;  // stays, pads, all payments, pad summary
-const SLOW        = 30_000;  // billing, schedules, tenants
+const DEDUPE_MS = 10_000;
+const FAST = 10_000; // devices, anomalies, pending payments
+const MEDIUM = 15_000; // stays, pads, all payments, pad summary
+const SLOW = 30_000; // billing, schedules, tenants
 
 // ── Devices ───────────────────────────────────────────────────────────────────
 
@@ -30,7 +30,11 @@ export function useDevices() {
   return useSWR(
     "devices",
     () => devicesApi.list().then((r) => r.data.data?.devices ?? []),
-    { dedupingInterval: DEDUPE_MS, revalidateOnFocus: true, refreshInterval: FAST }
+    {
+      dedupingInterval: DEDUPE_MS,
+      revalidateOnFocus: true,
+      refreshInterval: FAST,
+    },
   );
 }
 
@@ -44,7 +48,11 @@ export function usePads() {
   return useSWR(
     "pads",
     () => padsApi.list().then((r) => r.data.data?.pads ?? []),
-    { dedupingInterval: DEDUPE_MS, revalidateOnFocus: true, refreshInterval: MEDIUM }
+    {
+      dedupingInterval: DEDUPE_MS,
+      revalidateOnFocus: true,
+      refreshInterval: MEDIUM,
+    },
   );
 }
 
@@ -58,7 +66,11 @@ export function useBilling() {
   return useSWR(
     "billing",
     () => billingApi.list().then((r) => r.data.data?.bills ?? []),
-    { dedupingInterval: DEDUPE_MS, revalidateOnFocus: true, refreshInterval: SLOW }
+    {
+      dedupingInterval: DEDUPE_MS,
+      revalidateOnFocus: true,
+      refreshInterval: SLOW,
+    },
   );
 }
 
@@ -72,7 +84,11 @@ export function useSchedules() {
   return useSWR(
     "billing:schedules",
     () => billingSchedulesApi.list().then((r) => r.data.data?.schedules ?? []),
-    { dedupingInterval: DEDUPE_MS, revalidateOnFocus: true, refreshInterval: SLOW }
+    {
+      dedupingInterval: DEDUPE_MS,
+      revalidateOnFocus: true,
+      refreshInterval: SLOW,
+    },
   );
 }
 
@@ -86,15 +102,26 @@ export function useAllPayments() {
   return useSWR(
     "payments:all",
     () => paymentsApi.all().then((r) => r.data.data?.payments ?? []),
-    { dedupingInterval: DEDUPE_MS, revalidateOnFocus: true, refreshInterval: MEDIUM }
+    {
+      dedupingInterval: DEDUPE_MS,
+      revalidateOnFocus: true,
+      refreshInterval: MEDIUM,
+    },
   );
 }
 
 export function usePendingPayments() {
   return useSWR(
     "payments:pending",
-    () => paymentsApi.pendingVerification().then((r) => r.data.data?.payments ?? []),
-    { dedupingInterval: DEDUPE_MS, revalidateOnFocus: true, refreshInterval: FAST }
+    () =>
+      paymentsApi
+        .pendingVerification()
+        .then((r) => r.data.data?.payments ?? []),
+    {
+      dedupingInterval: DEDUPE_MS,
+      revalidateOnFocus: true,
+      refreshInterval: FAST,
+    },
   );
 }
 
@@ -113,7 +140,11 @@ export function usePadSummary(month?: string) {
   return useSWR(
     ["reports:pad-summary", month],
     () => reportsApi.padSummary(month).then((r) => r.data.data?.pads ?? []),
-    { dedupingInterval: DEDUPE_MS, revalidateOnFocus: true, refreshInterval: MEDIUM }
+    {
+      dedupingInterval: DEDUPE_MS,
+      revalidateOnFocus: true,
+      refreshInterval: MEDIUM,
+    },
   );
 }
 
@@ -121,12 +152,13 @@ export function useDailyReport(deviceId: number | null, month: string) {
   const currentMonth = new Date().toISOString().slice(0, 7);
   return useSWR(
     deviceId ? ["reports:daily", deviceId, month] : null,
-    () => reportsApi.daily(deviceId!, month).then((r) => r.data.data?.days ?? []),
+    () =>
+      reportsApi.daily(deviceId!, month).then((r) => r.data.data?.days ?? []),
     {
       dedupingInterval: DEDUPE_MS,
       revalidateOnFocus: true,
       refreshInterval: month === currentMonth ? 60_000 : 0,
-    }
+    },
   );
 }
 
@@ -136,7 +168,11 @@ export function useAnomalyEvents(deviceId: number | null) {
   return useSWR(
     deviceId ? ["anomaly:events", deviceId] : null,
     () => anomalyApi.list(deviceId!).then((r) => r.data.data?.events ?? []),
-    { dedupingInterval: DEDUPE_MS, revalidateOnFocus: true, refreshInterval: FAST }
+    {
+      dedupingInterval: DEDUPE_MS,
+      revalidateOnFocus: true,
+      refreshInterval: FAST,
+    },
   );
 }
 
@@ -150,7 +186,11 @@ export function useTenants() {
   return useSWR(
     "tenants",
     () => adminApi.listTenants().then((r) => r.data.data?.tenants ?? []),
-    { dedupingInterval: DEDUPE_MS, revalidateOnFocus: true, refreshInterval: SLOW }
+    {
+      dedupingInterval: DEDUPE_MS,
+      revalidateOnFocus: true,
+      refreshInterval: SLOW,
+    },
   );
 }
 
@@ -164,7 +204,11 @@ export function useStays() {
   return useSWR(
     "stays",
     () => staysApi.list().then((r) => r.data.data?.stays ?? []),
-    { dedupingInterval: DEDUPE_MS, revalidateOnFocus: true, refreshInterval: MEDIUM }
+    {
+      dedupingInterval: DEDUPE_MS,
+      revalidateOnFocus: true,
+      refreshInterval: MEDIUM,
+    },
   );
 }
 
@@ -172,7 +216,11 @@ export function useStaysByPad(padId: number | null) {
   return useSWR(
     padId ? ["stays:pad", padId] : null,
     () => staysApi.getByPad(padId!).then((r) => r.data.data?.stays ?? []),
-    { dedupingInterval: DEDUPE_MS, revalidateOnFocus: true, refreshInterval: MEDIUM }
+    {
+      dedupingInterval: DEDUPE_MS,
+      revalidateOnFocus: true,
+      refreshInterval: MEDIUM,
+    },
   );
 }
 

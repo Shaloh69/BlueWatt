@@ -4,12 +4,32 @@ import { useState } from "react";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "@heroui/modal";
 import { Input, Textarea } from "@heroui/input";
 import { Tooltip } from "@heroui/tooltip";
 import {
-  Cpu, Plus, Wifi, WifiOff, ToggleLeft, ToggleRight,
-  Pencil, Building2, User, MapPin, Info, Trash2, Copy, Check, KeyRound, RotateCcw,
+  Cpu,
+  Plus,
+  Wifi,
+  WifiOff,
+  ToggleLeft,
+  ToggleRight,
+  Pencil,
+  Building2,
+  User,
+  MapPin,
+  Info,
+  Trash2,
+  Copy,
+  Check,
+  KeyRound,
+  RotateCcw,
 } from "lucide-react";
 import { devicesApi, getErrorMessage } from "@/lib/api";
 import { useDevices, usePads, reloadDevices, reloadPads } from "@/lib/use-api";
@@ -19,20 +39,40 @@ import { toast } from "@/lib/toast";
 import { modalClassNames } from "@/lib/modal-styles";
 
 export default function DevicesPage() {
-  const { data: devices = [], isLoading: devLoading, mutate: mutateDevices } = useDevices();
-  const { data: pads = [],    isLoading: padLoading,  mutate: mutatePads   } = usePads();
+  const {
+    data: devices = [],
+    isLoading: devLoading,
+    mutate: mutateDevices,
+  } = useDevices();
+  const {
+    data: pads = [],
+    isLoading: padLoading,
+    mutate: mutatePads,
+  } = usePads();
   const loading = devLoading || padLoading;
 
-  function load() { mutateDevices(); mutatePads(); }
+  function load() {
+    mutateDevices();
+    mutatePads();
+  }
 
   // Register modal
   const [showAdd, setShowAdd] = useState(false);
-  const [saving, setSaving]   = useState(false);
-  const [form, setForm]       = useState({ device_id: "", device_name: "", location: "", description: "" });
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    device_id: "",
+    device_name: "",
+    location: "",
+    description: "",
+  });
 
   // Edit modal
   const [editTarget, setEditTarget] = useState<Device | null>(null);
-  const [editForm, setEditForm]     = useState({ device_name: "", location: "", description: "" });
+  const [editForm, setEditForm] = useState({
+    device_name: "",
+    location: "",
+    description: "",
+  });
   const [editSaving, setEditSaving] = useState(false);
 
   // Detail modal
@@ -52,15 +92,18 @@ export default function DevicesPage() {
 
   /** Find pads linked to a device */
   const linkedPads = (device: Device): Pad[] =>
-    pads.filter(p => p.device_id === device.id);
+    pads.filter((p) => p.device_id === device.id);
 
   const isOnline = (d: Device) =>
-    !!d.last_seen_at && Date.now() - new Date(d.last_seen_at).getTime() < 2 * 60 * 1000;
+    !!d.last_seen_at &&
+    Date.now() - new Date(d.last_seen_at).getTime() < 2 * 60 * 1000;
 
   async function handleRelay(device: Device, command: "on" | "off" | "reset") {
     try {
       await devicesApi.issueRelayCommand(device.id, command);
-      toast.success(`Relay ${command.toUpperCase()} sent to ${device.device_name}`);
+      toast.success(
+        `Relay ${command.toUpperCase()} sent to ${device.device_name}`,
+      );
       setTimeout(() => load(), 1500);
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -85,7 +128,12 @@ export default function DevicesPage() {
         setRevealKey(res.data.data.api_key as string);
       }
       setShowAdd(false);
-      setForm({ device_id: "", device_name: "", location: "", description: "" });
+      setForm({
+        device_id: "",
+        device_name: "",
+        location: "",
+        description: "",
+      });
       load();
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -97,21 +145,24 @@ export default function DevicesPage() {
   function openEdit(device: Device) {
     setEditTarget(device);
     setEditForm({
-      device_name:  device.device_name,
-      location:     device.location ?? "",
-      description:  device.description ?? "",
+      device_name: device.device_name,
+      location: device.location ?? "",
+      description: device.description ?? "",
     });
   }
 
   async function handleEdit() {
     if (!editTarget) return;
-    if (!editForm.device_name.trim()) { toast.warning("Name is required"); return; }
+    if (!editForm.device_name.trim()) {
+      toast.warning("Name is required");
+      return;
+    }
     setEditSaving(true);
     try {
       await devicesApi.update(editTarget.id, {
-        device_name:  editForm.device_name.trim(),
-        location:     editForm.location.trim() || null,
-        description:  editForm.description.trim() || null,
+        device_name: editForm.device_name.trim(),
+        location: editForm.location.trim() || null,
+        description: editForm.description.trim() || null,
       });
       toast.success("Device updated");
       setEditTarget(null);
@@ -155,7 +206,13 @@ export default function DevicesPage() {
   }
 
   const relayColor = (s?: string) =>
-    s === "on" ? "success" : s === "off" ? "default" : s === "tripped" ? "danger" : "warning";
+    s === "on"
+      ? "success"
+      : s === "off"
+        ? "default"
+        : s === "tripped"
+          ? "danger"
+          : "warning";
 
   return (
     <div className="space-y-6">
@@ -163,11 +220,22 @@ export default function DevicesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Devices</h1>
-          <p className="text-default-500 text-sm mt-0.5">{devices.length} registered</p>
+          <p className="text-default-500 text-sm mt-0.5">
+            {devices.length} registered
+          </p>
         </div>
         <div className="flex gap-2">
-          <Tooltip delay={3000} content="Register a new ESP32 meter device" placement="bottom">
-            <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />} onPress={() => setShowAdd(true)}>
+          <Tooltip
+            delay={3000}
+            content="Register a new ESP32 meter device"
+            placement="bottom"
+          >
+            <Button
+              color="primary"
+              size="sm"
+              startContent={<Plus className="w-4 h-4" />}
+              onPress={() => setShowAdd(true)}
+            >
               Register Device
             </Button>
           </Tooltip>
@@ -177,7 +245,9 @@ export default function DevicesPage() {
       {/* Device cards */}
       {loading ? (
         <Card className="border border-default-200">
-          <CardBody><TableSkeleton rows={4} cols={6} /></CardBody>
+          <CardBody>
+            <TableSkeleton rows={4} cols={6} />
+          </CardBody>
         </Card>
       ) : devices.length === 0 ? (
         <Card className="border border-default-200">
@@ -188,28 +258,53 @@ export default function DevicesPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {devices.map(d => {
+          {devices.map((d) => {
             const online = isOnline(d);
             const padsForDevice = linkedPads(d);
             const activePad = padsForDevice[0] ?? null;
             return (
-              <Card key={d.id} className="border border-default-200 hover:border-primary/40 transition-colors">
+              <Card
+                key={d.id}
+                className="border border-default-200 hover:border-primary/40 transition-colors"
+              >
                 <CardHeader className="flex items-start justify-between gap-3 pb-2">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${online ? "bg-primary/15" : "bg-default-100"}`}>
-                      <Cpu className={`w-5 h-5 ${online ? "text-primary" : "text-default-400"}`} />
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${online ? "bg-primary/15" : "bg-default-100"}`}
+                    >
+                      <Cpu
+                        className={`w-5 h-5 ${online ? "text-primary" : "text-default-400"}`}
+                      />
                     </div>
                     <div className="min-w-0">
-                      <p className="font-semibold text-foreground truncate">{d.device_name}</p>
-                      <p className="text-xs font-mono text-default-400">{d.device_id}</p>
+                      <p className="font-semibold text-foreground truncate">
+                        {d.device_name}
+                      </p>
+                      <p className="text-xs font-mono text-default-400">
+                        {d.device_id}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <Chip size="sm" variant="flat" color={online ? "success" : "default"}
-                      startContent={online ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}>
+                    <Chip
+                      size="sm"
+                      variant="flat"
+                      color={online ? "success" : "default"}
+                      startContent={
+                        online ? (
+                          <Wifi className="w-3 h-3" />
+                        ) : (
+                          <WifiOff className="w-3 h-3" />
+                        )
+                      }
+                    >
                       {online ? "Online" : "Offline"}
                     </Chip>
-                    <Chip size="sm" variant="flat" color={relayColor(d.relay_status)}>
+                    <Chip
+                      size="sm"
+                      variant="flat"
+                      color={relayColor(d.relay_status)}
+                    >
                       {d.relay_status ?? "unknown"}
                     </Chip>
                   </div>
@@ -224,15 +319,25 @@ export default function DevicesPage() {
                     {activePad ? (
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-foreground">{activePad.name}</p>
-                          <p className="text-xs text-default-400">₱{Number(activePad.rate_per_kwh).toFixed(2)}/kWh</p>
+                          <p className="text-sm font-medium text-foreground">
+                            {activePad.name}
+                          </p>
+                          <p className="text-xs text-default-400">
+                            ₱{Number(activePad.rate_per_kwh).toFixed(2)}/kWh
+                          </p>
                         </div>
-                        <Chip size="sm" variant="flat" color={activePad.is_active ? "success" : "default"}>
+                        <Chip
+                          size="sm"
+                          variant="flat"
+                          color={activePad.is_active ? "success" : "default"}
+                        >
                           {activePad.is_active ? "Active" : "Inactive"}
                         </Chip>
                       </div>
                     ) : (
-                      <p className="text-sm text-default-400 italic">Not assigned to any pad</p>
+                      <p className="text-sm text-default-400 italic">
+                        Not assigned to any pad
+                      </p>
                     )}
                   </div>
 
@@ -241,17 +346,28 @@ export default function DevicesPage() {
                     <p className="text-xs text-default-400 uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
                       <User className="w-3 h-3" /> Connected Accounts
                     </p>
-                    {padsForDevice.filter(p => p.tenant_name).length > 0 ? (
+                    {padsForDevice.filter((p) => p.tenant_name).length > 0 ? (
                       <div className="space-y-1">
-                        {padsForDevice.filter(p => p.tenant_name).map(p => (
-                          <div key={p.id} className="flex items-center justify-between">
-                            <p className="text-sm text-foreground">{p.tenant_name}</p>
-                            <p className="text-xs text-default-400">{p.name}</p>
-                          </div>
-                        ))}
+                        {padsForDevice
+                          .filter((p) => p.tenant_name)
+                          .map((p) => (
+                            <div
+                              key={p.id}
+                              className="flex items-center justify-between"
+                            >
+                              <p className="text-sm text-foreground">
+                                {p.tenant_name}
+                              </p>
+                              <p className="text-xs text-default-400">
+                                {p.name}
+                              </p>
+                            </div>
+                          ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-default-400 italic">No tenants linked</p>
+                      <p className="text-sm text-default-400 italic">
+                        No tenants linked
+                      </p>
                     )}
                   </div>
 
@@ -264,47 +380,143 @@ export default function DevicesPage() {
 
                   {/* Last seen + firmware */}
                   <div className="flex items-center justify-between text-xs text-default-400">
-                    <span>Last seen: {d.last_seen_at ? new Date(d.last_seen_at).toLocaleString() : "Never"}</span>
+                    <span>
+                      Last seen:{" "}
+                      {d.last_seen_at
+                        ? new Date(d.last_seen_at).toLocaleString()
+                        : "Never"}
+                    </span>
                     {d.firmware_version && <span>fw {d.firmware_version}</span>}
                   </div>
 
                   {/* Actions */}
                   <div className="flex gap-2 pt-1 border-t border-default-200">
                     {d.relay_status === "tripped" ? (
-                      <Tooltip delay={3000} content="Reset Relay (clear trip)" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
-                        <Button size="sm" variant="flat" color="warning" isIconOnly onPress={() => handleRelay(d, "reset")}>
+                      <Tooltip
+                        delay={3000}
+                        content="Reset Relay (clear trip)"
+                        classNames={{
+                          content:
+                            "bg-slate-800 text-white border border-white/10 text-xs",
+                        }}
+                      >
+                        <Button
+                          size="sm"
+                          variant="flat"
+                          color="warning"
+                          isIconOnly
+                          onPress={() => handleRelay(d, "reset")}
+                        >
                           <RotateCcw className="w-4 h-4" />
                         </Button>
                       </Tooltip>
                     ) : (
-                      <Tooltip delay={3000} content="Relay ON" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
-                        <Button size="sm" variant="flat" color="success" isIconOnly onPress={() => handleRelay(d, "on")}>
+                      <Tooltip
+                        delay={3000}
+                        content="Relay ON"
+                        classNames={{
+                          content:
+                            "bg-slate-800 text-white border border-white/10 text-xs",
+                        }}
+                      >
+                        <Button
+                          size="sm"
+                          variant="flat"
+                          color="success"
+                          isIconOnly
+                          onPress={() => handleRelay(d, "on")}
+                        >
                           <ToggleRight className="w-4 h-4" />
                         </Button>
                       </Tooltip>
                     )}
-                    <Tooltip delay={3000} content="Relay OFF" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
-                      <Button size="sm" variant="flat" color="default" isIconOnly onPress={() => handleRelay(d, "off")}>
+                    <Tooltip
+                      delay={3000}
+                      content="Relay OFF"
+                      classNames={{
+                        content:
+                          "bg-slate-800 text-white border border-white/10 text-xs",
+                      }}
+                    >
+                      <Button
+                        size="sm"
+                        variant="flat"
+                        color="default"
+                        isIconOnly
+                        onPress={() => handleRelay(d, "off")}
+                      >
                         <ToggleLeft className="w-4 h-4" />
                       </Button>
                     </Tooltip>
-                    <Tooltip delay={3000} content="Rename / Edit" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
-                      <Button size="sm" variant="flat" color="primary" isIconOnly onPress={() => openEdit(d)}>
+                    <Tooltip
+                      delay={3000}
+                      content="Rename / Edit"
+                      classNames={{
+                        content:
+                          "bg-slate-800 text-white border border-white/10 text-xs",
+                      }}
+                    >
+                      <Button
+                        size="sm"
+                        variant="flat"
+                        color="primary"
+                        isIconOnly
+                        onPress={() => openEdit(d)}
+                      >
                         <Pencil className="w-4 h-4" />
                       </Button>
                     </Tooltip>
-                    <Tooltip delay={3000} content="Details" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
-                      <Button size="sm" variant="flat" color="default" isIconOnly onPress={() => setDetailDevice(d)}>
+                    <Tooltip
+                      delay={3000}
+                      content="Details"
+                      classNames={{
+                        content:
+                          "bg-slate-800 text-white border border-white/10 text-xs",
+                      }}
+                    >
+                      <Button
+                        size="sm"
+                        variant="flat"
+                        color="default"
+                        isIconOnly
+                        onPress={() => setDetailDevice(d)}
+                      >
                         <Info className="w-4 h-4" />
                       </Button>
                     </Tooltip>
-                    <Tooltip delay={3000} content="Regenerate API Key" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
-                      <Button size="sm" variant="flat" color="warning" isIconOnly onPress={() => setRegenTarget(d)}>
+                    <Tooltip
+                      delay={3000}
+                      content="Regenerate API Key"
+                      classNames={{
+                        content:
+                          "bg-slate-800 text-white border border-white/10 text-xs",
+                      }}
+                    >
+                      <Button
+                        size="sm"
+                        variant="flat"
+                        color="warning"
+                        isIconOnly
+                        onPress={() => setRegenTarget(d)}
+                      >
                         <KeyRound className="w-4 h-4" />
                       </Button>
                     </Tooltip>
-                    <Tooltip delay={3000} content="Delete Device" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
-                      <Button size="sm" variant="flat" color="danger" isIconOnly onPress={() => setConfirmDelete(d)}>
+                    <Tooltip
+                      delay={3000}
+                      content="Delete Device"
+                      classNames={{
+                        content:
+                          "bg-slate-800 text-white border border-white/10 text-xs",
+                      }}
+                    >
+                      <Button
+                        size="sm"
+                        variant="flat"
+                        color="danger"
+                        isIconOnly
+                        onPress={() => setConfirmDelete(d)}
+                      >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </Tooltip>
@@ -317,143 +529,260 @@ export default function DevicesPage() {
       )}
 
       {/* ── Register Modal ── */}
-      <Modal isOpen={showAdd} onOpenChange={setShowAdd} classNames={modalClassNames}>
+      <Modal
+        isOpen={showAdd}
+        onOpenChange={setShowAdd}
+        classNames={modalClassNames}
+      >
         <ModalContent>
           <ModalHeader>Register New Device</ModalHeader>
           <ModalBody className="space-y-3">
-            <Input label="Device ID" placeholder="bluewatt-001" value={form.device_id}
-              onValueChange={v => setForm(f => ({ ...f, device_id: v }))}
-              description="Unique hardware identifier — must match the ESP32 config" />
-            <Input label="Name" placeholder="Unit 1A Meter" value={form.device_name}
-              onValueChange={v => setForm(f => ({ ...f, device_name: v }))} />
-            <Input label="Location (optional)" placeholder="Room 101, Building A" value={form.location}
-              onValueChange={v => setForm(f => ({ ...f, location: v }))} />
-            <Textarea label="Description (optional)" value={form.description}
-              onValueChange={v => setForm(f => ({ ...f, description: v }))} />
+            <Input
+              label="Device ID"
+              placeholder="bluewatt-001"
+              value={form.device_id}
+              onValueChange={(v) => setForm((f) => ({ ...f, device_id: v }))}
+              description="Unique hardware identifier — must match the ESP32 config"
+            />
+            <Input
+              label="Name"
+              placeholder="Unit 1A Meter"
+              value={form.device_name}
+              onValueChange={(v) => setForm((f) => ({ ...f, device_name: v }))}
+            />
+            <Input
+              label="Location (optional)"
+              placeholder="Room 101, Building A"
+              value={form.location}
+              onValueChange={(v) => setForm((f) => ({ ...f, location: v }))}
+            />
+            <Textarea
+              label="Description (optional)"
+              value={form.description}
+              onValueChange={(v) => setForm((f) => ({ ...f, description: v }))}
+            />
           </ModalBody>
           <ModalFooter>
-            <Button variant="flat" onPress={() => setShowAdd(false)}>Cancel</Button>
-            <Button color="primary" isLoading={saving} onPress={handleRegister}>Register</Button>
+            <Button variant="flat" onPress={() => setShowAdd(false)}>
+              Cancel
+            </Button>
+            <Button color="primary" isLoading={saving} onPress={handleRegister}>
+              Register
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
 
       {/* ── Edit / Rename Modal ── */}
-      <Modal isOpen={!!editTarget} onOpenChange={() => setEditTarget(null)} classNames={modalClassNames}>
+      <Modal
+        isOpen={!!editTarget}
+        onOpenChange={() => setEditTarget(null)}
+        classNames={modalClassNames}
+      >
         <ModalContent>
           <ModalHeader>Edit Device — {editTarget?.device_id}</ModalHeader>
           <ModalBody className="space-y-3">
-            <Input label="Name" value={editForm.device_name}
-              onValueChange={v => setEditForm(f => ({ ...f, device_name: v }))} />
-            <Input label="Location" placeholder="Room 101, Building A" value={editForm.location}
-              onValueChange={v => setEditForm(f => ({ ...f, location: v }))} />
-            <Textarea label="Description" value={editForm.description}
-              onValueChange={v => setEditForm(f => ({ ...f, description: v }))} />
+            <Input
+              label="Name"
+              value={editForm.device_name}
+              onValueChange={(v) =>
+                setEditForm((f) => ({ ...f, device_name: v }))
+              }
+            />
+            <Input
+              label="Location"
+              placeholder="Room 101, Building A"
+              value={editForm.location}
+              onValueChange={(v) => setEditForm((f) => ({ ...f, location: v }))}
+            />
+            <Textarea
+              label="Description"
+              value={editForm.description}
+              onValueChange={(v) =>
+                setEditForm((f) => ({ ...f, description: v }))
+              }
+            />
           </ModalBody>
           <ModalFooter>
-            <Button variant="flat" onPress={() => setEditTarget(null)}>Cancel</Button>
-            <Button color="primary" isLoading={editSaving} onPress={handleEdit}>Save Changes</Button>
+            <Button variant="flat" onPress={() => setEditTarget(null)}>
+              Cancel
+            </Button>
+            <Button color="primary" isLoading={editSaving} onPress={handleEdit}>
+              Save Changes
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
 
       {/* ── Detail Modal ── */}
-      <Modal isOpen={!!detailDevice} onOpenChange={() => setDetailDevice(null)} classNames={modalClassNames}>
+      <Modal
+        isOpen={!!detailDevice}
+        onOpenChange={() => setDetailDevice(null)}
+        classNames={modalClassNames}
+      >
         <ModalContent>
           <ModalHeader>Device Details</ModalHeader>
           <ModalBody className="space-y-4">
-            {detailDevice && (() => {
-              const padsForDevice = linkedPads(detailDevice);
-              return (
-                <>
-                  <div className="space-y-2 text-sm">
-                    {[
-                      ["Device ID",   detailDevice.device_id],
-                      ["Name",        detailDevice.device_name],
-                      ["Location",    detailDevice.location ?? "—"],
-                      ["Firmware",    detailDevice.firmware_version ?? "—"],
-                      ["Relay",       detailDevice.relay_status ?? "unknown"],
-                      ["Status",      detailDevice.is_active ? "Active" : "Inactive"],
-                      ["Last Seen",   detailDevice.last_seen_at ? new Date(detailDevice.last_seen_at).toLocaleString() : "Never"],
-                      ["Registered",  new Date(detailDevice.created_at).toLocaleDateString()],
-                    ].map(([k, v]) => (
-                      <div key={k} className="flex justify-between border-b border-default-100 pb-1.5">
-                        <span className="text-default-400">{k}</span>
-                        <span className="text-foreground font-medium font-mono text-xs text-right max-w-[60%] truncate">{v}</span>
-                      </div>
-                    ))}
-                  </div>
+            {detailDevice &&
+              (() => {
+                const padsForDevice = linkedPads(detailDevice);
+                return (
+                  <>
+                    <div className="space-y-2 text-sm">
+                      {[
+                        ["Device ID", detailDevice.device_id],
+                        ["Name", detailDevice.device_name],
+                        ["Location", detailDevice.location ?? "—"],
+                        ["Firmware", detailDevice.firmware_version ?? "—"],
+                        ["Relay", detailDevice.relay_status ?? "unknown"],
+                        [
+                          "Status",
+                          detailDevice.is_active ? "Active" : "Inactive",
+                        ],
+                        [
+                          "Last Seen",
+                          detailDevice.last_seen_at
+                            ? new Date(
+                                detailDevice.last_seen_at,
+                              ).toLocaleString()
+                            : "Never",
+                        ],
+                        [
+                          "Registered",
+                          new Date(
+                            detailDevice.created_at,
+                          ).toLocaleDateString(),
+                        ],
+                      ].map(([k, v]) => (
+                        <div
+                          key={k}
+                          className="flex justify-between border-b border-default-100 pb-1.5"
+                        >
+                          <span className="text-default-400">{k}</span>
+                          <span className="text-foreground font-medium font-mono text-xs text-right max-w-[60%] truncate">
+                            {v}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
 
-                  <div>
-                    <p className="text-xs text-default-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                      <Building2 className="w-3 h-3" /> Linked Pads ({padsForDevice.length})
-                    </p>
-                    {padsForDevice.length === 0 ? (
-                      <p className="text-sm text-default-400 italic">Not assigned to any pad</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {padsForDevice.map(p => (
-                          <div key={p.id} className="rounded-lg bg-default-50 border border-default-200 px-3 py-2">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <p className="text-sm font-medium text-foreground">{p.name}</p>
-                                <p className="text-xs text-default-400">
-                                  ₱{Number(p.rate_per_kwh).toFixed(2)}/kWh
-                                  {p.description ? ` · ${p.description}` : ""}
-                                </p>
+                    <div>
+                      <p className="text-xs text-default-400 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                        <Building2 className="w-3 h-3" /> Linked Pads (
+                        {padsForDevice.length})
+                      </p>
+                      {padsForDevice.length === 0 ? (
+                        <p className="text-sm text-default-400 italic">
+                          Not assigned to any pad
+                        </p>
+                      ) : (
+                        <div className="space-y-2">
+                          {padsForDevice.map((p) => (
+                            <div
+                              key={p.id}
+                              className="rounded-lg bg-default-50 border border-default-200 px-3 py-2"
+                            >
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <p className="text-sm font-medium text-foreground">
+                                    {p.name}
+                                  </p>
+                                  <p className="text-xs text-default-400">
+                                    ₱{Number(p.rate_per_kwh).toFixed(2)}/kWh
+                                    {p.description ? ` · ${p.description}` : ""}
+                                  </p>
+                                </div>
+                                <Chip
+                                  size="sm"
+                                  variant="flat"
+                                  color={p.is_active ? "success" : "default"}
+                                >
+                                  {p.is_active ? "Active" : "Inactive"}
+                                </Chip>
                               </div>
-                              <Chip size="sm" variant="flat" color={p.is_active ? "success" : "default"}>
-                                {p.is_active ? "Active" : "Inactive"}
-                              </Chip>
+                              {p.tenant_name && (
+                                <p className="text-xs text-primary mt-1.5 flex items-center gap-1">
+                                  <User className="w-3 h-3" /> {p.tenant_name}
+                                  {p.tenant_email ? ` · ${p.tenant_email}` : ""}
+                                </p>
+                              )}
                             </div>
-                            {p.tenant_name && (
-                              <p className="text-xs text-primary mt-1.5 flex items-center gap-1">
-                                <User className="w-3 h-3" /> {p.tenant_name}
-                                {p.tenant_email ? ` · ${p.tenant_email}` : ""}
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </>
-              );
-            })()}
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
           </ModalBody>
           <ModalFooter>
-            <Button variant="flat" onPress={() => setDetailDevice(null)}>Close</Button>
-            <Button color="primary" variant="flat" onPress={() => { openEdit(detailDevice!); setDetailDevice(null); }}
-              startContent={<Pencil className="w-4 h-4" />}>
+            <Button variant="flat" onPress={() => setDetailDevice(null)}>
+              Close
+            </Button>
+            <Button
+              color="primary"
+              variant="flat"
+              onPress={() => {
+                openEdit(detailDevice!);
+                setDetailDevice(null);
+              }}
+              startContent={<Pencil className="w-4 h-4" />}
+            >
               Edit
             </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
       {/* ── API Key Reveal Modal ── */}
-      <Modal isOpen={!!revealKey} onOpenChange={() => { setRevealKey(null); setKeyCopied(false); }}
-        isDismissable={false} classNames={modalClassNames}>
+      <Modal
+        isOpen={!!revealKey}
+        onOpenChange={() => {
+          setRevealKey(null);
+          setKeyCopied(false);
+        }}
+        isDismissable={false}
+        classNames={modalClassNames}
+      >
         <ModalContent>
           <ModalHeader>Save Your API Key</ModalHeader>
           <ModalBody className="space-y-3">
             <p className="text-sm text-warning font-medium">
-              This key will <span className="underline">not</span> be shown again. Copy it now and paste it into the ESP32 provisioning wizard (Step 1 → API Key field).
+              This key will <span className="underline">not</span> be shown
+              again. Copy it now and paste it into the ESP32 provisioning wizard
+              (Step 1 → API Key field).
             </p>
             <div className="flex items-center gap-2 rounded-xl bg-default-50 border border-default-200 px-3 py-2.5">
-              <code className="flex-1 text-xs font-mono text-foreground break-all select-all">{revealKey}</code>
-              <Button size="sm" isIconOnly variant="flat" color={keyCopied ? "success" : "primary"}
+              <code className="flex-1 text-xs font-mono text-foreground break-all select-all">
+                {revealKey}
+              </code>
+              <Button
+                size="sm"
+                isIconOnly
+                variant="flat"
+                color={keyCopied ? "success" : "primary"}
                 onPress={() => {
                   navigator.clipboard.writeText(revealKey ?? "");
                   setKeyCopied(true);
                   toast.success("API key copied to clipboard");
                   setTimeout(() => setKeyCopied(false), 3000);
-                }}>
-                {keyCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                }}
+              >
+                {keyCopied ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
               </Button>
             </div>
           </ModalBody>
           <ModalFooter>
-            <Button color="primary" onPress={() => { setRevealKey(null); setKeyCopied(false); }}>
+            <Button
+              color="primary"
+              onPress={() => {
+                setRevealKey(null);
+                setKeyCopied(false);
+              }}
+            >
               I&apos;ve saved it — Done
             </Button>
           </ModalFooter>
@@ -461,39 +790,69 @@ export default function DevicesPage() {
       </Modal>
 
       {/* ── Regenerate Key Confirm Modal ── */}
-      <Modal isOpen={!!regenTarget} onOpenChange={() => setRegenTarget(null)} classNames={modalClassNames}>
+      <Modal
+        isOpen={!!regenTarget}
+        onOpenChange={() => setRegenTarget(null)}
+        classNames={modalClassNames}
+      >
         <ModalContent>
           <ModalHeader>Regenerate API Key</ModalHeader>
           <ModalBody>
             <p className="text-sm text-default-600">
-              Generate a new API key for <span className="font-semibold text-foreground">{regenTarget?.device_name}</span>?
+              Generate a new API key for{" "}
+              <span className="font-semibold text-foreground">
+                {regenTarget?.device_name}
+              </span>
+              ?
             </p>
             <p className="text-xs text-warning mt-1">
-              The current key will be invalidated immediately. The ESP32 will be rejected until it is flashed with the new key.
+              The current key will be invalidated immediately. The ESP32 will be
+              rejected until it is flashed with the new key.
             </p>
           </ModalBody>
           <ModalFooter>
-            <Button variant="flat" onPress={() => setRegenTarget(null)}>Cancel</Button>
-            <Button color="warning" isLoading={regenLoading} onPress={handleRegenKey}>Regenerate</Button>
+            <Button variant="flat" onPress={() => setRegenTarget(null)}>
+              Cancel
+            </Button>
+            <Button
+              color="warning"
+              isLoading={regenLoading}
+              onPress={handleRegenKey}
+            >
+              Regenerate
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
 
       {/* ── Delete Confirm Modal ── */}
-      <Modal isOpen={!!confirmDelete} onOpenChange={() => setConfirmDelete(null)} classNames={modalClassNames}>
+      <Modal
+        isOpen={!!confirmDelete}
+        onOpenChange={() => setConfirmDelete(null)}
+        classNames={modalClassNames}
+      >
         <ModalContent>
           <ModalHeader>Delete Device</ModalHeader>
           <ModalBody>
             <p className="text-sm text-default-600">
-              Are you sure you want to delete <span className="font-semibold text-foreground">{confirmDelete?.device_name}</span>?
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-foreground">
+                {confirmDelete?.device_name}
+              </span>
+              ?
             </p>
             <p className="text-xs text-warning mt-1">
-              This will permanently remove the device and all associated data. This action cannot be undone.
+              This will permanently remove the device and all associated data.
+              This action cannot be undone.
             </p>
           </ModalBody>
           <ModalFooter>
-            <Button variant="flat" onPress={() => setConfirmDelete(null)}>Cancel</Button>
-            <Button color="danger" isLoading={deleting} onPress={handleDelete}>Delete</Button>
+            <Button variant="flat" onPress={() => setConfirmDelete(null)}>
+              Cancel
+            </Button>
+            <Button color="danger" isLoading={deleting} onPress={handleDelete}>
+              Delete
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>

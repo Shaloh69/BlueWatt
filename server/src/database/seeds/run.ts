@@ -90,8 +90,6 @@ const PADS = [
   },
 ];
 
-const CHECK_IN = new Date('2026-03-11T00:00:00');
-
 const DEVICE_KEYS: { device_serial: string; api_key: string }[] = [];
 
 // ── Daily power data ──────────────────────────────────────────────────────────
@@ -2239,7 +2237,14 @@ async function seedDevices() {
     }
     await pool.execute(
       'INSERT INTO devices (owner_id, device_id, device_name, location, description, energy_offset) VALUES (?, ?, ?, ?, ?, ?)',
-      [adminId, d.device_id, d.device_name, d.location, d.description, (d as any).energy_offset ?? 0]
+      [
+        adminId,
+        d.device_id,
+        d.device_name,
+        d.location,
+        d.description,
+        (d as any).energy_offset ?? 0,
+      ]
     );
     console.log(`  ✓ Device created: ${d.device_id}  (${d.device_name})`);
   }

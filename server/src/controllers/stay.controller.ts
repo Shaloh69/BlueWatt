@@ -112,4 +112,3 @@ export const deleteStay = asyncHandler(async (req: Request, res: Response, _next
   await StayModel.delete(id);
   sendSuccess(res, { id }, HTTP_STATUS.OK, 'Stay deleted');
 });
-

@@ -8,7 +8,15 @@ import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Divider } from "@heroui/divider";
 import { Switch } from "@heroui/switch";
 import { Tooltip } from "@heroui/tooltip";
-import { Camera, Lock, User as UserIcon, Mail, CalendarClock, PauseCircle, PlayCircle } from "lucide-react";
+import {
+  Camera,
+  Lock,
+  User as UserIcon,
+  Mail,
+  CalendarClock,
+  PauseCircle,
+  PlayCircle,
+} from "lucide-react";
 import { authApi, billingSchedulesApi, getErrorMessage } from "@/lib/api";
 import { getStoredUser, storeAuth, getStoredToken } from "@/hooks/useAuth";
 import { toast } from "@/lib/toast";
@@ -28,9 +36,13 @@ export default function SettingsPage() {
     if (activeSchedules.length === 0) return;
     setPausingAll(true);
     try {
-      await Promise.all(activeSchedules.map((s: any) => billingSchedulesApi.stop(s.id)));
+      await Promise.all(
+        activeSchedules.map((s: any) => billingSchedulesApi.stop(s.id)),
+      );
       reloadSchedules();
-      toast.success(`Stopped ${activeSchedules.length} active schedule${activeSchedules.length !== 1 ? "s" : ""}`);
+      toast.success(
+        `Stopped ${activeSchedules.length} active schedule${activeSchedules.length !== 1 ? "s" : ""}`,
+      );
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -61,16 +73,19 @@ export default function SettingsPage() {
       setEmail(stored.email);
     }
     // Re-fetch from server for freshness
-    authApi.me().then((res) => {
-      const fresh: User = res.data.data;
-      setUser(fresh);
-      setFullName(fresh.full_name);
-      setEmail(fresh.email);
-      const token = getStoredToken();
-      if (token) storeAuth(token, fresh);
-      // Notify sidebar via storage event
-      window.dispatchEvent(new StorageEvent("storage", { key: "bw_user" }));
-    }).catch(() => {});
+    authApi
+      .me()
+      .then((res) => {
+        const fresh: User = res.data.data;
+        setUser(fresh);
+        setFullName(fresh.full_name);
+        setEmail(fresh.email);
+        const token = getStoredToken();
+        if (token) storeAuth(token, fresh);
+        // Notify sidebar via storage event
+        window.dispatchEvent(new StorageEvent("storage", { key: "bw_user" }));
+      })
+      .catch(() => {});
   }, []);
 
   async function handleSaveProfile() {
@@ -78,7 +93,9 @@ export default function SettingsPage() {
     setSavingProfile(true);
     try {
       const res = await authApi.updateProfile({
-        ...(fullName.trim() !== user?.full_name ? { full_name: fullName.trim() } : {}),
+        ...(fullName.trim() !== user?.full_name
+          ? { full_name: fullName.trim() }
+          : {}),
         ...(email.trim() !== user?.email ? { email: email.trim() } : {}),
       });
       const updated: User = res.data.data;
@@ -142,7 +159,9 @@ export default function SettingsPage() {
       const formData = new FormData();
       formData.append("image", file);
       const res = await authApi.uploadProfileImage(formData);
-      const { profile_image_url } = res.data.data as { profile_image_url: string };
+      const { profile_image_url } = res.data.data as {
+        profile_image_url: string;
+      };
 
       const fresh = await authApi.me();
       const updated: User = fresh.data.data;
@@ -167,13 +186,17 @@ export default function SettingsPage() {
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-        <p className="text-default-400 text-sm mt-1">Manage your account profile and security</p>
+        <p className="text-default-400 text-sm mt-1">
+          Manage your account profile and security
+        </p>
       </div>
 
       {/* Profile Picture */}
       <Card>
         <CardHeader className="pb-2">
-          <p className="text-base font-semibold text-foreground">Profile Picture</p>
+          <p className="text-base font-semibold text-foreground">
+            Profile Picture
+          </p>
         </CardHeader>
         <Divider />
         <CardBody className="pt-4">
@@ -194,8 +217,12 @@ export default function SettingsPage() {
               </button>
             </div>
             <div>
-              <p className="text-sm font-medium text-foreground">{user?.full_name}</p>
-              <p className="text-xs text-default-400 capitalize">{user?.role}</p>
+              <p className="text-sm font-medium text-foreground">
+                {user?.full_name}
+              </p>
+              <p className="text-xs text-default-400 capitalize">
+                {user?.role}
+              </p>
               <p className="text-xs text-default-400 mt-0.5">{user?.email}</p>
               <Button
                 size="sm"
@@ -216,14 +243,18 @@ export default function SettingsPage() {
             className="hidden"
             onChange={handleAvatarChange}
           />
-          <p className="text-xs text-default-400 mt-3">JPEG, PNG or WebP · Max 5 MB</p>
+          <p className="text-xs text-default-400 mt-3">
+            JPEG, PNG or WebP · Max 5 MB
+          </p>
         </CardBody>
       </Card>
 
       {/* Profile Info */}
       <Card>
         <CardHeader className="pb-2">
-          <p className="text-base font-semibold text-foreground">Profile Information</p>
+          <p className="text-base font-semibold text-foreground">
+            Profile Information
+          </p>
         </CardHeader>
         <Divider />
         <CardBody className="pt-4 space-y-4">
@@ -259,26 +290,40 @@ export default function SettingsPage() {
         <CardHeader className="pb-2">
           <div className="flex items-center gap-2">
             <CalendarClock className="w-4 h-4 text-secondary" />
-            <p className="text-base font-semibold text-foreground">Billing Automation</p>
+            <p className="text-base font-semibold text-foreground">
+              Billing Automation
+            </p>
           </div>
         </CardHeader>
         <Divider />
         <CardBody className="pt-4 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-foreground">Automated Schedules</p>
+              <p className="text-sm font-medium text-foreground">
+                Automated Schedules
+              </p>
               <p className="text-xs text-default-400 mt-0.5">
                 {allPaused
                   ? "All schedules are currently stopped. Go to Billing to create new ones."
                   : `${activeSchedules.length} active schedule${activeSchedules.length !== 1 ? "s" : ""} running — bills generate at :55 every hour.`}
               </p>
             </div>
-            <Tooltip delay={3000} content={allPaused ? "No active schedules to stop" : "Stop all active billing schedules immediately"} placement="left">
+            <Tooltip
+              delay={3000}
+              content={
+                allPaused
+                  ? "No active schedules to stop"
+                  : "Stop all active billing schedules immediately"
+              }
+              placement="left"
+            >
               <span>
                 <Switch
                   isSelected={!allPaused}
                   isDisabled={allPaused || pausingAll}
-                  onValueChange={(val) => { if (!val) handlePauseAll(); }}
+                  onValueChange={(val) => {
+                    if (!val) handlePauseAll();
+                  }}
                   color="success"
                   size="sm"
                 />
@@ -286,7 +331,11 @@ export default function SettingsPage() {
             </Tooltip>
           </div>
           {!allPaused && (
-            <Tooltip delay={3000} content="Stop all active billing schedules at once. Bills already generated are not affected." placement="top">
+            <Tooltip
+              delay={3000}
+              content="Stop all active billing schedules at once. Bills already generated are not affected."
+              placement="top"
+            >
               <Button
                 color="warning"
                 variant="flat"
@@ -302,7 +351,13 @@ export default function SettingsPage() {
           {allPaused && (
             <div className="flex items-center gap-2 text-xs text-default-400">
               <PlayCircle className="w-4 h-4 text-default-300" />
-              <span>Go to <span className="font-medium text-foreground">Billing → Create Bill → Automated Schedule</span> to set up new schedules.</span>
+              <span>
+                Go to{" "}
+                <span className="font-medium text-foreground">
+                  Billing → Create Bill → Automated Schedule
+                </span>{" "}
+                to set up new schedules.
+              </span>
             </div>
           )}
         </CardBody>
@@ -311,7 +366,9 @@ export default function SettingsPage() {
       {/* Change Password */}
       <Card>
         <CardHeader className="pb-2">
-          <p className="text-base font-semibold text-foreground">Change Password</p>
+          <p className="text-base font-semibold text-foreground">
+            Change Password
+          </p>
         </CardHeader>
         <Divider />
         <CardBody className="pt-4 space-y-4">

@@ -22,18 +22,22 @@ export class BillingService {
     const pad = await PadModel.findById(padId);
     if (!pad || !pad.is_active) throw new Error(`Pad ${padId} not found or inactive`);
 
-    const periodEnd = opts?.periodEnd ?? (() => {
-      const d = new Date(periodStart);
-      d.setMonth(d.getMonth() + 1);
-      d.setDate(0);
-      return d;
-    })();
+    const periodEnd =
+      opts?.periodEnd ??
+      (() => {
+        const d = new Date(periodStart);
+        d.setMonth(d.getMonth() + 1);
+        d.setDate(0);
+        return d;
+      })();
 
-    const dueDate = opts?.dueDate ?? (() => {
-      const d = new Date(periodEnd);
-      d.setDate(d.getDate() + 7);
-      return d;
-    })();
+    const dueDate =
+      opts?.dueDate ??
+      (() => {
+        const d = new Date(periodEnd);
+        d.setDate(d.getDate() + 7);
+        return d;
+      })();
 
     const startStr = periodStart.toISOString().split('T')[0];
     const endStr = periodEnd.toISOString().split('T')[0];
@@ -135,7 +139,9 @@ export class BillingService {
 
     // Electricity bills need the period to be fully closed (all sensor data available)
     if (schedule.bill_type === 'electricity' && periodEndStr >= todayStr) {
-      logger.debug(`[schedule] ${schedule.id}: electricity period not yet closed (${periodEndStr}), skipping`);
+      logger.debug(
+        `[schedule] ${schedule.id}: electricity period not yet closed (${periodEndStr}), skipping`
+      );
       return;
     }
 
@@ -156,7 +162,11 @@ export class BillingService {
       if (schedule.device_id) {
         const device = await DeviceModel.findById(schedule.device_id);
         if (device) {
-          energyKwh = await PowerAggregateModel.sumEnergyForPeriod(device.id, startStr, periodEndStr);
+          energyKwh = await PowerAggregateModel.sumEnergyForPeriod(
+            device.id,
+            startStr,
+            periodEndStr
+          );
         }
       }
       amountDue = parseFloat((energyKwh * schedule.rate_per_kwh).toFixed(2));
@@ -188,7 +198,7 @@ export class BillingService {
 
     logger.info(
       `[schedule] ${schedule.id}: generated ${schedule.bill_type} bill ` +
-      `pad=${schedule.pad_id} period=${startStr}–${periodEndStr} amount=₱${amountDue}`
+        `pad=${schedule.pad_id} period=${startStr}–${periodEndStr} amount=₱${amountDue}`
     );
   }
 }

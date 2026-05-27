@@ -12,15 +12,19 @@ export const upload = multer({
     //   image/jpg  — non-standard alias for JPEG used by some Android versions
     //   image/heic / image/heif — iPhone default format (when synced to device)
     const allowedTypes = [
-      'image/jpeg', 'image/jpg',
+      'image/jpeg',
+      'image/jpg',
       'image/png',
       'image/webp',
-      'image/heic', 'image/heif',
+      'image/heic',
+      'image/heif',
     ];
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error(`Invalid file type (${file.mimetype}). Please attach a JPEG, PNG, or WebP image.`));
+      cb(
+        new Error(`Invalid file type (${file.mimetype}). Please attach a JPEG, PNG, or WebP image.`)
+      );
     }
   },
 });

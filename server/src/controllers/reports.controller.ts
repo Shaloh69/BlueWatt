@@ -87,7 +87,8 @@ export const getAllDailyReport = asyncHandler(
     const now = new Date();
     const today = now.toISOString().split('T')[0];
     const hasToday = data.some((r) => {
-      const d = r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date).slice(0, 10);
+      const d =
+        r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date).slice(0, 10);
       return d === today;
     });
     if (!hasToday) {
