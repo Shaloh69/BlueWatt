@@ -60,21 +60,23 @@ export class BillingService {
       }
     }
 
-    const amountDue = parseFloat((energyKwh * pad.rate_per_kwh).toFixed(2));
+    // Round energy to 2dp so displayed value matches what was billed
+    const energyKwhRounded = parseFloat(energyKwh.toFixed(2));
+    const amountDue = parseFloat((energyKwhRounded * Number(pad.rate_per_kwh)).toFixed(2));
 
     await BillingPeriodModel.create(
       padId,
       pad.tenant_id ?? null,
       periodStart,
       periodEnd,
-      energyKwh,
+      energyKwhRounded,
       pad.rate_per_kwh,
       amountDue,
       dueDate
     );
 
     logger.info(
-      `Billing generated: pad=${padId} period=${startStr} energy=${energyKwh}kWh amount=₱${amountDue}`
+      `Billing generated: pad=${padId} period=${startStr} energy=${energyKwhRounded}kWh amount=₱${amountDue}`
     );
   }
 
@@ -169,7 +171,9 @@ export class BillingService {
           );
         }
       }
-      amountDue = parseFloat((energyKwh * schedule.rate_per_kwh).toFixed(2));
+      // Round to 2dp so displayed energy × displayed rate = displayed amount
+      energyKwh = parseFloat(energyKwh.toFixed(2));
+      amountDue = parseFloat((energyKwh * Number(schedule.rate_per_kwh)).toFixed(2));
     } else {
       // Rent: prefer the active stay's flat rate; fall back to schedule's flat_amount
       const activeStay = await StayModel.findActiveByPad(schedule.pad_id);
