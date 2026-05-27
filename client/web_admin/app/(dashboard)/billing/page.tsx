@@ -547,7 +547,7 @@ export default function BillingPage() {
             </Select>
           </div>
           {loadingBills ? (
-            <TableSkeleton rows={5} cols={8} />
+            <TableSkeleton rows={5} cols={9} />
           ) : displayedBills.length === 0 ? (
             <div className="flex flex-col items-center py-12 text-center">
               <Receipt className="w-10 h-10 text-default-300 mb-3" />
@@ -567,6 +567,7 @@ export default function BillingPage() {
                       "Tenant",
                       "Period",
                       "Energy",
+                      "Rate",
                       "Amount",
                       "Status",
                       "Generated At",
@@ -599,6 +600,9 @@ export default function BillingPage() {
                       </td>
                       <td className="py-3 px-3 font-mono text-xs">
                         {Number(b.energy_kwh).toFixed(2)} kWh
+                      </td>
+                      <td className="py-3 px-3 font-mono text-xs text-default-400">
+                        ₱{Number(b.rate_per_kwh).toFixed(2)}/kWh
                       </td>
                       <td className="py-3 px-3 font-mono text-xs">
                         ₱{Number(b.amount_due).toFixed(2)}
