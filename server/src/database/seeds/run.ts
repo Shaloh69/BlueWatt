@@ -2401,133 +2401,7 @@ async function seedPowerAggregates() {
   }
 }
 
-// ── Step 6: Stays & billing ───────────────────────────────────────────────────
-
-async function seedStaysAndBilling() {
-  const adminId = await getAdminId();
-  if (!adminId) throw new Error('Admin not found');
-
-  for (const p of PADS) {
-    if (!p.tenant_email) continue; // skip unassigned pads
-
-    const tenantId = await getUserId(p.tenant_email);
-    const padId = await getPadId(p.name);
-    if (!tenantId) throw new Error(`Tenant not found: ${p.tenant_email}`);
-    if (!padId) throw new Error(`Pad not found: ${p.name}`);
-
-    // Stay
-    const [existingStay] = await pool.execute<any[]>(
-      'SELECT id FROM stays WHERE pad_id = ? AND tenant_id = ?',
-      [padId, tenantId]
-    );
-    if ((existingStay as any[]).length > 0) {
-      console.log(`  ↳ Stay already exists: ${p.tenant_email} @ ${p.name}`);
-    } else {
-      await pool.execute(
-        `INSERT INTO stays
-           (pad_id, tenant_id, check_in_at, billing_cycle, flat_rate_per_cycle,
-            rate_per_kwh, status, notes, created_by)
-         VALUES (?, ?, ?, 'monthly', ?, ?, 'active', ?, ?)`,
-        [
-          padId,
-          tenantId,
-          CHECK_IN,
-          p.flat_rate,
-          p.rate_per_kwh,
-          'Monthly tenant — check-in March 11 2026',
-          adminId,
-        ]
-      );
-      console.log(
-        `  ✓ Stay created: ${p.tenant_email} @ ${p.name}  |  ₱${p.flat_rate}/mo + ₱${p.rate_per_kwh}/kWh`
-      );
-    }
-  }
-}
-
-// ── Step 7: Billing periods ───────────────────────────────────────────────────
-
-async function seedBillingPeriods() {
-  // Cycle 1: 2026-03-11 → 2026-04-11 (complete)
-  const cycleStart = new Date('2026-03-11T00:00:00');
-  const cycleEnd = new Date('2026-04-10T00:00:00');
-  const dueDate = new Date('2026-04-18T00:00:00');
-
-  for (const p of PADS) {
-    if (!p.tenant_email) continue;
-
-    const padId = await getPadId(p.name);
-    const tenantId = await getUserId(p.tenant_email);
-    if (!padId || !tenantId) continue;
-
-    // Get stay id
-    const [stayRows] = await pool.execute<any[]>(
-      'SELECT id FROM stays WHERE pad_id = ? AND tenant_id = ?',
-      [padId, tenantId]
-    );
-    if (!(stayRows as any[]).length) continue;
-    const stayId = (stayRows as any[])[0].id;
-
-    // Get device db id
-    const [devRows] = await pool.execute<any[]>(
-      'SELECT d.id FROM devices d JOIN pads p ON p.device_id = d.id WHERE p.id = ?',
-      [padId]
-    );
-    const deviceDbId: number | null = (devRows as any[]).length ? (devRows as any[])[0].id : null;
-
-    // Sum energy from aggregates (Mar 11 – Apr 10 inclusive)
-    let energyKwh = 0;
-    if (deviceDbId) {
-      const [eRows] = await pool.execute<any[]>(
-        `SELECT COALESCE(SUM(total_energy_kwh), 0) AS total
-         FROM power_aggregates_daily
-         WHERE device_id = ? AND date BETWEEN '2026-03-11' AND '2026-04-10'`,
-        [deviceDbId]
-      );
-      energyKwh = parseFloat((eRows as any[])[0].total) || 0;
-    }
-
-    const energyAmount = parseFloat((energyKwh * p.rate_per_kwh).toFixed(2));
-
-    // Electricity bill (cycle 1) — insert or fix if previously generated as 0.00
-    const [exElec] = await pool.execute<any[]>(
-      'SELECT id, amount_due FROM billing_periods WHERE stay_id = ? AND cycle_number = 1 AND bill_type = ?',
-      [stayId, 'electricity']
-    );
-    if (!(exElec as any[]).length) {
-      await pool.execute(
-        `INSERT INTO billing_periods
-           (pad_id, stay_id, tenant_id, period_start, period_end,
-            energy_kwh, rate_per_kwh, amount_due, flat_amount, cycle_number, bill_type, due_date)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 1, 'electricity', ?)`,
-        [
-          padId,
-          stayId,
-          tenantId,
-          cycleStart,
-          cycleEnd,
-          energyKwh,
-          p.rate_per_kwh,
-          energyAmount,
-          dueDate,
-        ]
-      );
-      console.log(
-        `  ✓ Electricity bill: ${p.tenant_email}  |  ${energyKwh.toFixed(2)} kWh  |  ₱${energyAmount}`
-      );
-    } else if (parseFloat((exElec as any[])[0].amount_due) === 0 && energyAmount > 0) {
-      await pool.execute(
-        `UPDATE billing_periods SET energy_kwh = ?, rate_per_kwh = ?, amount_due = ? WHERE id = ?`,
-        [energyKwh, p.rate_per_kwh, energyAmount, (exElec as any[])[0].id]
-      );
-      console.log(
-        `  ↻ Fixed 0.00 elec:  ${p.tenant_email}  |  ${energyKwh.toFixed(2)} kWh  |  ₱${energyAmount}`
-      );
-    }
-  }
-}
-
-// ── Step 8: Anomaly events ────────────────────────────────────────────────────
+// ── Step 6: Anomaly events ────────────────────────────────────────────────────
 
 async function seedAnomalyEvents() {
   const adminId = await getAdminId();
@@ -2573,12 +2447,6 @@ async function main() {
     console.log('\n⚡  Seeding power aggregates (Mar 11 – May 5)...');
     await seedPowerAggregates();
 
-    console.log('\n🏨  Seeding stays...');
-    await seedStaysAndBilling();
-
-    console.log('\n💰  Seeding billing periods (cycle 1: Mar 11 – Apr 10)...');
-    await seedBillingPeriods();
-
     console.log('\n⚠️   Seeding anomaly events...');
     await seedAnomalyEvents();
 
@@ -2590,8 +2458,8 @@ async function main() {
     console.log('  Reynie:  reynie-proto@test.com  /  Tenant@1234  →  PAD-3 (bluewatt-003)');
     console.log('  Jassy:   jassy-proto@test.com   /  Tenant@1234  →  PAD-4 (bluewatt-004)');
     console.log('─────────────────────────────────────────────────────────────────────');
-    console.log('  Rate: ₱11.98/kWh | Check-in: March 11 2026 | Data: Mar 11 – May 5');
-    console.log('  Billing cycle 1 (Mar 11 – Apr 10): electricity only. No rent billing.');
+    console.log('  Rate: ₱11.98/kWh | Data: Mar 11 – May 5');
+    console.log('  Bills and stays are NOT seeded — create them manually via the admin panel.');
     console.log('─────────────────────────────────────────────────────────────────────');
     console.log('  NOTE: Re-upload the GCash/Maya payment QR code in the admin panel.');
     console.log('─────────────────────────────────────────────────────────────────────\n');
