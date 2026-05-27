@@ -1,5 +1,7 @@
 import { BillingPeriodModel } from '../models/billingPeriod.model';
+import { BillingScheduleModel } from '../models/billingSchedule.model';
 import { PadModel } from '../models/pad.model';
+import { StayModel } from '../models/stay.model';
 import { PowerAggregateModel } from '../models/powerAggregate.model';
 import { DeviceModel } from '../models/device.model';
 import { logger } from '../utils/logger';
@@ -98,5 +100,93 @@ export class BillingService {
   static async markOverdue(): Promise<void> {
     const count = await BillingPeriodModel.markOverdue();
     if (count > 0) logger.info(`Marked ${count} billing periods as overdue`);
+  }
+
+  /** Process all active schedules that are due and generate their next bill. */
+  static async processSchedules(): Promise<void> {
+    const schedules = await BillingScheduleModel.findActiveDue();
+    for (const schedule of schedules) {
+      try {
+        await BillingService.processOneSchedule(schedule);
+      } catch (err) {
+        logger.error(`[schedule] Failed to process schedule ${schedule.id}:`, err);
+      }
+    }
+  }
+
+  private static async processOneSchedule(schedule: any): Promise<void> {
+    const periodStart = new Date(schedule.next_period_start + 'T00:00:00Z');
+
+    const periodEnd = new Date(periodStart);
+    if (schedule.frequency === 'daily') {
+      // period_end = same day
+    } else if (schedule.frequency === 'weekly') {
+      periodEnd.setUTCDate(periodEnd.getUTCDate() + 6);
+    } else {
+      // monthly: last day of periodStart's month
+      periodEnd.setUTCMonth(periodEnd.getUTCMonth() + 1);
+      periodEnd.setUTCDate(0);
+    }
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const periodEndStr = periodEnd.toISOString().split('T')[0];
+
+    // Electricity bills need the period to be fully closed (all sensor data available)
+    if (schedule.bill_type === 'electricity' && periodEndStr >= todayStr) {
+      logger.debug(`[schedule] ${schedule.id}: electricity period not yet closed (${periodEndStr}), skipping`);
+      return;
+    }
+
+    // Skip if pad has no tenant
+    if (!schedule.tenant_id) {
+      logger.info(`[schedule] ${schedule.id}: pad ${schedule.pad_id} has no tenant, skipping`);
+      return;
+    }
+
+    const startStr = periodStart.toISOString().split('T')[0];
+    const dueDate = new Date(periodEnd);
+    dueDate.setUTCDate(dueDate.getUTCDate() + schedule.due_date_offset_days);
+
+    let energyKwh = 0;
+    let amountDue = 0;
+
+    if (schedule.bill_type === 'electricity') {
+      if (schedule.device_id) {
+        const device = await DeviceModel.findById(schedule.device_id);
+        if (device) {
+          energyKwh = await PowerAggregateModel.sumEnergyForPeriod(device.id, startStr, periodEndStr);
+        }
+      }
+      amountDue = parseFloat((energyKwh * schedule.rate_per_kwh).toFixed(2));
+    } else {
+      // Rent: prefer the active stay's flat rate; fall back to schedule's flat_amount
+      const activeStay = await StayModel.findActiveByPad(schedule.pad_id);
+      amountDue = activeStay
+        ? parseFloat(Number(activeStay.flat_rate_per_cycle).toFixed(2))
+        : parseFloat((schedule.flat_amount ?? 0).toString());
+    }
+
+    await BillingPeriodModel.create(
+      schedule.pad_id,
+      schedule.tenant_id,
+      periodStart,
+      periodEnd,
+      energyKwh,
+      schedule.rate_per_kwh,
+      amountDue,
+      dueDate,
+      schedule.bill_type === 'rent'
+        ? { flatAmount: amountDue, billType: 'rent' }
+        : { billType: 'electricity' }
+    );
+
+    const nextStart = new Date(periodEnd);
+    nextStart.setUTCDate(nextStart.getUTCDate() + 1);
+    await BillingScheduleModel.updateNextPeriod(schedule.id, nextStart.toISOString().split('T')[0]);
+
+    logger.info(
+      `[schedule] ${schedule.id}: generated ${schedule.bill_type} bill ` +
+      `pad=${schedule.pad_id} period=${startStr}–${periodEndStr} amount=₱${amountDue}`
+    );
   }
 }

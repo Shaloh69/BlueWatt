@@ -6,7 +6,6 @@ import { sendSuccess } from '../utils/apiResponse';
 import { asyncHandler } from '../utils/asyncHandler';
 import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
 import { StayBillingService } from '../services/stayBilling.service';
-
 /** GET /stays — list all stays */
 export const listStays = asyncHandler(async (_req: Request, res: Response, _next: NextFunction) => {
   const stays = await StayModel.findAll();
@@ -114,21 +113,3 @@ export const deleteStay = asyncHandler(async (req: Request, res: Response, _next
   sendSuccess(res, { id }, HTTP_STATUS.OK, 'Stay deleted');
 });
 
-/** POST /stays/:id/generate-bill — manually trigger bill generation for a stay */
-export const generateBillNow = asyncHandler(
-  async (req: Request, res: Response, _next: NextFunction) => {
-    const id = parseInt(req.params.id, 10);
-    const stay = await StayModel.findById(id);
-    if (!stay) throw new AppError('Stay not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
-
-    const now = new Date();
-    const created = await StayBillingService.billStay(stay, now);
-
-    sendSuccess(
-      res,
-      { bills_created: created },
-      HTTP_STATUS.OK,
-      created > 0 ? `Generated ${created} bill(s)` : 'No new bills — all cycles already billed'
-    );
-  }
-);

@@ -3,7 +3,6 @@ import https from 'https';
 import http from 'http';
 import { AggregationService } from '../services/aggregation.service';
 import { BillingService } from '../services/billing.service';
-import { StayBillingService } from '../services/stayBilling.service';
 import { PowerAggregateModel } from '../models/powerAggregate.model';
 import { PowerReadingModel } from '../models/powerReading.model';
 import { RelayCommandModel } from '../models/relayCommand.model';
@@ -41,16 +40,6 @@ export function startCronJobs(): void {
     }
   });
 
-  // ── Every hour :45 — scan active stays and generate due bills ────────────
-  cron.schedule('45 * * * *', async () => {
-    logger.debug('[cron] Running stay billing scan');
-    try {
-      await StayBillingService.scanAndBill();
-    } catch (e) {
-      logger.error('[cron] Stay billing scan failed:', e);
-    }
-  });
-
   // ── 1st of month 04:10 UTC (12:10 PM PHT): legacy pad billing ────────────
   cron.schedule('10 4 1 * *', async () => {
     logger.info('[cron] Auto-generating legacy monthly billing');
@@ -58,6 +47,16 @@ export function startCronJobs(): void {
       await BillingService.autoGenerateAllPads();
     } catch (e) {
       logger.error('[cron] Auto-billing failed:', e);
+    }
+  });
+
+  // ── Every hour :55 — process repeating billing schedules ─────────────────
+  cron.schedule('55 * * * *', async () => {
+    logger.debug('[cron] Processing billing schedules');
+    try {
+      await BillingService.processSchedules();
+    } catch (e) {
+      logger.error('[cron] Billing schedule processing failed:', e);
     }
   });
 
@@ -114,6 +113,6 @@ export function startCronJobs(): void {
   }
 
   logger.info(
-    'Cron jobs registered: hourly-agg, daily-agg, monthly-agg, stay-billing, legacy-billing, overdue, cleanup, relay-expiry, keep-alive'
+    'Cron jobs registered: hourly-agg, daily-agg, monthly-agg, legacy-billing, schedules, overdue, cleanup, relay-expiry, keep-alive'
   );
 }

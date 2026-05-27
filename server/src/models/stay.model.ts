@@ -112,6 +112,15 @@ export class StayModel {
     return rows;
   }
 
+  /** Find the currently active stay for a pad (if any). */
+  static async findActiveByPad(padId: number): Promise<RowDataPacket | null> {
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT s.* FROM stays s WHERE s.pad_id = ? AND s.status = 'active' LIMIT 1`,
+      [padId]
+    );
+    return rows.length > 0 ? rows[0] : null;
+  }
+
   static async checkout(id: number, checkOutAt: Date): Promise<void> {
     await pool.execute(`UPDATE stays SET status = 'ended', check_out_at = ? WHERE id = ?`, [
       checkOutAt,

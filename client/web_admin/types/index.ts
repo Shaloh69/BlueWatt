@@ -236,6 +236,21 @@ export interface PadSummaryRow {
   billed_amount?: number;
 }
 
+// ── Billing Schedule ──────────────────────────────────────────────────────────
+export interface BillingSchedule {
+  id: number;
+  pad_id: number;
+  bill_type: "electricity" | "rent";
+  frequency: "daily" | "weekly" | "monthly";
+  due_date_offset_days: number;
+  flat_amount: number | null;
+  next_period_start: string;
+  status: "active" | "stopped";
+  created_at: string;
+  pad_name?: string;
+  tenant_name?: string;
+}
+
 // ── SSE ───────────────────────────────────────────────────────────────────────
 export type SseEventType =
   | "anomaly"

@@ -99,6 +99,14 @@ export const billingApi = {
   delete: (id: number) => api.delete(`/billing/${id}`),
 };
 
+// ── Billing Schedules ─────────────────────────────────────────────────────────
+export const billingSchedulesApi = {
+  list: () => api.get("/billing/schedules"),
+  create: (data: object) => api.post("/billing/schedules", data),
+  stop: (id: number) => api.put(`/billing/schedules/${id}/stop`, {}),
+  delete: (id: number) => api.delete(`/billing/schedules/${id}`),
+};
+
 // ── Payments ──────────────────────────────────────────────────────────────────
 export const paymentsApi = {
   pendingVerification: () => api.get("/payments/pending-verification"),
@@ -178,7 +186,6 @@ export const staysApi = {
   checkOut: (id: number, check_out_at?: string) =>
     api.put(`/stays/${id}/checkout`, { check_out_at }),
   delete: (id: number) => api.delete(`/stays/${id}`),
-  generateBill: (id: number) => api.post(`/stays/${id}/generate-bill`, {}),
 };
 
 // ── Power Data ────────────────────────────────────────────────────────────────

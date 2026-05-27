@@ -10,6 +10,7 @@ import {
   devicesApi,
   padsApi,
   billingApi,
+  billingSchedulesApi,
   paymentsApi,
   reportsApi,
   anomalyApi,
@@ -62,6 +63,20 @@ export function useBilling() {
 
 export function reloadBilling() {
   return globalMutate("billing");
+}
+
+// ── Billing Schedules ─────────────────────────────────────────────────────────
+
+export function useSchedules() {
+  return useSWR(
+    "billing:schedules",
+    () => billingSchedulesApi.list().then((r) => r.data.data?.schedules ?? []),
+    { dedupingInterval: DEDUPE_MS, revalidateOnFocus: false }
+  );
+}
+
+export function reloadSchedules() {
+  return globalMutate("billing:schedules");
 }
 
 // ── Payments ──────────────────────────────────────────────────────────────────

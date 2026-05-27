@@ -6,26 +6,55 @@ import { modalClassNames } from "@/lib/modal-styles";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
+import { Switch } from "@heroui/switch";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import { Input } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
-import { Receipt, Plus, RefreshCw, Trash2, CheckCircle, Download } from "lucide-react";
-import { billingApi, getErrorMessage } from "@/lib/api";
-import { BillingPeriod } from "@/types";
+import { Receipt, Plus, RefreshCw, Trash2, CheckCircle, Download, CalendarClock, StopCircle } from "lucide-react";
+import { billingApi, billingSchedulesApi, getErrorMessage } from "@/lib/api";
+import { BillingPeriod, BillingSchedule } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
-import { useBilling, usePads, reloadBilling } from "@/lib/use-api";
+import { useBilling, usePads, reloadBilling, useSchedules, reloadSchedules, useStays } from "@/lib/use-api";
 
 const statusColor = (s: string) =>
   s === "paid" ? "success" : s === "overdue" ? "danger" : s === "waived" ? "default" : "warning";
 
+const freqLabel = (f: string) => ({ daily: "Daily", weekly: "Weekly", monthly: "Monthly" }[f] ?? f);
+const typeLabel = (t: string) => t === "electricity" ? "⚡ Electricity" : "🏠 Rent";
+
 export default function BillingPage() {
-  const { data: bills = [], isLoading: loading } = useBilling();
+  const { data: bills = [], isLoading: loadingBills } = useBilling();
   const { data: pads = [] } = usePads();
+  const { data: stays = [] } = useStays();
+  const { data: schedules = [], isLoading: loadingSchedules } = useSchedules();
+
+  // ── One-time bill ──────────────────────────────────────────────────────────
   const [showGen, setShowGen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<BillingPeriod | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ pad_id: "", period_start: "", period_end: "", due_date: "" });
 
+  // ── Schedule creation ──────────────────────────────────────────────────────
+  const [showSched, setShowSched] = useState(false);
+  const [stopTarget, setStopTarget] = useState<BillingSchedule | null>(null);
+  const [deleteSchedTarget, setDeleteSchedTarget] = useState<BillingSchedule | null>(null);
+  const [schedForm, setSchedForm] = useState({
+    pad_id: "",
+    bill_type: "electricity" as "electricity" | "rent",
+    frequency: "monthly" as "daily" | "weekly" | "monthly",
+    due_date_offset_days: "7",
+    flat_amount: "",
+    start_date: "",
+  });
+
+  // Find the active stay's flat rate for the selected pad (for rent schedules)
+  const activeFlatRate = (() => {
+    if (!schedForm.pad_id || schedForm.bill_type !== "rent") return null;
+    const stay = stays.find((s: any) => String(s.pad_id) === schedForm.pad_id && s.status === "active");
+    return stay ? Number(stay.flat_rate_per_cycle) : null;
+  })();
+
+  // ── One-time handlers ──────────────────────────────────────────────────────
   async function handleGenerate() {
     if (!form.pad_id || !form.period_start || !form.period_end) {
       toast.warning("Please fill in all required fields");
@@ -80,26 +109,168 @@ export default function BillingPage() {
     }
   }
 
+  // ── Schedule handlers ──────────────────────────────────────────────────────
+  async function handleCreateSchedule() {
+    if (!schedForm.pad_id || !schedForm.bill_type || !schedForm.frequency || !schedForm.start_date) {
+      toast.warning("Please fill in all required fields");
+      return;
+    }
+    setSaving(true);
+    try {
+      await billingSchedulesApi.create({
+        ...schedForm,
+        pad_id: parseInt(schedForm.pad_id),
+        due_date_offset_days: parseInt(schedForm.due_date_offset_days || "7"),
+        flat_amount:
+          schedForm.bill_type === "rent" && activeFlatRate === null && schedForm.flat_amount
+            ? parseFloat(schedForm.flat_amount)
+            : null,
+      });
+      toast.success("Billing schedule created");
+      setShowSched(false);
+      setSchedForm({ pad_id: "", bill_type: "electricity", frequency: "monthly", due_date_offset_days: "7", flat_amount: "", start_date: "" });
+      reloadSchedules();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleStopSchedule() {
+    if (!stopTarget) return;
+    setSaving(true);
+    try {
+      await billingSchedulesApi.stop(stopTarget.id);
+      toast.success("Schedule stopped");
+      setStopTarget(null);
+      reloadSchedules();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteSchedule() {
+    if (!deleteSchedTarget) return;
+    setSaving(true);
+    try {
+      await billingSchedulesApi.delete(deleteSchedTarget.id);
+      toast.success("Schedule deleted");
+      setDeleteSchedTarget(null);
+      reloadSchedules();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const activeSchedules = schedules.filter((s: BillingSchedule) => s.status === "active");
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Billing</h1>
-          <p className="text-default-500 text-sm mt-0.5">{bills.length} billing periods</p>
+          <p className="text-default-500 text-sm mt-0.5">
+            {bills.length} billing period{bills.length !== 1 ? "s" : ""} · {activeSchedules.length} active schedule{activeSchedules.length !== 1 ? "s" : ""}
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => reloadBilling()}>Refresh</Button>
-          <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />} onPress={() => setShowGen(true)}>Generate Bill</Button>
+          <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />}
+            onPress={() => { reloadBilling(); reloadSchedules(); }}>
+            Refresh
+          </Button>
+          <Button variant="flat" size="sm" color="secondary" startContent={<CalendarClock className="w-4 h-4" />}
+            onPress={() => setShowSched(true)}>
+            New Schedule
+          </Button>
+          <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />}
+            onPress={() => setShowGen(true)}>
+            One-time Bill
+          </Button>
         </div>
       </div>
 
+      {/* ── Automated Billing Schedules ─────────────────────────────────────── */}
+      <Card className="border border-default-200">
+        <CardHeader className="flex items-center gap-2 pb-0">
+          <CalendarClock className="w-5 h-5 text-secondary" />
+          <h2 className="font-semibold text-foreground">Automated Billing</h2>
+          {activeSchedules.length > 0 && (
+            <Chip size="sm" color="secondary" className="ml-auto">{activeSchedules.length} active</Chip>
+          )}
+        </CardHeader>
+        <CardBody>
+          {loadingSchedules ? (
+            <TableSkeleton rows={2} cols={6} />
+          ) : schedules.length === 0 ? (
+            <div className="flex flex-col items-center py-8 text-center">
+              <CalendarClock className="w-8 h-8 text-default-300 mb-2" />
+              <p className="text-default-400 text-sm">No billing schedules yet</p>
+              <p className="text-default-300 text-xs mt-1">
+                Create a schedule to auto-generate bills daily, weekly, or monthly.
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-default-200">
+                    {["Pad", "Tenant", "Type", "Frequency", "Next Bill", "Due Offset", "Active", "Actions"].map(h => (
+                      <th key={h} className="text-left py-2 px-3 text-default-500 font-medium text-xs uppercase tracking-wide">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {schedules.map((s: BillingSchedule) => (
+                    <tr key={s.id} className="border-b border-default-100 hover:bg-default-50">
+                      <td className="py-3 px-3 font-medium text-foreground">{s.pad_name ?? `#${s.pad_id}`}</td>
+                      <td className="py-3 px-3 text-default-500 text-xs">{s.tenant_name ?? "—"}</td>
+                      <td className="py-3 px-3 text-xs">{typeLabel(s.bill_type)}</td>
+                      <td className="py-3 px-3">
+                        <Chip size="sm" variant="flat" color="secondary" className="capitalize">
+                          {freqLabel(s.frequency)}
+                        </Chip>
+                      </td>
+                      <td className="py-3 px-3 font-mono text-xs">{s.next_period_start}</td>
+                      <td className="py-3 px-3 text-xs text-default-500">+{s.due_date_offset_days}d</td>
+                      <td className="py-3 px-3">
+                        <Switch
+                          size="sm"
+                          isSelected={s.status === "active"}
+                          isDisabled={saving || s.status === "stopped"}
+                          onValueChange={(val) => { if (!val) setStopTarget(s); }}
+                          color="success"
+                        />
+                      </td>
+                      <td className="py-3 px-3">
+                        <Button size="sm" variant="flat" color="danger" isIconOnly
+                          title="Delete schedule"
+                          onPress={() => setDeleteSchedTarget(s)}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardBody>
+      </Card>
+
+      {/* ── All Bills ─────────────────────────────────────────────────────────── */}
       <Card className="border border-default-200">
         <CardHeader className="flex items-center gap-2 pb-0">
           <Receipt className="w-5 h-5 text-primary" />
           <h2 className="font-semibold text-foreground">All Billing Periods</h2>
         </CardHeader>
         <CardBody>
-          {loading ? <TableSkeleton rows={5} cols={6} /> : bills.length === 0 ? (
+          {loadingBills ? <TableSkeleton rows={5} cols={7} /> : bills.length === 0 ? (
             <div className="flex flex-col items-center py-12 text-center">
               <Receipt className="w-10 h-10 text-default-300 mb-3" />
               <p className="text-default-400">No billing periods yet</p>
@@ -115,7 +286,7 @@ export default function BillingPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {bills.map(b => (
+                  {bills.map((b: BillingPeriod) => (
                     <tr key={b.id} className="border-b border-default-100 hover:bg-default-50">
                       <td className="py-3 px-3 font-medium text-foreground">{b.pad_name ?? `#${b.pad_id}`}</td>
                       <td className="py-3 px-3 text-default-500">{b.tenant_name ?? "—"}</td>
@@ -139,7 +310,10 @@ export default function BillingPage() {
                             </Button>
                           )}
                           {b.status === "unpaid" && (
-                            <Button size="sm" variant="flat" color="default" onPress={() => handleWaive(b)}>Waive</Button>
+                            <Button size="sm" variant="flat" color="default"
+                              onPress={() => handleWaive(b)}>
+                              Waive
+                            </Button>
                           )}
                           {(b as any).receipt_url && (
                             <Button size="sm" variant="flat" color="primary" isIconOnly
@@ -148,7 +322,8 @@ export default function BillingPage() {
                               <Download className="w-3 h-3" />
                             </Button>
                           )}
-                          <Button size="sm" variant="flat" color="danger" isIconOnly title="Delete bill"
+                          <Button size="sm" variant="flat" color="danger" isIconOnly
+                            title="Delete bill"
                             onPress={() => setDeleteTarget(b)}>
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -163,7 +338,7 @@ export default function BillingPage() {
         </CardBody>
       </Card>
 
-      {/* Delete Confirmation */}
+      {/* ── Delete Bill modal ────────────────────────────────────────────────── */}
       <Modal isOpen={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)} classNames={modalClassNames}>
         <ModalContent>
           <ModalHeader>Delete Bill</ModalHeader>
@@ -184,9 +359,10 @@ export default function BillingPage() {
         </ModalContent>
       </Modal>
 
+      {/* ── One-time Bill modal ──────────────────────────────────────────────── */}
       <Modal isOpen={showGen} onOpenChange={setShowGen} classNames={modalClassNames}>
         <ModalContent>
-          <ModalHeader>Generate Billing Period</ModalHeader>
+          <ModalHeader>Generate One-time Bill</ModalHeader>
           <ModalBody className="space-y-3">
             <Select
               label="Pad"
@@ -208,12 +384,132 @@ export default function BillingPage() {
               label="Due Date (bill visible to tenant from this date)"
               type="date"
               value={form.due_date}
-              description="Tenant will see this bill starting on the due date."
+              description="Tenant sees this bill starting on the due date."
               onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
           </ModalBody>
           <ModalFooter>
             <Button variant="flat" onPress={() => setShowGen(false)}>Cancel</Button>
             <Button color="primary" isLoading={saving} onPress={handleGenerate}>Generate</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* ── New Schedule modal ───────────────────────────────────────────────── */}
+      <Modal isOpen={showSched} onOpenChange={setShowSched} classNames={modalClassNames}>
+        <ModalContent>
+          <ModalHeader>New Billing Schedule</ModalHeader>
+          <ModalBody className="space-y-3">
+            <Select
+              label="Pad"
+              placeholder="Select a pad"
+              selectedKeys={schedForm.pad_id ? [schedForm.pad_id] : []}
+              onSelectionChange={keys => setSchedForm(f => ({ ...f, pad_id: String([...keys][0] ?? "") }))}>
+              {pads.map((p: { id: number; name: string; tenant_name?: string }) => (
+                <SelectItem key={String(p.id)} textValue={p.name}>
+                  <span className="font-medium">{p.name}</span>
+                  {p.tenant_name && <span className="text-default-400 ml-2 text-xs">{p.tenant_name}</span>}
+                </SelectItem>
+              ))}
+            </Select>
+            <Select
+              label="Bill Type"
+              selectedKeys={[schedForm.bill_type]}
+              onSelectionChange={keys => setSchedForm(f => ({ ...f, bill_type: String([...keys][0] ?? "electricity") as "electricity" | "rent" }))}>
+              <SelectItem key="electricity">⚡ Electricity</SelectItem>
+              <SelectItem key="rent">🏠 Rent</SelectItem>
+            </Select>
+            <Select
+              label="Frequency"
+              selectedKeys={[schedForm.frequency]}
+              onSelectionChange={keys => setSchedForm(f => ({ ...f, frequency: String([...keys][0] ?? "monthly") as "daily" | "weekly" | "monthly" }))}>
+              <SelectItem key="daily">Daily</SelectItem>
+              <SelectItem key="weekly">Weekly</SelectItem>
+              <SelectItem key="monthly">Monthly</SelectItem>
+            </Select>
+            <Input
+              label="First Period Start Date"
+              type="date"
+              value={schedForm.start_date}
+              onChange={e => setSchedForm(f => ({ ...f, start_date: e.target.value }))} />
+            <Input
+              label="Due Date Offset (days after period end)"
+              type="number"
+              min="0"
+              value={schedForm.due_date_offset_days}
+              description="e.g. 7 = tenant sees bill 7 days after each period closes"
+              onChange={e => setSchedForm(f => ({ ...f, due_date_offset_days: e.target.value }))} />
+            {schedForm.bill_type === "rent" && (
+              activeFlatRate !== null ? (
+                <div className="rounded-lg bg-secondary-50 border border-secondary-200 px-3 py-2.5 text-sm">
+                  <p className="text-secondary-700">
+                    Flat rate: <span className="font-semibold">₱{activeFlatRate.toFixed(2)}</span> per cycle
+                  </p>
+                  <p className="text-xs text-secondary-500 mt-0.5">
+                    Pulled from the active stay on this pad. Edit it in the Stays page.
+                  </p>
+                </div>
+              ) : (
+                <Input
+                  label="Flat Rent Amount per Cycle (₱)"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={schedForm.flat_amount}
+                  description="No active stay on this pad — enter the rent amount manually."
+                  onChange={e => setSchedForm(f => ({ ...f, flat_amount: e.target.value }))} />
+              )
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="flat" onPress={() => setShowSched(false)}>Cancel</Button>
+            <Button color="secondary" isLoading={saving} onPress={handleCreateSchedule}>
+              Create Schedule
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* ── Stop Schedule confirmation ─────────────────────────────────────── */}
+      <Modal isOpen={!!stopTarget} onOpenChange={() => setStopTarget(null)} classNames={modalClassNames}>
+        <ModalContent>
+          <ModalHeader>Stop Schedule</ModalHeader>
+          <ModalBody>
+            <p className="text-default-600">
+              Stop the <span className="font-semibold text-foreground capitalize">{stopTarget?.frequency}</span>{" "}
+              {stopTarget?.bill_type} schedule for{" "}
+              <span className="font-semibold text-foreground">{stopTarget?.pad_name}</span>?
+            </p>
+            <p className="text-sm text-default-500 mt-1">
+              No new bills will be generated. Already-created bills are not affected.
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="flat" onPress={() => setStopTarget(null)}>Cancel</Button>
+            <Button color="warning" isLoading={saving}
+              startContent={<StopCircle className="w-4 h-4" />}
+              onPress={handleStopSchedule}>
+              Stop
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* ── Delete Schedule confirmation ───────────────────────────────────── */}
+      <Modal isOpen={!!deleteSchedTarget} onOpenChange={() => setDeleteSchedTarget(null)} classNames={modalClassNames}>
+        <ModalContent>
+          <ModalHeader>Delete Schedule</ModalHeader>
+          <ModalBody>
+            <p className="text-default-600">
+              Permanently delete the <span className="font-semibold text-foreground capitalize">{deleteSchedTarget?.frequency}</span>{" "}
+              {deleteSchedTarget?.bill_type} schedule for{" "}
+              <span className="font-semibold text-foreground">{deleteSchedTarget?.pad_name}</span>?
+            </p>
+            <p className="text-xs text-default-400 mt-1">This action cannot be undone. Already-created bills remain.</p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="flat" onPress={() => setDeleteSchedTarget(null)}>Cancel</Button>
+            <Button color="danger" isLoading={saving} onPress={handleDeleteSchedule}>Delete</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
