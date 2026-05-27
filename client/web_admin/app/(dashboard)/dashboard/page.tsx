@@ -4,10 +4,10 @@ import { useState } from "react";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Chip } from "@heroui/chip";
 import { Button } from "@heroui/button";
-import { Building2, CreditCard, AlertTriangle, Cpu, RefreshCw, TrendingUp, LineChart as LineChartIcon } from "lucide-react";
+import { Building2, CreditCard, AlertTriangle, Cpu, TrendingUp, LineChart as LineChartIcon } from "lucide-react";
 import { StatCard } from "@/components/shared/StatCard";
 import { TableSkeleton } from "@/components/shared/PageLoader";
-import { usePadSummary, usePendingPayments, reloadPendingPayments, useDailyReport } from "@/lib/use-api";
+import { usePadSummary, usePendingPayments, useDailyReport } from "@/lib/use-api";
 import { PadSummaryRow } from "@/types";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Dot } from "recharts";
 
@@ -55,15 +55,12 @@ function PadChart({ pad, month }: { pad: PadSummaryRow; month: string }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const { data: padSummary = [], isLoading: padLoading, isValidating: padValidating, mutate: reloadPad } = usePadSummary();
-  const { data: pendingPayments = [], isLoading: payLoading, isValidating: payValidating } = usePendingPayments();
+  const { data: padSummary = [], isLoading: padLoading } = usePadSummary();
+  const { data: pendingPayments = [], isLoading: payLoading } = usePendingPayments();
   const [selectedPad, setSelectedPad] = useState<number | null>(null);
   const month = new Date().toISOString().slice(0, 7);
 
   const loading = padLoading || payLoading;
-  const refreshing = padValidating || payValidating;
-
-  function load() { reloadPad(); reloadPendingPayments(); }
 
   const activePads = padSummary.filter((p: PadSummaryRow) => p.device_serial).length;
   const totalAnomaly = padSummary.reduce((s: number, p: PadSummaryRow) => s + (p.anomaly_count ?? 0), 0);
@@ -85,13 +82,6 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
           <p className="text-default-500 text-sm mt-0.5">Overview for {new Date().toLocaleString("default", { month: "long", year: "numeric" })}</p>
         </div>
-        <Button
-          variant="flat" size="sm"
-          startContent={<RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />}
-          onPress={() => load()} isDisabled={refreshing}
-        >
-          Refresh
-        </Button>
       </div>
 
       {/* Stats */}

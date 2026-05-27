@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { toast } from "@/lib/toast";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
-import { BarChart3, RefreshCw, Download } from "lucide-react";
+import { BarChart3, Download } from "lucide-react";
 import { reportsApi, getErrorMessage } from "@/lib/api";
 import { DailyAggregate } from "@/types";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Dot } from "recharts";
@@ -14,7 +14,7 @@ export default function ReportsPage() {
   const { data: devices = [] } = useDevices();
   const [selectedDevice, setSelectedDevice] = useState<number | null>(null);
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
-  const { data: daily = [], isLoading: loading, mutate: reloadDaily } = useDailyReport(selectedDevice, month);
+  const { data: daily = [], isLoading: loading } = useDailyReport(selectedDevice, month);
 
   useEffect(() => {
     if (devices.length > 0 && !selectedDevice) setSelectedDevice(devices[0].id);
@@ -48,8 +48,6 @@ export default function ReportsPage() {
           <input type="month" value={month} onChange={e => setMonth(e.target.value)}
             className="px-3 py-2 rounded-xl bg-content2 border border-default-200 text-sm text-foreground focus:outline-none focus:border-primary" />
           <Button variant="flat" size="sm" startContent={<Download className="w-4 h-4" />} onPress={handleExport}>Export CSV</Button>
-          <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />}
-            onPress={() => reloadDaily()}>Refresh</Button>
         </div>
       </div>
 

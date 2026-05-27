@@ -8,7 +8,7 @@ import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import { Textarea } from "@heroui/input";
-import { CreditCard, RefreshCw, CheckCircle, XCircle, ExternalLink, QrCode, Upload, Trash2, Eye, EyeOff } from "lucide-react";
+import { CreditCard, CheckCircle, XCircle, ExternalLink, QrCode, Upload, Trash2, Eye, EyeOff } from "lucide-react";
 import { Tooltip } from "@heroui/tooltip";
 import { paymentsApi, getErrorMessage } from "@/lib/api";
 import { Payment } from "@/types";
@@ -155,9 +155,6 @@ export default function PaymentsPage() {
           <h1 className="text-2xl font-bold text-foreground">Payments</h1>
           <p className="text-default-500 text-sm mt-0.5">{pending.length} pending verification</p>
         </div>
-        <Tooltip delay={3000} content="Reload payment records" placement="bottom">
-          <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => reloadPayments()}>Refresh</Button>
-        </Tooltip>
       </div>
 
       {/* ── QR Code section ─────────────────────────────────────── */}

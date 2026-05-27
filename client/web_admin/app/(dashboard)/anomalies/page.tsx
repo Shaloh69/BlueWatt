@@ -5,7 +5,7 @@ import { toast } from "@/lib/toast";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
-import { AlertTriangle, RefreshCw, CheckCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle } from "lucide-react";
 import { Tooltip } from "@heroui/tooltip";
 import { anomalyApi, getErrorMessage } from "@/lib/api";
 import { AnomalyEvent } from "@/types";
@@ -47,10 +47,6 @@ export default function AnomaliesPage() {
           <h1 className="text-2xl font-bold text-foreground">Anomalies</h1>
           <p className="text-default-500 text-sm mt-0.5">{unresolved} unresolved</p>
         </div>
-        <Tooltip delay={3000} content="Reload anomaly events for selected device" placement="bottom">
-          <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />}
-            onPress={() => selectedDevice && reloadAnomalyEvents(selectedDevice)}>Refresh</Button>
-        </Tooltip>
       </div>
 
       {/* Device selector */}

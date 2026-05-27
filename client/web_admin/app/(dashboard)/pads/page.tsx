@@ -6,7 +6,7 @@ import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import { Input, Textarea } from "@heroui/input";
-import { Building2, Plus, RefreshCw, UserPlus, UserMinus, Pencil, Trash2 } from "lucide-react";
+import { Building2, Plus, UserPlus, UserMinus, Pencil, Trash2 } from "lucide-react";
 import { Tooltip } from "@heroui/tooltip";
 import { padsApi, getErrorMessage } from "@/lib/api";
 import { Pad } from "@/types";
@@ -127,9 +127,6 @@ export default function PadsPage() {
           <p className="text-default-500 text-sm mt-0.5">{pads.length} total</p>
         </div>
         <div className="flex gap-2">
-          <Tooltip delay={3000} content="Reload pads list" placement="bottom">
-            <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => reloadPads()}>Refresh</Button>
-          </Tooltip>
           <Tooltip delay={3000} content="Create a new rental unit/pad" placement="bottom">
             <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />} onPress={() => setShowAdd(true)}>Add Pad</Button>
           </Tooltip>

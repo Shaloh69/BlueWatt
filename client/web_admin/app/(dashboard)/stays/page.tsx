@@ -7,7 +7,7 @@ import { Chip } from "@heroui/chip";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import { Input, Textarea } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
-import { CalendarCheck, Plus, RefreshCw, LogOut, Trash2, Clock } from "lucide-react";
+import { CalendarCheck, Plus, LogOut, Trash2, Clock } from "lucide-react";
 import { Tooltip } from "@heroui/tooltip";
 import { staysApi, getErrorMessage } from "@/lib/api";
 import { Stay } from "@/types";
@@ -49,7 +49,7 @@ function durationLabel(stay: Stay): string {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function StaysPage() {
-  const { data: stays = [], isLoading: loading, isValidating, mutate } = useStays();
+  const { data: stays = [], isLoading: loading } = useStays();
   const { data: pads  = [] } = usePads();
   const { data: tenants = [] } = useTenants();
 
@@ -144,15 +144,6 @@ export default function StaysPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Tooltip delay={3000} content="Reload stays list" placement="bottom">
-            <Button
-              variant="flat" size="sm"
-              startContent={<RefreshCw className={`w-4 h-4 ${isValidating ? "animate-spin" : ""}`} />}
-              onPress={() => mutate()} isDisabled={isValidating}
-            >
-              Refresh
-            </Button>
-          </Tooltip>
           <Tooltip delay={3000} content="Check in a new tenant to a pad" placement="bottom">
             <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />}
               onPress={() => setShowCheckIn(true)}>

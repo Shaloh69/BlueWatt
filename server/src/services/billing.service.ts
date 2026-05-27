@@ -115,7 +115,9 @@ export class BillingService {
   }
 
   private static async processOneSchedule(schedule: any): Promise<void> {
-    const periodStart = new Date(schedule.next_period_start + 'T00:00:00Z');
+    // next_period_start may be a Date object (mysql2 default) or a string — normalize to YYYY-MM-DD
+    const dateOnly = new Date(schedule.next_period_start).toISOString().split('T')[0];
+    const periodStart = new Date(dateOnly + 'T00:00:00Z');
 
     const periodEnd = new Date(periodStart);
     if (schedule.frequency === 'daily') {

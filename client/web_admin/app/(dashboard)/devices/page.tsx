@@ -8,7 +8,7 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@herou
 import { Input, Textarea } from "@heroui/input";
 import { Tooltip } from "@heroui/tooltip";
 import {
-  Cpu, Plus, RefreshCw, Wifi, WifiOff, ToggleLeft, ToggleRight,
+  Cpu, Plus, Wifi, WifiOff, ToggleLeft, ToggleRight,
   Pencil, Building2, User, MapPin, Info, Trash2, Copy, Check, KeyRound, RotateCcw,
 } from "lucide-react";
 import { devicesApi, getErrorMessage } from "@/lib/api";
@@ -166,11 +166,6 @@ export default function DevicesPage() {
           <p className="text-default-500 text-sm mt-0.5">{devices.length} registered</p>
         </div>
         <div className="flex gap-2">
-          <Tooltip delay={3000} content="Reload devices and pads" placement="bottom">
-            <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => load()}>
-              Refresh
-            </Button>
-          </Tooltip>
           <Tooltip delay={3000} content="Register a new ESP32 meter device" placement="bottom">
             <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />} onPress={() => setShowAdd(true)}>
               Register Device

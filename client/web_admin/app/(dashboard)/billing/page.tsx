@@ -10,7 +10,7 @@ import { Switch } from "@heroui/switch";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import { Input } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
-import { Receipt, Plus, RefreshCw, Trash2, CheckCircle, Download, CalendarClock, StopCircle, Info } from "lucide-react";
+import { Receipt, Plus, Trash2, CheckCircle, Download, CalendarClock, StopCircle, Info } from "lucide-react";
 import { Tooltip } from "@heroui/tooltip";
 import { billingApi, billingSchedulesApi, getErrorMessage } from "@/lib/api";
 import { BillingPeriod, BillingSchedule } from "@/types";
@@ -192,13 +192,7 @@ export default function BillingPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Tooltip delay={3000}content="Reload bills and schedules" placement="bottom">
-            <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />}
-              onPress={() => { reloadBilling(); reloadSchedules(); }}>
-              Refresh
-            </Button>
-          </Tooltip>
-          <Tooltip delay={3000}content="Generate a one-time bill or set up an automated schedule" placement="bottom">
+          <Tooltip delay={3000} content="Generate a one-time bill or set up an automated schedule" placement="bottom">
             <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />}
               onPress={() => setShowCreate(true)}>
               Create Bill
@@ -280,7 +274,7 @@ export default function BillingPage() {
                         </Tooltip>
                       </td>
                       <td className="py-3 px-3">
-                        <Tooltip delay={3000}content="Permanently delete this schedule" placement="left" color="danger">
+                        <Tooltip delay={3000} content="Permanently delete this schedule" placement="left" color="danger">
                           <Button size="sm" variant="flat" color="danger" isIconOnly
                             onPress={() => setDeleteSchedTarget(s)}>
                             <Trash2 className="w-3.5 h-3.5" />
@@ -336,7 +330,7 @@ export default function BillingPage() {
                       <td className="py-3 px-3">
                         <div className="flex gap-1 flex-wrap">
                           {(b.status === "unpaid" || b.status === "overdue") && (
-                            <Tooltip delay={3000}content="Record that this bill has been paid" placement="top" color="success">
+                            <Tooltip delay={3000} content="Record that this bill has been paid" placement="top" color="success">
                               <Button size="sm" variant="flat" color="success"
                                 startContent={<CheckCircle className="w-3 h-3" />}
                                 onPress={() => handleMarkPaid(b)}>
@@ -345,7 +339,7 @@ export default function BillingPage() {
                             </Tooltip>
                           )}
                           {b.status === "unpaid" && (
-                            <Tooltip delay={3000}content="Waive this bill — tenant won't need to pay it" placement="top">
+                            <Tooltip delay={3000} content="Waive this bill — tenant won't need to pay it" placement="top">
                               <Button size="sm" variant="flat" color="default"
                                 onPress={() => handleWaive(b)}>
                                 Waive
@@ -353,14 +347,14 @@ export default function BillingPage() {
                             </Tooltip>
                           )}
                           {(b as any).receipt_url && (
-                            <Tooltip delay={3000}content="Download receipt" placement="top" color="primary">
+                            <Tooltip delay={3000} content="Download receipt" placement="top" color="primary">
                               <Button size="sm" variant="flat" color="primary" isIconOnly
                                 as="a" href={(b as any).receipt_url} target="_blank" rel="noopener noreferrer">
                                 <Download className="w-3 h-3" />
                               </Button>
                             </Tooltip>
                           )}
-                          <Tooltip delay={3000}content="Delete this billing record permanently" placement="left" color="danger">
+                          <Tooltip delay={3000} content="Delete this billing record permanently" placement="left" color="danger">
                             <Button size="sm" variant="flat" color="danger" isIconOnly
                               onPress={() => setDeleteTarget(b)}>
                               <Trash2 className="w-4 h-4" />

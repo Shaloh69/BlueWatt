@@ -8,7 +8,7 @@ import { Chip } from "@heroui/chip";
 import { Input } from "@heroui/input";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import {
-  Users, Plus, RefreshCw, Cpu, Trash2, MapPin,
+  Users, Plus, Cpu, Trash2, MapPin,
   Wifi, WifiOff, ChevronRight,
 } from "lucide-react";
 import { Tooltip } from "@heroui/tooltip";
@@ -189,11 +189,6 @@ export default function TenantsPage() {
           <p className="text-default-500 text-sm mt-0.5">{tenants.length} account{tenants.length !== 1 ? "s" : ""}</p>
         </div>
         <div className="flex gap-2">
-          <Tooltip delay={3000} content="Reload tenant list" placement="bottom">
-            <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => load()}>
-              Refresh
-            </Button>
-          </Tooltip>
           <Tooltip delay={3000} content="Create a new tenant account" placement="bottom">
             <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />} onPress={() => setShowCreate(true)}>
               Create Tenant
