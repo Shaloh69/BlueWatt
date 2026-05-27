@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { BillingPeriodModel } from '../models/billingPeriod.model';
+import { BillingScheduleModel } from '../models/billingSchedule.model';
 import { PadModel } from '../models/pad.model';
 import { BillingService } from '../services/billing.service';
 import { AppError } from '../utils/AppError';
@@ -115,13 +116,22 @@ export const waiveBilling = asyncHandler(
   }
 );
 
-/** DELETE /billing/:id — admin: permanently delete a billing period */
+/** DELETE /billing/:id — admin: permanently delete a billing period.
+ *  If a schedule for the same pad had already advanced past this period,
+ *  roll back next_period_start so the period can be regenerated. */
 export const deleteBilling = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
     const bill = await BillingPeriodModel.findById(parseInt(req.params.id, 10));
     if (!bill)
       throw new AppError('Billing period not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
+
     await BillingPeriodModel.delete(bill.id);
+
+    // Roll back any schedule whose next_period_start is exactly period_end + 1 day
+    // (i.e. the deleted bill was the last generated period for that schedule)
+    const periodEndStr = new Date(bill.period_end).toISOString().split('T')[0];
+    await BillingScheduleModel.rollbackIfLastPeriod(bill.pad_id, periodEndStr, new Date(bill.period_start).toISOString().split('T')[0]);
+
     bustBillingCache();
     sendSuccess(res, { id: bill.id }, HTTP_STATUS.OK, 'Bill deleted');
   }

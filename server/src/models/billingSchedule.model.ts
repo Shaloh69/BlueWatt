@@ -96,6 +96,25 @@ export class BillingScheduleModel {
     ]);
   }
 
+  /** If the deleted bill was the last generated period, roll back next_period_start
+   *  so the cron / Run Now will regenerate it on the next run. */
+  static async rollbackIfLastPeriod(
+    padId: number,
+    periodEndStr: string,
+    periodStartStr: string,
+  ): Promise<void> {
+    // next_period_start was set to period_end + 1 day after generation.
+    // Only roll back if that exact advance is still in place.
+    await pool.execute(
+      `UPDATE billing_schedules
+         SET next_period_start = ?
+       WHERE pad_id = ?
+         AND status IN ('active', 'stopped')
+         AND next_period_start = DATE_ADD(?, INTERVAL 1 DAY)`,
+      [periodStartStr, padId, periodEndStr],
+    );
+  }
+
   static async stop(id: number): Promise<void> {
     await pool.execute(`UPDATE billing_schedules SET status = 'stopped' WHERE id = ?`, [id]);
   }
