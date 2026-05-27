@@ -235,7 +235,9 @@ export default function BillingPage() {
                           {freqLabel(s.frequency)}
                         </Chip>
                       </td>
-                      <td className="py-3 px-3 font-mono text-xs">{s.next_period_start}</td>
+                      <td className="py-3 px-3 font-mono text-xs">
+        {new Date(s.next_period_start).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric" })}
+      </td>
                       <td className="py-3 px-3 text-xs text-default-500">+{s.due_date_offset_days}d</td>
                       <td className="py-3 px-3">
                         <Switch
