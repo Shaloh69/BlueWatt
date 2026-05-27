@@ -35,23 +35,30 @@
 #define STATUS_LED_GPIO         GPIO_NUM_2
 
 // ============================================================
-// Electrical System (Philippines: 220V AC, 60Hz)
+// Electrical System (Philippines: 230V AC, 60Hz)
+// Compliant with PEC 2017 / IEC 60038 — nominal 230V, ±10% tolerance
+// Undervoltage limit: 230V × 0.90 = 207V (PEC Section 230)
+// Overvoltage limit:  230V × 1.10 = 253V (PEC Section 230)
 // ============================================================
-#define NOMINAL_VOLTAGE_V       220.0f
+#define NOMINAL_VOLTAGE_V       230.0f
 #define NOMINAL_FREQUENCY_HZ    60.0f
-#define VOLTAGE_MIN_V           180.0f
-#define VOLTAGE_MAX_V           250.0f
+#define VOLTAGE_MIN_V           207.0f   // PEC 2017: 230V - 10%
+#define VOLTAGE_MAX_V           253.0f   // PEC 2017: 230V + 10%
 
 // ============================================================
 // Anomaly Detection Thresholds
+// PEC 2017 Section 240: overcurrent protection must not exceed conductor ampacity.
+// Relay is rated 30A (SLA-05VDC-SL-C); threshold kept at 28A (2A safety margin).
+// Wire gauge of the installation determines true PEC ampacity limit —
+// if 2.0mm² (20A) wiring is used, recommend lowering to 18–20A in future.
 // ============================================================
-#define OVERCURRENT_THRESHOLD_A     28.0f  // Relay rated 30A — 2A safety margin
-#define SHORT_CIRCUIT_THRESHOLD_A   50.0f
-#define MAX_POWER_W                 3000.0f
-#define WIRE_FIRE_POWER_RATIO       1.5f
-#define WIRE_FIRE_MIN_POWER_W       2100.0f  // 70% of max before ratio check
-#define OVERCURRENT_CONFIRM_COUNT   3        // Consecutive readings to confirm
-#define FIRE_HISTORY_SIZE           10       // Rolling window for wire fire
+#define OVERCURRENT_THRESHOLD_A     28.0f  // 30A relay - 2A margin (PEC Sec. 240)
+#define SHORT_CIRCUIT_THRESHOLD_A   50.0f  // Severe fault detection (PZEM max 100A)
+#define MAX_POWER_W                 3000.0f // Practical room load limit (not a PEC value)
+#define WIRE_FIRE_POWER_RATIO       1.5f   // 1.5× baseline triggers thermal alert
+#define WIRE_FIRE_MIN_POWER_W       2100.0f // 70% of MAX_POWER_W before ratio check
+#define OVERCURRENT_CONFIRM_COUNT   3       // Consecutive readings to confirm (~3s)
+#define FIRE_HISTORY_SIZE           10      // Rolling window for thermal runaway
 
 // ============================================================
 // WiFi Configuration
