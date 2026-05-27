@@ -166,12 +166,16 @@ export default function DevicesPage() {
           <p className="text-default-500 text-sm mt-0.5">{devices.length} registered</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => load()}>
-            Refresh
-          </Button>
-          <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />} onPress={() => setShowAdd(true)}>
-            Register Device
-          </Button>
+          <Tooltip delay={3000} content="Reload devices and pads" placement="bottom">
+            <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => load()}>
+              Refresh
+            </Button>
+          </Tooltip>
+          <Tooltip delay={3000} content="Register a new ESP32 meter device" placement="bottom">
+            <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />} onPress={() => setShowAdd(true)}>
+              Register Device
+            </Button>
+          </Tooltip>
         </div>
       </div>
 
@@ -272,39 +276,39 @@ export default function DevicesPage() {
                   {/* Actions */}
                   <div className="flex gap-2 pt-1 border-t border-default-200">
                     {d.relay_status === "tripped" ? (
-                      <Tooltip content="Reset Relay (clear trip)" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
+                      <Tooltip delay={3000} content="Reset Relay (clear trip)" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
                         <Button size="sm" variant="flat" color="warning" isIconOnly onPress={() => handleRelay(d, "reset")}>
                           <RotateCcw className="w-4 h-4" />
                         </Button>
                       </Tooltip>
                     ) : (
-                      <Tooltip content="Relay ON" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
+                      <Tooltip delay={3000} content="Relay ON" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
                         <Button size="sm" variant="flat" color="success" isIconOnly onPress={() => handleRelay(d, "on")}>
                           <ToggleRight className="w-4 h-4" />
                         </Button>
                       </Tooltip>
                     )}
-                    <Tooltip content="Relay OFF" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
+                    <Tooltip delay={3000} content="Relay OFF" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
                       <Button size="sm" variant="flat" color="default" isIconOnly onPress={() => handleRelay(d, "off")}>
                         <ToggleLeft className="w-4 h-4" />
                       </Button>
                     </Tooltip>
-                    <Tooltip content="Rename / Edit" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
+                    <Tooltip delay={3000} content="Rename / Edit" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
                       <Button size="sm" variant="flat" color="primary" isIconOnly onPress={() => openEdit(d)}>
                         <Pencil className="w-4 h-4" />
                       </Button>
                     </Tooltip>
-                    <Tooltip content="Details" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
+                    <Tooltip delay={3000} content="Details" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
                       <Button size="sm" variant="flat" color="default" isIconOnly onPress={() => setDetailDevice(d)}>
                         <Info className="w-4 h-4" />
                       </Button>
                     </Tooltip>
-                    <Tooltip content="Regenerate API Key" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
+                    <Tooltip delay={3000} content="Regenerate API Key" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
                       <Button size="sm" variant="flat" color="warning" isIconOnly onPress={() => setRegenTarget(d)}>
                         <KeyRound className="w-4 h-4" />
                       </Button>
                     </Tooltip>
-                    <Tooltip content="Delete Device" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
+                    <Tooltip delay={3000} content="Delete Device" classNames={{ content: "bg-slate-800 text-white border border-white/10 text-xs" }}>
                       <Button size="sm" variant="flat" color="danger" isIconOnly onPress={() => setConfirmDelete(d)}>
                         <Trash2 className="w-4 h-4" />
                       </Button>

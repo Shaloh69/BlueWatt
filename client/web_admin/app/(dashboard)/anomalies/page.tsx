@@ -6,6 +6,7 @@ import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
 import { AlertTriangle, RefreshCw, CheckCircle } from "lucide-react";
+import { Tooltip } from "@heroui/tooltip";
 import { anomalyApi, getErrorMessage } from "@/lib/api";
 import { AnomalyEvent } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
@@ -46,8 +47,10 @@ export default function AnomaliesPage() {
           <h1 className="text-2xl font-bold text-foreground">Anomalies</h1>
           <p className="text-default-500 text-sm mt-0.5">{unresolved} unresolved</p>
         </div>
-        <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />}
-          onPress={() => selectedDevice && reloadAnomalyEvents(selectedDevice)}>Refresh</Button>
+        <Tooltip delay={3000} content="Reload anomaly events for selected device" placement="bottom">
+          <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />}
+            onPress={() => selectedDevice && reloadAnomalyEvents(selectedDevice)}>Refresh</Button>
+        </Tooltip>
       </div>
 
       {/* Device selector */}
@@ -103,14 +106,17 @@ export default function AnomaliesPage() {
                         </Chip>
                       </td>
                       <td className="py-3 px-3">
-                        <Button size="sm" variant="flat" color="success" isIconOnly
-                          isDisabled={e.is_resolved}
-                          isLoading={resolving === e.id}
-                          onPress={() => !e.is_resolved && handleResolve(e)}
-                          title="Mark resolved"
-                          className={e.is_resolved ? "opacity-30 cursor-not-allowed" : ""}>
-                          <CheckCircle className="w-4 h-4" />
-                        </Button>
+                        <Tooltip delay={3000} content={e.is_resolved ? "Already resolved" : "Mark this anomaly as resolved"} placement="left" color={e.is_resolved ? "default" : "success"}>
+                          <span>
+                            <Button size="sm" variant="flat" color="success" isIconOnly
+                              isDisabled={e.is_resolved}
+                              isLoading={resolving === e.id}
+                              onPress={() => !e.is_resolved && handleResolve(e)}
+                              className={e.is_resolved ? "opacity-30 cursor-not-allowed" : ""}>
+                              <CheckCircle className="w-4 h-4" />
+                            </Button>
+                          </span>
+                        </Tooltip>
                       </td>
                     </tr>
                   ))}

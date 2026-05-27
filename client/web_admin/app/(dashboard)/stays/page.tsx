@@ -8,6 +8,7 @@ import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@herou
 import { Input, Textarea } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
 import { CalendarCheck, Plus, RefreshCw, LogOut, Trash2, Clock } from "lucide-react";
+import { Tooltip } from "@heroui/tooltip";
 import { staysApi, getErrorMessage } from "@/lib/api";
 import { Stay } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
@@ -143,17 +144,21 @@ export default function StaysPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="flat" size="sm"
-            startContent={<RefreshCw className={`w-4 h-4 ${isValidating ? "animate-spin" : ""}`} />}
-            onPress={() => mutate()} isDisabled={isValidating}
-          >
-            Refresh
-          </Button>
-          <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />}
-            onPress={() => setShowCheckIn(true)}>
-            Check In
-          </Button>
+          <Tooltip delay={3000} content="Reload stays list" placement="bottom">
+            <Button
+              variant="flat" size="sm"
+              startContent={<RefreshCw className={`w-4 h-4 ${isValidating ? "animate-spin" : ""}`} />}
+              onPress={() => mutate()} isDisabled={isValidating}
+            >
+              Refresh
+            </Button>
+          </Tooltip>
+          <Tooltip delay={3000} content="Check in a new tenant to a pad" placement="bottom">
+            <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />}
+              onPress={() => setShowCheckIn(true)}>
+              Check In
+            </Button>
+          </Tooltip>
         </div>
       </div>
 
@@ -234,16 +239,20 @@ export default function StaysPage() {
                       <td className="py-3 px-3">
                         <div className="flex gap-1">
                           {s.status === "active" && (
-                            <Button size="sm" variant="flat" color="warning"
-                              startContent={<LogOut className="w-3.5 h-3.5" />}
-                              onPress={() => setCheckOutTarget(s)}>
-                              Check Out
-                            </Button>
+                            <Tooltip delay={3000} content="End this stay and generate a prorated final bill" placement="top" color="warning">
+                              <Button size="sm" variant="flat" color="warning"
+                                startContent={<LogOut className="w-3.5 h-3.5" />}
+                                onPress={() => setCheckOutTarget(s)}>
+                                Check Out
+                              </Button>
+                            </Tooltip>
                           )}
-                          <Button size="sm" variant="flat" color="danger" isIconOnly title="Delete stay"
-                            onPress={() => setDeleteTarget(s)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <Tooltip delay={3000} content="Delete this stay record permanently" placement="left" color="danger">
+                            <Button size="sm" variant="flat" color="danger" isIconOnly
+                              onPress={() => setDeleteTarget(s)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </Tooltip>
                         </div>
                       </td>
                     </tr>

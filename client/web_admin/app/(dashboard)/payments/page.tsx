@@ -9,6 +9,7 @@ import { Chip } from "@heroui/chip";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import { Textarea } from "@heroui/input";
 import { CreditCard, RefreshCw, CheckCircle, XCircle, ExternalLink, QrCode, Upload, Trash2, Eye, EyeOff } from "lucide-react";
+import { Tooltip } from "@heroui/tooltip";
 import { paymentsApi, getErrorMessage } from "@/lib/api";
 import { Payment } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
@@ -154,7 +155,9 @@ export default function PaymentsPage() {
           <h1 className="text-2xl font-bold text-foreground">Payments</h1>
           <p className="text-default-500 text-sm mt-0.5">{pending.length} pending verification</p>
         </div>
-        <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => reloadPayments()}>Refresh</Button>
+        <Tooltip delay={3000} content="Reload payment records" placement="bottom">
+          <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => reloadPayments()}>Refresh</Button>
+        </Tooltip>
       </div>
 
       {/* ── QR Code section ─────────────────────────────────────── */}
@@ -235,14 +238,16 @@ export default function PaymentsPage() {
                       <Chip size="sm" variant="flat" color={qr.is_active ? "success" : "default"}>
                         {qr.is_active ? "Active" : "Inactive"}
                       </Chip>
-                      <Button size="sm" variant="flat" isIconOnly title={qr.is_active ? "Deactivate" : "Activate"}
-                        onPress={() => handleToggleQr(qr)}>
-                        {qr.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </Button>
-                      <Button size="sm" variant="flat" color="danger" isIconOnly title="Delete"
-                        onPress={() => handleDeleteQr(qr)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <Tooltip delay={3000} content={qr.is_active ? "Deactivate — tenants won't see this QR" : "Activate — set as the payment QR shown to tenants"} placement="top">
+                        <Button size="sm" variant="flat" isIconOnly onPress={() => handleToggleQr(qr)}>
+                          {qr.is_active ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </Button>
+                      </Tooltip>
+                      <Tooltip delay={3000} content="Delete this QR code permanently" placement="top" color="danger">
+                        <Button size="sm" variant="flat" color="danger" isIconOnly onPress={() => handleDeleteQr(qr)}>
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </Tooltip>
                     </div>
                   ))}
                 </div>
@@ -298,20 +303,23 @@ export default function PaymentsPage() {
                         <div className="flex gap-1">
                           {p.status === "pending_verification" && (
                             <>
-                              <Button size="sm" color="success" variant="flat" isIconOnly isLoading={saving}
-                                onPress={() => handleApprove(p)} title="Approve">
-                                <CheckCircle className="w-4 h-4" />
-                              </Button>
-                              <Button size="sm" color="danger" variant="flat" isIconOnly
-                                onPress={() => setRejectTarget(p)} title="Reject">
-                                <XCircle className="w-4 h-4" />
-                              </Button>
+                              <Tooltip delay={3000} content="Approve this payment and mark the bill as paid" placement="top" color="success">
+                                <Button size="sm" color="success" variant="flat" isIconOnly isLoading={saving} onPress={() => handleApprove(p)}>
+                                  <CheckCircle className="w-4 h-4" />
+                                </Button>
+                              </Tooltip>
+                              <Tooltip delay={3000} content="Reject this payment and notify the tenant" placement="top" color="danger">
+                                <Button size="sm" color="danger" variant="flat" isIconOnly onPress={() => setRejectTarget(p)}>
+                                  <XCircle className="w-4 h-4" />
+                                </Button>
+                              </Tooltip>
                             </>
                           )}
-                          <Button size="sm" color="danger" variant="light" isIconOnly
-                            onPress={() => setDeleteTarget(p)} title="Delete record">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <Tooltip delay={3000} content="Delete this payment record permanently" placement="left" color="danger">
+                            <Button size="sm" color="danger" variant="light" isIconOnly onPress={() => setDeleteTarget(p)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </Tooltip>
                         </div>
                       </td>
                     </tr>

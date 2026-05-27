@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "@/lib/toast";
 import { modalClassNames } from "@/lib/modal-styles";
 import { Card, CardBody, CardHeader } from "@heroui/card";
@@ -10,7 +10,8 @@ import { Switch } from "@heroui/switch";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import { Input } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
-import { Receipt, Plus, RefreshCw, Trash2, CheckCircle, Download, CalendarClock, StopCircle } from "lucide-react";
+import { Receipt, Plus, RefreshCw, Trash2, CheckCircle, Download, CalendarClock, StopCircle, Info } from "lucide-react";
+import { Tooltip } from "@heroui/tooltip";
 import { billingApi, billingSchedulesApi, getErrorMessage } from "@/lib/api";
 import { BillingPeriod, BillingSchedule } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
@@ -172,6 +173,14 @@ export default function BillingPage() {
 
   const activeSchedules = schedules.filter((s: BillingSchedule) => s.status === "active");
 
+  const nextUpdate = useMemo(() => {
+    const now = new Date();
+    const next = new Date(now);
+    next.setMinutes(55, 0, 0);
+    if (now.getMinutes() >= 55) next.setHours(next.getHours() + 1);
+    return next.toLocaleTimeString("en-PH", { hour: "2-digit", minute: "2-digit" });
+  }, []);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -183,16 +192,31 @@ export default function BillingPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />}
-            onPress={() => { reloadBilling(); reloadSchedules(); }}>
-            Refresh
-          </Button>
-          <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />}
-            onPress={() => setShowCreate(true)}>
-            Create Bill
-          </Button>
+          <Tooltip delay={3000}content="Reload bills and schedules" placement="bottom">
+            <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />}
+              onPress={() => { reloadBilling(); reloadSchedules(); }}>
+              Refresh
+            </Button>
+          </Tooltip>
+          <Tooltip delay={3000}content="Generate a one-time bill or set up an automated schedule" placement="bottom">
+            <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />}
+              onPress={() => setShowCreate(true)}>
+              Create Bill
+            </Button>
+          </Tooltip>
         </div>
       </div>
+
+      {/* ── Next update banner ───────────────────────────────────────────────── */}
+      {activeSchedules.length > 0 && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary-50 border border-secondary-200 text-secondary-700 text-sm">
+          <Info className="w-4 h-4 shrink-0" />
+          <span>
+            Automated bills are processed at <span className="font-semibold">:55 of every hour</span>.
+            Next run: <span className="font-semibold">{nextUpdate}</span>.
+          </span>
+        </div>
+      )}
 
       {/* ── Automated Billing Schedules ─────────────────────────────────────── */}
       <Card className="border border-default-200">
@@ -240,20 +264,28 @@ export default function BillingPage() {
       </td>
                       <td className="py-3 px-3 text-xs text-default-500">+{s.due_date_offset_days}d</td>
                       <td className="py-3 px-3">
-                        <Switch
-                          size="sm"
-                          isSelected={s.status === "active"}
-                          isDisabled={saving || s.status === "stopped"}
-                          onValueChange={(val) => { if (!val) setStopTarget(s); }}
-                          color="success"
-                        />
+                        <Tooltip
+                          content={s.status === "stopped" ? "Schedule is stopped" : "Turn off to stop auto-billing for this pad"}
+                          placement="left"
+                        >
+                          <span>
+                            <Switch
+                              size="sm"
+                              isSelected={s.status === "active"}
+                              isDisabled={saving || s.status === "stopped"}
+                              onValueChange={(val) => { if (!val) setStopTarget(s); }}
+                              color="success"
+                            />
+                          </span>
+                        </Tooltip>
                       </td>
                       <td className="py-3 px-3">
-                        <Button size="sm" variant="flat" color="danger" isIconOnly
-                          title="Delete schedule"
-                          onPress={() => setDeleteSchedTarget(s)}>
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
+                        <Tooltip delay={3000}content="Permanently delete this schedule" placement="left" color="danger">
+                          <Button size="sm" variant="flat" color="danger" isIconOnly
+                            onPress={() => setDeleteSchedTarget(s)}>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </Tooltip>
                       </td>
                     </tr>
                   ))}
@@ -304,30 +336,36 @@ export default function BillingPage() {
                       <td className="py-3 px-3">
                         <div className="flex gap-1 flex-wrap">
                           {(b.status === "unpaid" || b.status === "overdue") && (
-                            <Button size="sm" variant="flat" color="success"
-                              startContent={<CheckCircle className="w-3 h-3" />}
-                              onPress={() => handleMarkPaid(b)}>
-                              Mark Paid
-                            </Button>
+                            <Tooltip delay={3000}content="Record that this bill has been paid" placement="top" color="success">
+                              <Button size="sm" variant="flat" color="success"
+                                startContent={<CheckCircle className="w-3 h-3" />}
+                                onPress={() => handleMarkPaid(b)}>
+                                Mark Paid
+                              </Button>
+                            </Tooltip>
                           )}
                           {b.status === "unpaid" && (
-                            <Button size="sm" variant="flat" color="default"
-                              onPress={() => handleWaive(b)}>
-                              Waive
-                            </Button>
+                            <Tooltip delay={3000}content="Waive this bill — tenant won't need to pay it" placement="top">
+                              <Button size="sm" variant="flat" color="default"
+                                onPress={() => handleWaive(b)}>
+                                Waive
+                              </Button>
+                            </Tooltip>
                           )}
                           {(b as any).receipt_url && (
-                            <Button size="sm" variant="flat" color="primary" isIconOnly
-                              title="Download receipt"
-                              as="a" href={(b as any).receipt_url} target="_blank" rel="noopener noreferrer">
-                              <Download className="w-3 h-3" />
-                            </Button>
+                            <Tooltip delay={3000}content="Download receipt" placement="top" color="primary">
+                              <Button size="sm" variant="flat" color="primary" isIconOnly
+                                as="a" href={(b as any).receipt_url} target="_blank" rel="noopener noreferrer">
+                                <Download className="w-3 h-3" />
+                              </Button>
+                            </Tooltip>
                           )}
-                          <Button size="sm" variant="flat" color="danger" isIconOnly
-                            title="Delete bill"
-                            onPress={() => setDeleteTarget(b)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <Tooltip delay={3000}content="Delete this billing record permanently" placement="left" color="danger">
+                            <Button size="sm" variant="flat" color="danger" isIconOnly
+                              onPress={() => setDeleteTarget(b)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </Tooltip>
                         </div>
                       </td>
                     </tr>

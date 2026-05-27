@@ -6,14 +6,37 @@ import { Input } from "@heroui/input";
 import { Avatar } from "@heroui/avatar";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Divider } from "@heroui/divider";
-import { Camera, Lock, User as UserIcon, Mail } from "lucide-react";
-import { authApi, getErrorMessage } from "@/lib/api";
+import { Switch } from "@heroui/switch";
+import { Tooltip } from "@heroui/tooltip";
+import { Camera, Lock, User as UserIcon, Mail, CalendarClock, PauseCircle, PlayCircle } from "lucide-react";
+import { authApi, billingSchedulesApi, getErrorMessage } from "@/lib/api";
 import { getStoredUser, storeAuth, getStoredToken } from "@/hooks/useAuth";
 import { toast } from "@/lib/toast";
 import { User } from "@/types";
+import { useSchedules, reloadSchedules } from "@/lib/use-api";
 
 export default function SettingsPage() {
   const [user, setUser] = useState<User | null>(null);
+
+  // Billing automation
+  const { data: schedules = [] } = useSchedules();
+  const [pausingAll, setPausingAll] = useState(false);
+  const activeSchedules = schedules.filter((s: any) => s.status === "active");
+  const allPaused = activeSchedules.length === 0;
+
+  async function handlePauseAll() {
+    if (activeSchedules.length === 0) return;
+    setPausingAll(true);
+    try {
+      await Promise.all(activeSchedules.map((s: any) => billingSchedulesApi.stop(s.id)));
+      reloadSchedules();
+      toast.success(`Stopped ${activeSchedules.length} active schedule${activeSchedules.length !== 1 ? "s" : ""}`);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setPausingAll(false);
+    }
+  }
 
   // Profile form
   const [fullName, setFullName] = useState("");
@@ -228,6 +251,60 @@ export default function SettingsPage() {
           >
             Save Changes
           </Button>
+        </CardBody>
+      </Card>
+
+      {/* Billing Automation */}
+      <Card>
+        <CardHeader className="pb-2">
+          <div className="flex items-center gap-2">
+            <CalendarClock className="w-4 h-4 text-secondary" />
+            <p className="text-base font-semibold text-foreground">Billing Automation</p>
+          </div>
+        </CardHeader>
+        <Divider />
+        <CardBody className="pt-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-foreground">Automated Schedules</p>
+              <p className="text-xs text-default-400 mt-0.5">
+                {allPaused
+                  ? "All schedules are currently stopped. Go to Billing to create new ones."
+                  : `${activeSchedules.length} active schedule${activeSchedules.length !== 1 ? "s" : ""} running — bills generate at :55 every hour.`}
+              </p>
+            </div>
+            <Tooltip delay={3000} content={allPaused ? "No active schedules to stop" : "Stop all active billing schedules immediately"} placement="left">
+              <span>
+                <Switch
+                  isSelected={!allPaused}
+                  isDisabled={allPaused || pausingAll}
+                  onValueChange={(val) => { if (!val) handlePauseAll(); }}
+                  color="success"
+                  size="sm"
+                />
+              </span>
+            </Tooltip>
+          </div>
+          {!allPaused && (
+            <Tooltip delay={3000} content="Stop all active billing schedules at once. Bills already generated are not affected." placement="top">
+              <Button
+                color="warning"
+                variant="flat"
+                size="sm"
+                isLoading={pausingAll}
+                startContent={<PauseCircle className="w-4 h-4" />}
+                onPress={handlePauseAll}
+              >
+                Stop All Schedules
+              </Button>
+            </Tooltip>
+          )}
+          {allPaused && (
+            <div className="flex items-center gap-2 text-xs text-default-400">
+              <PlayCircle className="w-4 h-4 text-default-300" />
+              <span>Go to <span className="font-medium text-foreground">Billing → Create Bill → Automated Schedule</span> to set up new schedules.</span>
+            </div>
+          )}
         </CardBody>
       </Card>
 

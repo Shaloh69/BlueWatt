@@ -11,6 +11,7 @@ import {
   Users, Plus, RefreshCw, Cpu, Trash2, MapPin,
   Wifi, WifiOff, ChevronRight,
 } from "lucide-react";
+import { Tooltip } from "@heroui/tooltip";
 import { adminApi, getErrorMessage } from "@/lib/api";
 import { useTenants, useDevices, reloadTenants, reloadDevices } from "@/lib/use-api";
 import { Tenant, Device } from "@/types";
@@ -188,12 +189,16 @@ export default function TenantsPage() {
           <p className="text-default-500 text-sm mt-0.5">{tenants.length} account{tenants.length !== 1 ? "s" : ""}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => load()}>
-            Refresh
-          </Button>
-          <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />} onPress={() => setShowCreate(true)}>
-            Create Tenant
-          </Button>
+          <Tooltip delay={3000} content="Reload tenant list" placement="bottom">
+            <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => load()}>
+              Refresh
+            </Button>
+          </Tooltip>
+          <Tooltip delay={3000} content="Create a new tenant account" placement="bottom">
+            <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />} onPress={() => setShowCreate(true)}>
+              Create Tenant
+            </Button>
+          </Tooltip>
         </div>
       </div>
 
@@ -268,13 +273,11 @@ export default function TenantsPage() {
                     </p>
                   </div>
 
-                  <Button
-                    size="sm" isIconOnly variant="light" color="danger"
-                    title="Delete tenant"
-                    onPress={() => setConfirmDelete(t)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <Tooltip delay={3000} content="Remove this tenant account" placement="left" color="danger">
+                    <Button size="sm" isIconOnly variant="light" color="danger" onPress={() => setConfirmDelete(t)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </Tooltip>
                 </div>
               ))}
             </div>

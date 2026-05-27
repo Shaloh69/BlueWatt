@@ -7,6 +7,7 @@ import { Chip } from "@heroui/chip";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import { Input, Textarea } from "@heroui/input";
 import { Building2, Plus, RefreshCw, UserPlus, UserMinus, Pencil, Trash2 } from "lucide-react";
+import { Tooltip } from "@heroui/tooltip";
 import { padsApi, getErrorMessage } from "@/lib/api";
 import { Pad } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
@@ -126,8 +127,12 @@ export default function PadsPage() {
           <p className="text-default-500 text-sm mt-0.5">{pads.length} total</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => reloadPads()}>Refresh</Button>
-          <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />} onPress={() => setShowAdd(true)}>Add Pad</Button>
+          <Tooltip delay={3000} content="Reload pads list" placement="bottom">
+            <Button variant="flat" size="sm" startContent={<RefreshCw className="w-4 h-4" />} onPress={() => reloadPads()}>Refresh</Button>
+          </Tooltip>
+          <Tooltip delay={3000} content="Create a new rental unit/pad" placement="bottom">
+            <Button color="primary" size="sm" startContent={<Plus className="w-4 h-4" />} onPress={() => setShowAdd(true)}>Add Pad</Button>
+          </Tooltip>
         </div>
       </div>
 
@@ -170,23 +175,29 @@ export default function PadsPage() {
                       </td>
                       <td className="py-3 px-3">
                         <div className="flex gap-1">
-                          <Button size="sm" variant="flat" color="default" isIconOnly title="Edit rate / name"
-                            onPress={() => openEdit(p)}>
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button size="sm" variant="flat" color="primary" isIconOnly title="Assign tenant/device"
-                            onPress={() => { setShowAssign(p); setAssignForm({ tenant_id: String(p.tenant_id ?? ""), device_id: String(p.device_id ?? "") }); }}>
-                            <UserPlus className="w-4 h-4" />
-                          </Button>
-                          {(p.tenant_id || p.device_id) && (
-                            <Button size="sm" variant="flat" color="danger" isIconOnly title="Unassign" onPress={() => handleUnassign(p)}>
-                              <UserMinus className="w-4 h-4" />
+                          <Tooltip delay={3000} content="Edit name and rate" placement="top">
+                            <Button size="sm" variant="flat" color="default" isIconOnly onPress={() => openEdit(p)}>
+                              <Pencil className="w-4 h-4" />
                             </Button>
+                          </Tooltip>
+                          <Tooltip delay={3000} content="Assign tenant or device to this pad" placement="top">
+                            <Button size="sm" variant="flat" color="primary" isIconOnly
+                              onPress={() => { setShowAssign(p); setAssignForm({ tenant_id: String(p.tenant_id ?? ""), device_id: String(p.device_id ?? "") }); }}>
+                              <UserPlus className="w-4 h-4" />
+                            </Button>
+                          </Tooltip>
+                          {(p.tenant_id || p.device_id) && (
+                            <Tooltip delay={3000} content="Remove tenant and device assignment" placement="top" color="danger">
+                              <Button size="sm" variant="flat" color="danger" isIconOnly onPress={() => handleUnassign(p)}>
+                                <UserMinus className="w-4 h-4" />
+                              </Button>
+                            </Tooltip>
                           )}
-                          <Button size="sm" variant="flat" color="danger" isIconOnly title="Delete pad"
-                            onPress={() => setDeleteTarget(p)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          <Tooltip delay={3000} content="Permanently delete this pad" placement="top" color="danger">
+                            <Button size="sm" variant="flat" color="danger" isIconOnly onPress={() => setDeleteTarget(p)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </Tooltip>
                         </div>
                       </td>
                     </tr>
