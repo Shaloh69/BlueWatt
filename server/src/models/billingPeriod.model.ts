@@ -162,4 +162,12 @@ export class BillingPeriodModel {
   static async delete(id: number): Promise<void> {
     await pool.execute(`DELETE FROM billing_periods WHERE id = ?`, [id]);
   }
+
+  static async deleteByPad(padId: number): Promise<number> {
+    const [result] = await pool.execute<ResultSetHeader>(
+      `DELETE FROM billing_periods WHERE pad_id = ?`,
+      [padId],
+    );
+    return result.affectedRows;
+  }
 }

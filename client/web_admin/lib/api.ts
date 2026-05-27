@@ -107,7 +107,10 @@ export const billingSchedulesApi = {
   create: (data: object) => api.post("/billing/schedules", data),
   runNow: () => api.post("/billing/schedules/run", {}),
   stop: (id: number) => api.put(`/billing/schedules/${id}/stop`, {}),
-  delete: (id: number) => api.delete(`/billing/schedules/${id}`),
+  delete: (id: number, cascadeBills = false) =>
+    api.delete(
+      `/billing/schedules/${id}${cascadeBills ? "?cascade=bills" : ""}`,
+    ),
 };
 
 // ── Payments ──────────────────────────────────────────────────────────────────

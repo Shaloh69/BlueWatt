@@ -1,11 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { BillingScheduleModel } from '../models/billingSchedule.model';
+import { BillingPeriodModel } from '../models/billingPeriod.model';
 import { PadModel } from '../models/pad.model';
 import { BillingService } from '../services/billing.service';
 import { AppError } from '../utils/AppError';
 import { sendSuccess } from '../utils/apiResponse';
 import { asyncHandler } from '../utils/asyncHandler';
 import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
+import { cache } from '../services/cache.service';
 
 /** GET /billing/schedules */
 export const listSchedules = asyncHandler(
@@ -69,15 +71,25 @@ export const runSchedules = asyncHandler(
   }
 );
 
-/** DELETE /billing/schedules/:id */
+/** DELETE /billing/schedules/:id
+ *  Query param: ?cascade=bills  — also deletes all billing periods for that pad */
 export const deleteSchedule = asyncHandler(
   async (req: Request, res: Response, _next: NextFunction) => {
     const id = parseInt(req.params.id, 10);
+    const cascade = req.query.cascade === 'bills';
+
     const schedule = await BillingScheduleModel.findById(id);
     if (!schedule) {
       throw new AppError('Schedule not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
     }
+
+    let deletedBills = 0;
+    if (cascade) {
+      deletedBills = await BillingPeriodModel.deleteByPad(schedule.pad_id);
+      cache.invalidate('billing:');
+    }
+
     await BillingScheduleModel.delete(id);
-    sendSuccess(res, { message: 'Schedule deleted' });
+    sendSuccess(res, { message: 'Schedule deleted', deleted_bills: deletedBills });
   }
 );
