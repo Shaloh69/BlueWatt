@@ -159,6 +159,11 @@ export const anomalyApi = {
   unresolved: (deviceId: number) =>
     api.get(`/anomaly-events/devices/${deviceId}/anomaly-events/unresolved`),
   resolve: (id: number) => api.put(`/anomaly-events/${id}/resolve`, {}),
+  delete: (id: number) => api.delete(`/anomaly-events/${id}`),
+  deleteByType: (deviceId: number, type: string) =>
+    api.delete(
+      `/anomaly-events/devices/${deviceId}/by-type?type=${encodeURIComponent(type)}`,
+    ),
 };
 
 // ── Admin ─────────────────────────────────────────────────────────────────────

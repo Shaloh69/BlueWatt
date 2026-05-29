@@ -295,14 +295,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           style: const TextStyle(
                               color: kTextMuted, fontSize: 13)),
                     ],
-                    const SizedBox(height: 8),
-                    Row(children: [
-                      const Icon(Icons.bolt, color: kWarning, size: 14),
-                      const SizedBox(width: 4),
-                      Text('₱${pad.ratePerKwh.toStringAsFixed(2)} / kWh',
-                          style: const TextStyle(
-                              color: kWarning, fontSize: 13)),
-                    ]),
                   ],
                 ),
               );

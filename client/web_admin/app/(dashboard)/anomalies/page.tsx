@@ -5,8 +5,9 @@ import { toast } from "@/lib/toast";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
-import { AlertTriangle, CheckCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle, Trash2 } from "lucide-react";
 import { Tooltip } from "@heroui/tooltip";
+import { Select, SelectItem } from "@heroui/select";
 import { anomalyApi, getErrorMessage } from "@/lib/api";
 import { AnomalyEvent } from "@/types";
 import { TableSkeleton } from "@/components/shared/PageLoader";
@@ -29,12 +30,17 @@ export default function AnomaliesPage() {
   const { data: devices = [] } = useDevices();
   const [selectedDevice, setSelectedDevice] = useState<number | null>(null);
   const [resolving, setResolving] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState<number | null>(null);
+  const [clearing, setClearing] = useState(false);
   const { data: events = [], isLoading: loading } =
     useAnomalyEvents(selectedDevice);
 
   useEffect(() => {
     if (devices.length > 0 && !selectedDevice) setSelectedDevice(devices[0].id);
   }, [devices, selectedDevice]);
+
+  // Unique types present in the current list for the clear dropdown
+  const presentTypes = [...new Set((events as AnomalyEvent[]).map((e) => e.anomaly_type))];
 
   async function handleResolve(event: AnomalyEvent) {
     setResolving(event.id);
@@ -46,6 +52,34 @@ export default function AnomaliesPage() {
       toast.error(getErrorMessage(err));
     } finally {
       setResolving(null);
+    }
+  }
+
+  async function handleDelete(event: AnomalyEvent) {
+    setDeleting(event.id);
+    try {
+      await anomalyApi.delete(event.id);
+      toast.success("Anomaly deleted");
+      if (selectedDevice) reloadAnomalyEvents(selectedDevice);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setDeleting(null);
+    }
+  }
+
+  async function handleClearByType(type: string) {
+    if (!selectedDevice || !type) return;
+    setClearing(true);
+    try {
+      const res = await anomalyApi.deleteByType(selectedDevice, type);
+      const count = res.data.data?.deleted ?? 0;
+      toast.success(`Deleted ${count} ${type.replace(/_/g, " ")} event${count !== 1 ? "s" : ""}`);
+      reloadAnomalyEvents(selectedDevice);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setClearing(false);
     }
   }
 
@@ -78,13 +112,34 @@ export default function AnomaliesPage() {
       </div>
 
       <Card className="border border-default-200">
-        <CardHeader className="flex items-center gap-2 pb-0">
+        <CardHeader className="flex items-center gap-2 pb-0 flex-wrap">
           <AlertTriangle className="w-5 h-5 text-warning" />
           <h2 className="font-semibold text-foreground">Anomaly Events</h2>
           {unresolved > 0 && (
-            <Chip size="sm" color="danger" className="ml-auto">
+            <Chip size="sm" color="danger">
               {unresolved} unresolved
             </Chip>
+          )}
+          {presentTypes.length > 0 && (
+            <div className="ml-auto flex items-center gap-2">
+              <Select
+                size="sm"
+                aria-label="Clear by type"
+                placeholder="Clear by type..."
+                className="w-44"
+                isDisabled={clearing || !selectedDevice}
+                onSelectionChange={(k) => {
+                  const type = String([...k][0] ?? "");
+                  if (type) handleClearByType(type);
+                }}
+              >
+                {presentTypes.map((t) => (
+                  <SelectItem key={t}>
+                    {t.replace(/_/g, " ")}
+                  </SelectItem>
+                ))}
+              </Select>
+            </div>
           )}
         </CardHeader>
         <CardBody>
@@ -108,7 +163,7 @@ export default function AnomaliesPage() {
                       "Severity",
                       "Relay Tripped",
                       "Status",
-                      "Action",
+                      "Actions",
                     ].map((h) => (
                       <th
                         key={h}
@@ -159,35 +214,56 @@ export default function AnomaliesPage() {
                         </Chip>
                       </td>
                       <td className="py-3 px-3">
-                        <Tooltip
-                          delay={3000}
-                          content={
-                            e.is_resolved
-                              ? "Already resolved"
-                              : "Mark this anomaly as resolved"
-                          }
-                          placement="left"
-                          color={e.is_resolved ? "default" : "success"}
-                        >
-                          <span>
+                        <div className="flex gap-1">
+                          <Tooltip
+                            delay={3000}
+                            content={
+                              e.is_resolved
+                                ? "Already resolved"
+                                : "Mark this anomaly as resolved"
+                            }
+                            placement="left"
+                            color={e.is_resolved ? "default" : "success"}
+                          >
+                            <span>
+                              <Button
+                                size="sm"
+                                variant="flat"
+                                color="success"
+                                isIconOnly
+                                isDisabled={e.is_resolved}
+                                isLoading={resolving === e.id}
+                                onPress={() =>
+                                  !e.is_resolved && handleResolve(e)
+                                }
+                                className={
+                                  e.is_resolved
+                                    ? "opacity-30 cursor-not-allowed"
+                                    : ""
+                                }
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </Button>
+                            </span>
+                          </Tooltip>
+                          <Tooltip
+                            delay={3000}
+                            content="Delete this record permanently"
+                            placement="left"
+                            color="danger"
+                          >
                             <Button
                               size="sm"
                               variant="flat"
-                              color="success"
+                              color="danger"
                               isIconOnly
-                              isDisabled={e.is_resolved}
-                              isLoading={resolving === e.id}
-                              onPress={() => !e.is_resolved && handleResolve(e)}
-                              className={
-                                e.is_resolved
-                                  ? "opacity-30 cursor-not-allowed"
-                                  : ""
-                              }
+                              isLoading={deleting === e.id}
+                              onPress={() => handleDelete(e)}
                             >
-                              <CheckCircle className="w-4 h-4" />
+                              <Trash2 className="w-4 h-4" />
                             </Button>
-                          </span>
-                        </Tooltip>
+                          </Tooltip>
+                        </div>
                       </td>
                     </tr>
                   ))}

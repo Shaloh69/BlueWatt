@@ -95,6 +95,18 @@ export class AnomalyEventModel {
     return rows[0].count;
   }
 
+  static async deleteById(id: number): Promise<void> {
+    await pool.execute(`DELETE FROM anomaly_events WHERE id = ?`, [id]);
+  }
+
+  static async deleteByDeviceAndType(deviceId: number, anomalyType: string): Promise<number> {
+    const [result] = await pool.execute<ResultSetHeader>(
+      `DELETE FROM anomaly_events WHERE device_id = ? AND anomaly_type = ?`,
+      [deviceId, anomalyType],
+    );
+    return result.affectedRows;
+  }
+
   static async deleteResolvedOlderThan(days: number): Promise<number> {
     const [result] = await pool.execute<ResultSetHeader>(
       `DELETE FROM anomaly_events

@@ -41,4 +41,20 @@ router.put(
   anomalyEventController.resolveAnomaly
 );
 
+import { requireAdmin } from '../middleware/auth.middleware';
+
+router.delete(
+  '/devices/:id/by-type',
+  authenticateJWT,
+  requireAdmin,
+  anomalyEventController.deleteAnomalyEventsByType
+);
+
+router.delete(
+  '/:id',
+  authenticateJWT,
+  requireAdmin,
+  anomalyEventController.deleteAnomalyEvent
+);
+
 export default router;

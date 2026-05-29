@@ -192,7 +192,6 @@ export const resolveAnomaly = asyncHandler(
 
     await AnomalyEventModel.markResolved(eventId, req.user.id);
 
-    // Send real-time SSE notification
     sseService.sendToDevice(device.id, 'anomaly_resolved', {
       event_id: eventId,
       resolved_by: req.user.id,
@@ -200,5 +199,27 @@ export const resolveAnomaly = asyncHandler(
     });
 
     sendSuccess(res, { message: 'Anomaly marked as resolved' });
+  }
+);
+
+/** DELETE /anomaly-events/:id — admin: delete a single anomaly event */
+export const deleteAnomalyEvent = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    const id = parseInt(req.params.id, 10);
+    await AnomalyEventModel.deleteById(id);
+    sendSuccess(res, { message: 'Anomaly deleted' });
+  }
+);
+
+/** DELETE /anomaly-events/devices/:id/by-type?type=undervoltage — admin: bulk delete by type */
+export const deleteAnomalyEventsByType = asyncHandler(
+  async (req: Request, res: Response, _next: NextFunction) => {
+    const deviceId = parseInt(req.params.id, 10);
+    const anomalyType = req.query.type as string;
+    if (!anomalyType) {
+      throw new AppError('type query param required', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION_ERROR);
+    }
+    const count = await AnomalyEventModel.deleteByDeviceAndType(deviceId, anomalyType);
+    sendSuccess(res, { deleted: count });
   }
 );
