@@ -2,7 +2,7 @@ const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const app = express();
-const TARGET = 'https://bluewatt-api-z9nu.onrender.com';
+const TARGET = 'https://bluewatt-api-ydhd.onrender.com';
 
 app.use('/', createProxyMiddleware({
   target: TARGET,
