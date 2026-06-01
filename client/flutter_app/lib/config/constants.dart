@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 // ── API ───────────────────────────────────────────────────────────────────────
-const String kApiBase = 'https://bluewatt-api.onrender.com/api/v1';
+const String kApiBase = 'https://bluewatt-api-ydhd.onrender.com/api/v1';
 // Change to http://192.168.x.x:3000/api/v1 for local dev
 
 // ── Secure storage keys ───────────────────────────────────────────────────────
