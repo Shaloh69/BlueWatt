@@ -109,8 +109,8 @@ export const authenticateApiKey = async (
       }
     }
 
-    // Trust-on-first-use: if no key matched, find the device by serial and
-    // auto-register the received key if that device has no keys yet.
+    // Auto-register: if the device_id is known but the key doesn't match,
+    // replace all old keys with the new one so the ESP connects immediately.
     if (!matchedDeviceId) {
       const deviceSerial: string | undefined =
         (req.params.id as string | undefined) || (req.body?.device_id as string | undefined);
@@ -119,23 +119,21 @@ export const authenticateApiKey = async (
         const candidate = await DeviceModel.findByDeviceId(deviceSerial);
         if (candidate) {
           const existingKeys = await DeviceKeyModel.findByDeviceId(candidate.id);
-          if (existingKeys.length === 0) {
-            await DeviceKeyModel.create(candidate.id, apiKey, 'Auto-registered');
-            invalidateKeyCache(); // force reload so next request sees the new key
-            matchedDeviceId = candidate.id;
-            logger.info(
-              `[Auth] TOFU: auto-registered key for device "${deviceSerial}" — key starts "${apiKey.slice(0, 10)}..."`
-            );
-          } else {
-            logger.warn(
-              `[ESP] Key mismatch for "${deviceSerial}" — device has ${existingKeys.length} key(s) but none matched`
-            );
+          // Delete any stale keys then register the new one
+          for (const old of existingKeys) {
+            await DeviceKeyModel.delete(old.id);
           }
+          await DeviceKeyModel.create(candidate.id, apiKey, 'Auto-registered');
+          invalidateKeyCache();
+          matchedDeviceId = candidate.id;
+          logger.info(
+            `[Auth] Auto-registered key for device "${deviceSerial}" (replaced ${existingKeys.length} old key(s)) — key starts "${apiKey.slice(0, 10)}..."`
+          );
         }
       }
 
       if (!matchedDeviceId) {
-        logger.warn(`[ESP] API key rejected (IP: ${req.ip}) — no match, no keyless device found`);
+        logger.warn(`[ESP] API key rejected (IP: ${req.ip}) — device_id not found in DB`);
         throw new AppError('Invalid API key', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
       }
     }
