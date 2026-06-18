@@ -7,6 +7,7 @@
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "esp_log.h"
+#include "esp_sntp.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "lwip/inet.h"
@@ -64,6 +65,13 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
         wifi_ctx.retry_count = 0;
         xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_BIT);
         LOG_INFO(TAG_WIFI, "Connected! IP: %s", wifi_ctx.ip_addr);
+
+        // Sync real-time clock via NTP so timestamps are valid Unix seconds
+        sntp_setoperatingmode(SNTP_OPMODE_POLL);
+        sntp_setservername(0, "pool.ntp.org");
+        sntp_setservername(1, "time.cloudflare.com");
+        sntp_init();
+        LOG_INFO(TAG_WIFI, "NTP sync started");
 
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STACONNECTED) {
         wifi_event_ap_staconnected_t *ev = (wifi_event_ap_staconnected_t *)event_data;

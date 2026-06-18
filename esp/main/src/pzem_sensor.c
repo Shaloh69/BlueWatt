@@ -11,6 +11,7 @@
 
 #include <string.h>
 #include <math.h>
+#include <time.h>
 
 // Cached last successful reading (thread-safe via mutex)
 static pzem_data_t       s_last_reading = {.valid = false};
@@ -243,7 +244,10 @@ static esp_err_t pzem_sensor_read_with_addr(uint8_t addr, pzem_data_t *out)
     out->frequency      = f_raw  / 10.0f;
     out->power_factor   = pf_raw / 100.0f;
     out->power_apparent = out->v_rms * out->i_rms;
-    out->timestamp      = xTaskGetTickCount() * portTICK_PERIOD_MS;
+    // Use real Unix time if NTP has synced, otherwise fall back to uptime ms
+    time_t now = time(NULL);
+    out->timestamp = (now > 1000000000L) ? (uint32_t)now
+                                         : xTaskGetTickCount() * portTICK_PERIOD_MS;
     out->valid          = true;
 
     // Cache for web dashboard

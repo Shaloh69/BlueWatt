@@ -1,16 +1,16 @@
 # BlueWatt — Repository Analysis
 
-> Last updated: 2026-03-30 (wiring corrected: TX→TX, RX→RX)
+> Last updated: 2026-06-18 (NTP, ACK retry, auto-rotate key, thresholds corrected)
 
 ---
 
 ## 1. Project Overview
 
-**BlueWatt** is an IoT-based electrical monitoring and management system designed for multi-unit residential buildings (condominiums, boarding houses, rental units) in the Philippines. The system:
+**BlueWatt** is an IoT-based electrical monitoring and management system designed for boarding houses in the Philippines. The system:
 
 - Monitors real-time electrical consumption per unit via an ESP32 + PZEM-004T power meter
-- Detects safety anomalies (overcurrent, short circuits, arc faults, wire fires) and triggers automatic relay cutoffs
-- Manages per-unit billing based on actual energy consumption
+- Detects safety anomalies (overcurrent, short circuits, wire fires) and triggers automatic relay cutoffs
+- Manages per-unit billing based on actual energy consumption (daily / weekly / monthly schedules)
 - Handles tenant payment submissions with receipt image verification
 - Provides a web admin dashboard and a mobile tenant app
 
@@ -23,7 +23,7 @@
 │ Client Layer                                                │
 │  - Next.js web admin dashboard (admin/landlord)             │
 │  - Flutter mobile app (tenants)                             │
-│  - Real-time updates via SSE and webhooks                   │
+│  - Real-time updates via SSE                                │
 └────────────────────┬────────────────────────────────────────┘
                      │ HTTP/REST API
 ┌────────────────────▼────────────────────────────────────────┐
@@ -47,11 +47,20 @@
 
 | Task | Priority | Function |
 |------|----------|----------|
-| `task_pzem_read` | 9 | Read PZEM-004T sensor every 1s |
-| `task_anomaly_detection` | 9 | Monitor thresholds, trigger relay |
-| `task_relay_control` | 8 | Execute relay commands |
-| `task_wifi_manager` | 3 | Maintain WiFi connectivity |
-| `task_http_client` | 2 | POST data/events to backend |
+| `task_pzem_read` | 9 | Read PZEM-004T sensor every 1s, fan out to queues |
+| `task_anomaly_detection` | 9 | Monitor thresholds, push events to relay + HTTP queues |
+| `task_relay_control` | 8 | Execute emergency cutoff on critical anomalies |
+| `task_wifi_manager` | 3 | Maintain WiFi connectivity, NTP after connect |
+| `task_http_client` | 2 | POST data/events, poll relay commands every 5s |
+
+**Inter-task queues:**
+
+| Queue | Size | From → To |
+|-------|------|-----------|
+| `queue_power_data` | 1 (overwrite) | PZEM read → Anomaly detection |
+| `queue_anomaly_events` | 10 | Anomaly → Relay control |
+| `queue_http_events` | 20 | Anomaly → HTTP client |
+| `queue_http_power` | 5 | PZEM read → HTTP client |
 
 ---
 
@@ -77,18 +86,13 @@ BlueWatt/
 │       └── types/models.ts         # TypeScript interfaces
 │
 ├── client/
-│   ├── web_admin/                  # Next.js 15 admin panel
+│   ├── web_admin/                  # Next.js admin panel
 │   │   ├── app/
 │   │   │   ├── (auth)/login/       # Login page
 │   │   │   ├── (dashboard)/        # Protected dashboard pages
-│   │   │   └── [about,blog,docs,pricing]/
-│   │   ├── components/             # Sidebar, StatCard, dialogs
-│   │   ├── hooks/                  # useAuth, useSSE
-│   │   ├── lib/api.ts              # Axios API client
-│   │   └── types/index.ts          # Shared TypeScript types
+│   │   └── lib/use-api.ts          # SWR hooks (FAST=5s, MEDIUM=8s, SLOW=15s)
 │   │
-│   └── flutter_app/                # Flutter tenant app (structure present)
-│       └── [ios, android, windows, linux, macos, web]
+│   └── flutter_app/                # Flutter tenant app (v1.1.1+75)
 │
 ├── esp/
 │   ├── main/                       # Production ESP32 firmware
@@ -97,6 +101,7 @@ BlueWatt/
 │   │   └── platformio.ini          # PlatformIO build config
 │   └── pilot/                      # Prototype/pilot firmware
 │
+├── proxy/index.js                  # Express reverse proxy (Render)
 ├── render.yaml                     # Render deployment config
 └── analyzation.md                  # This document
 ```
@@ -105,7 +110,7 @@ BlueWatt/
 
 ## 4. ESP32 Firmware (`esp/main/`)
 
-**Power Architecture:**
+### 4.1 Power Architecture
 
 ```
 220V AC
@@ -123,40 +128,26 @@ BlueWatt/
               3.3V ── powers ESP32 chip internally             │
                        ALL GPIO pins = 3.3V logic              │
                        regardless of 5V supply ────────────────┘
-                                                   ↑ this mismatch
-                                                     is why resistors are needed
 ```
 
 > **KEY FACT:** The ESP32 is powered from 5V but its GPIO pins always operate at 3.3V.
 > The PZEM and relay run at 5V. This 5V ↔ 3.3V boundary is where all resistor requirements come from.
 
-**Hardware:**
-- MCU: ESP32 (5V in via VIN → 3.3V internal via LDO)
-- Power Meter: PZEM-004T via UART0 (GPIO1/GPIO3, 9600 baud, VCC = 5V)
-- Relay: GPIO14 (active-LOW, SLA-05VDC-SL-C module, VCC = 5V)
-- Status LED: GPIO2
-- Power supply: 220V AC → 5V DC converter feeds everything
+### 4.2 Hardware
 
-**PCB Wiring (FIXED — custom PCB, pins cannot change):**
+| Component | Details |
+|-----------|---------|
+| MCU | ESP32 (5V in via VIN → 3.3V internal via LDO) |
+| Power Meter | PZEM-004T v3.0 via UART0 (GPIO1/GPIO3, 9600 baud, Modbus RTU) |
+| Relay | SLA-05VDC-SL-C — GPIO14, active-LOW, 30A rated |
+| Status LED | GPIO2 |
+| Power supply | 220V AC → 5V DC converter |
+
+**PCB Wiring (custom PCB — pins cannot change):**
 
 ```
-220V AC → [AC-DC] → 5V DC
-                        │
-          ┌─────────────┼──────────────────────────────┐
-          │             │                              │
-    PZEM-004T      ESP32 board                   Relay Module
-    ─────────      ─────────────                 ────────────
-      VCC ◄──── 5V   VIN ◄──── 5V                VCC ◄──── 5V
-      GND ──── GND   GND ──── GND                GND ──── GND
-                       │                           │
-                   [LDO reg]                   IN ◄──── GPIO14 (3.3V)
-                       │
-                     3.3V (internal)
-                    GPIO pins
-
-    TX ──────────────────────────────► GPIO1 (TX0)   TX-to-TX
-    RX ◄──────────────────────────────  GPIO3 (RX0)   RX-to-RX
-                                        (3.3V output)
+    PZEM TX ──────────────────────────────► GPIO1 (TX0)   TX-to-TX
+    PZEM RX ◄──────────────────────────────  GPIO3 (RX0)   RX-to-RX
 
 Status LED
 ──────────
@@ -168,48 +159,89 @@ Status LED
 
 **Required resistors / mods (production-critical):**
 
-All resistor needs come from the **5V ↔ 3.3V boundary** between PZEM/relay (5V) and ESP32 GPIO (3.3V).
-
 | Item | Location | Why |
 |------|----------|-----|
-| 1kΩ in parallel with R8 on PZEM board | On PZEM PCB near RX optocoupler | GPIO3 outputs 3.3V to PZEM RX — stock R8 (1kΩ) was sized for 5V; at 3.3V current is too low for reliable optocoupler switching |
-| 10kΩ + 20kΩ voltage divider on PZEM TX → GPIO1 | PCB trace between PZEM TX and GPIO1 | PZEM TX outputs 5V (its VCC); ESP32 GPIO1 input max is 3.6V — without this, the ESP32 GPIO can be damaged |
-| 10kΩ pull-up on relay IN to 3.3V | PCB, IN pin to 3.3V rail | GPIO14 (3.3V) glitches during boot; pull-up holds IN HIGH (relay OFF) until firmware takes control |
-| 100µF + 0.1µF decoupling caps on PZEM VCC | PCB near PZEM VCC pin | ESP32 WiFi TX causes 5V supply spikes; caps absorb them before they corrupt the PZEM's internal address register |
+| 1kΩ in parallel with R8 on PZEM board | On PZEM PCB near RX optocoupler | GPIO3 outputs 3.3V; stock R8 sized for 5V — low current causes unreliable optocoupler switching |
+| 10kΩ + 20kΩ voltage divider on PZEM TX → GPIO1 | PCB trace | PZEM TX outputs 5V; ESP32 GPIO1 max is 3.6V — without divider, GPIO can be damaged |
+| 10kΩ pull-up on relay IN to 3.3V | PCB, IN pin to 3.3V rail | GPIO14 glitches during boot; pull-up holds IN HIGH (relay OFF) until firmware runs |
+| 100µF + 0.1µF decoupling caps on PZEM VCC | PCB near PZEM VCC pin | WiFi TX causes 5V supply spikes that corrupt PZEM's internal address register |
 
-**Modules:**
+### 4.3 Firmware Modules
 
 | File | Purpose |
 |------|---------|
 | `main.c` | FreeRTOS task orchestration and startup |
-| `pzem_sensor.c` | PZEM-004T driver — reads voltage, current, power, energy, frequency |
+| `pzem_sensor.c` | PZEM-004T driver — reads voltage, current, power, energy, PF, frequency |
 | `anomaly_detector.c` | Threshold-based anomaly detection with confirmation logic |
-| `relay_control.c` | Relay open/close with 1s cooldown |
-| `http_client.c` | JSON POST of readings and anomalies to backend |
-| `wifi_provisioning.c` | BLE-based WiFi credential setup (stored in NVS) |
-| `wifi_manager.c` | WiFi connection and auto-reconnect |
+| `relay_control.c` | Relay state machine — ON/OFF/TRIPPED, 1s cooldown |
+| `http_client.c` | JSON POST of readings and anomalies; relay poll and ACK |
+| `wifi_provisioning.c` | SoftAP captive portal for WiFi credential setup (stored in NVS) |
+| `wifi_manager.c` | WiFi connection, auto-reconnect, NTP init on connect |
+| `led_status.c` | Blink pattern driver |
 | `logger.c` | Centralized logging |
 
-**Anomaly Detection Thresholds (`config.h`):**
+### 4.4 Anomaly Detection Thresholds
+
+Compliant with **PEC 2017 (Philippine Electrical Code)** / IEC 60038:
 
 | Anomaly | Condition | Threshold | Action |
 |---------|-----------|-----------|--------|
-| Short Circuit | I_rms spike | > 50A | Immediate relay trip |
-| Overcurrent | I_rms sustained (3 readings) | > 15A | Relay trip |
-| Wire Fire | P_apparent / P_real ratio | > 1.5x with P > 2100W | Relay trip |
-| Overvoltage | V_rms | > 250V | Log event |
-| Undervoltage | V_rms | < 180V | Log event |
-| Overpower | P_real sustained | > 3000W | Log event |
-| Arc Fault | Rapid power fluctuations | Analyzer logic | Log event |
-| Ground Fault | Phase imbalance | Analyzer logic | Log event |
+| Short Circuit | I_rms spike | > 50A | Immediate relay TRIP |
+| Overcurrent | I_rms sustained (3 readings) | > 28A | Relay TRIP |
+| Wire Fire | P_real ≥ 1.5× baseline AND P_real > 2100W | Thermal runaway | Relay TRIP |
+| Overvoltage | V_rms | > 253V (230V + 10%) | Log only |
+| Undervoltage | V_rms | < 207V (230V − 10%) | Log only |
 
-**Relay Command Flow:**
-1. Admin issues command (ON / OFF / RESET) via web dashboard
-2. Backend stores it as `pending` in `relay_commands` table
-3. ESP32 polls `/devices/:id/relay-command` every ~5–10s
-4. ESP32 executes command and ACKs via `/relay-command/ack`
+> **Relay state machine:** TRIPPED cannot be overridden by an "on" command — admin must send "reset" first.
+> Undervoltage does NOT trip the relay; it logs only.
 
-**HTTP Authentication:** `X-API-Key` header (per-device key, stored in NVS)
+### 4.5 WiFi Provisioning
+
+On first boot (or when no credentials are in NVS):
+1. ESP broadcasts SoftAP: **"PAD 4 Setup"** (password: `bluewatt2024`)
+2. User connects and opens `http://192.168.4.1` (captive portal)
+3. Submits WiFi SSID + password (optionally server URL / API key)
+4. ESP saves to NVS, reboots into STA mode
+
+Once in STA mode the local settings page is accessible at:
+- `http://bluewatt.local/` (mDNS)
+- `http://<device-ip>/` (direct IP)
+
+**NVS persists across reflash.** Use `pio run -t erase` to clear stale credentials before fresh provisioning.
+
+### 4.6 NVS Stored Values
+
+| Key | Default (config.h) | Purpose |
+|-----|--------------------|---------|
+| `server_url` | `https://bluewatt-api.onrender.com` | Backend endpoint |
+| `api_key` | `bw_fd0fdbbc...` | Device API key |
+| `device_id` | `bluewatt-004` | Device serial |
+| `wifi_ssid` | `""` | Target AP |
+| `wifi_pass` | `""` | AP password |
+| `static_ip` | `""` | Optional static IP |
+
+NVS values **override** `config.h` defaults at every boot.
+
+### 4.7 LED Status Codes
+
+| Pattern | Meaning |
+|---------|---------|
+| Solid ON | No WiFi, no server |
+| 1 blink / 2s | WiFi connected, server unreachable |
+| 2 blinks / 2s | WiFi + server both connected ✓ |
+
+### 4.8 NTP Time Sync
+
+After WiFi connects, `wifi_manager.c` calls `sntp_init()` pointing to `pool.ntp.org` and `time.cloudflare.com`. `pzem_sensor.c` timestamps readings with `time(NULL)` and falls back to boot-uptime ms if NTP has not yet synced (`now > 1_000_000_000` check).
+
+### 4.9 Relay Command Flow
+
+1. Admin issues command (on / off / reset) via web dashboard
+2. Server stores it as `pending` in `relay_commands` (expiry: 3 min — planned: 10 min)
+3. ESP polls `GET /devices/:id/relay-command` every **5 seconds**
+4. ESP executes command; on success ACKs via `PUT /devices/:id/relay-command/ack`
+5. ACK is retried up to **3 times** with 3s delay between attempts (handles Render cold-start timeouts)
+6. If relay_set_state fails (e.g. TRIPPED trying "on"), command is NOT ACKed — stays pending for next poll
 
 ---
 
@@ -230,6 +262,7 @@ All resistor needs come from the **5V ↔ 3.3V boundary** between PZEM/relay (5V
 | Validation | express-validator 7.0.1 |
 | Logging | winston 3.12.0 + daily-rotate-file |
 | Security | helmet 7.1.0, express-rate-limit 7.2.0 |
+| Email | Nodemailer + Gmail SMTP |
 
 ### 5.2 Database Schema
 
@@ -239,17 +272,17 @@ All resistor needs come from the **5V ↔ 3.3V boundary** between PZEM/relay (5V
 |-------|---------|
 | `users` | Admins and tenants |
 | `devices` | ESP32 devices (device_id, relay_status, last_seen_at) |
-| `device_keys` | Hashed API keys for ESP32 auth |
+| `device_keys` | Plaintext API keys for ESP32 auth (one per device, auto-rotated) |
 | `power_readings` | Raw sensor data (voltage, current, power, timestamp) |
 | `power_aggregates_hourly` | Hourly averages (avg/max/min power, energy_kwh) |
 | `power_aggregates_daily` | Daily summaries with peak hour + anomaly count |
 | `power_aggregates_monthly` | Monthly totals |
 | `anomaly_events` | Detected anomalies with type, severity, resolution |
 | `pads` | Billing units linking device → tenant → owner |
-| `billing_periods` | Monthly bills (energy × rate) |
+| `billing_periods` | Bills generated per schedule period |
 | `payments` | Tenant payment submissions with receipt images |
 | `payment_qr_codes` | Payment destination QR codes (GCash, Maya, etc.) |
-| `relay_commands` | Admin-issued relay commands (pending → acked) |
+| `relay_commands` | Admin-issued relay commands (pending → acked / failed) |
 
 **Relationships:**
 ```
@@ -286,6 +319,7 @@ power_readings → power_aggregates_hourly → power_aggregates_daily → power_
 | POST | `/auth/register` | None | Register user |
 | POST | `/auth/login` | None | Login, receive JWT |
 | POST | `/auth/refresh` | None | Refresh JWT token |
+| POST | `/auth/forgot-password` | None | Send reset email (Gmail SMTP) |
 
 **Devices**
 
@@ -299,6 +333,7 @@ power_readings → power_aggregates_hourly → power_aggregates_daily → power_
 | POST | `/devices/:id/relay-command` | JWT + Admin | Issue relay command |
 | GET | `/devices/:id/relay-command` | API Key | ESP polls pending command |
 | PUT | `/devices/:id/relay-command/ack` | API Key | ESP acknowledges command |
+| GET | `/devices/:id/relay-command/history` | JWT + Admin | Command history |
 
 **Power Data**
 
@@ -358,7 +393,22 @@ power_readings → power_aggregates_hourly → power_aggregates_daily → power_
 | GET | `/sse/events?token=` | JWT | SSE event stream |
 | GET | `/health` | None | Health check |
 
-### 5.4 Services
+### 5.4 Authentication
+
+**JWT (Users/Admins):**
+- Login → `{ token, refreshToken, user }`
+- Header: `Authorization: Bearer <token>`
+- Access token: 24h, Refresh token: 7d
+- Payload: `{ id, email, full_name, role, is_active }`
+
+**API Key (ESP32 Devices):**
+- Format: `bw_` prefix + 64 hex chars
+- Header: `X-API-Key: <key>`
+- Stored **plaintext** in `device_keys` table (compared directly, not bcrypt)
+- Cache TTL: 60 seconds (avoids per-request DB queries)
+- **Auto-rotate on mismatch**: if `device_id` matches a known device but the key doesn't match any stored key, all old keys are deleted and the new key is auto-registered. This handles reflash / NVS regeneration without manual DB cleanup.
+
+### 5.5 Services
 
 **SSE Service** (`sse.service.ts`)
 - Real-time broadcasting to connected clients (in-memory registry)
@@ -366,11 +416,11 @@ power_readings → power_aggregates_hourly → power_aggregates_daily → power_
 - Target: `sendToUser(userId)`, `sendToDevice(deviceId)`, `broadcastToAll()`
 
 **Billing Service** (`billing.service.ts`)
-- Monthly billing auto-generation on 1st of month
-- Bill = `energy_kwh × rate_per_kwh`
-- `due_date = period_end + 7 days`
-- Daily overdue check (status → `overdue`)
-- Manual waive operation
+- Supports `daily`, `weekly`, and `monthly` billing frequency per pad
+- `bill_type`: `electricity` (energy × rate) or `flat_rate`
+- `due_date = period_end + due_offset_days`
+- Energy rounded to 2dp before multiplication — displayed `kWh × rate = displayed amount`
+- **Auto-rollback**: deleting a generated bill rolls `next_period_start` back for regeneration
 
 **Aggregation Service** (`aggregation.service.ts`)
 - Hourly: averages raw readings per device
@@ -382,45 +432,47 @@ power_readings → power_aggregates_hourly → power_aggregates_daily → power_
 - Uploads to organized buckets: `users/{id}/`, `devices/{id}/`, `receipts/{tenantId}/`, `payment-qr/`
 - Returns public URLs for display
 
-### 5.5 Cron Jobs (`jobs/index.ts`)
+### 5.6 Cron Jobs (`jobs/index.ts`)
 
 | Schedule | Task |
 |----------|------|
+| `55 * * * *` | Check billing schedules and generate closed periods |
 | `5 * * * *` | Hourly power aggregation |
 | `10 0 * * *` | Daily aggregation |
 | `20 0 1 * *` | Monthly aggregation |
-| `30 0 1 * *` | Auto-generate billing for all pads |
 | `0 8 * * *` | Mark overdue bills |
 | `0 3 * * 0` | Data cleanup (raw > 30 days, aggregates > 90 days) |
 
-### 5.6 Authentication
+### 5.7 Online Status Threshold
 
-**JWT (Users/Admins):**
-- Login → `{ token, refreshToken, user }`
-- Header: `Authorization: Bearer <token>`
-- Access token: 24h, Refresh token: 7d
-- Payload: `{ id, email, full_name, role, is_active }`
-
-**API Key (ESP32 Devices):**
-- Format: `bw_<random32>` (prefix configurable)
-- Header: `X-API-Key: <key>`
-- Stored bcrypt-hashed in `device_keys` table
+A device is considered **online** if: `Date.now() - last_seen_at < 2 minutes`.
+Checked in the devices page (`client/web_admin/app/(dashboard)/devices/page.tsx`).
 
 ---
 
-## 6. Web Admin Dashboard (`client/web_admin/`)
+## 6. Deployed Devices
+
+| Device ID | Pad | CKS Meter | Notes |
+|-----------|-----|-----------|-------|
+| bluewatt-001 | PAD-1 | #2020351146 | Tenant: Sophie Garcia |
+| bluewatt-002 | PAD-2 | — | Inactive, no tenant |
+| bluewatt-003 | PAD-3 | #2020351142 | Tenant: Reynie Tapnio |
+| bluewatt-004 | PAD-4 | #2020351141 | Tenant: Jassy Halt; PZEM reset ~2026-05-10 (energy_offset: 197.774 kWh) |
+
+---
+
+## 7. Web Admin Dashboard (`client/web_admin/`)
 
 ### Tech Stack
 
 | Category | Library |
 |----------|---------|
-| Framework | Next.js 15.5.9 (App Router) |
+| Framework | Next.js 14 (App Router, `output: standalone`) |
 | UI Library | HeroUI 2.x |
-| Styling | TailwindCSS 4.1.11 |
+| Styling | TailwindCSS |
 | Charts | Recharts |
 | Forms | react-hook-form + zod |
-| HTTP | Axios |
-| Theming | next-themes |
+| HTTP | Axios / SWR |
 | Icons | lucide-react, framer-motion |
 
 ### Pages
@@ -430,24 +482,8 @@ power_readings → power_aggregates_hourly → power_aggregates_daily → power_
 | `/` | Redirects to `/dashboard` |
 | `/(auth)/login` | Login form |
 | `/(dashboard)/dashboard` | Main monitoring dashboard |
-| `/about` | About page |
-| `/blog` | Blog (placeholder) |
-| `/docs` | Documentation |
-| `/pricing` | Pricing table |
-
-### Key Files
-
-| File | Purpose |
-|------|---------|
-| `app/layout.tsx` | Root layout with providers |
-| `app/providers.tsx` | Theme, auth, and query providers |
-| `components/layout/Sidebar.tsx` | Navigation sidebar |
-| `components/shared/StatCard.tsx` | Stat display cards |
-| `components/shared/ConfirmDialog.tsx` | Confirmation modals |
-| `hooks/useAuth.ts` | Auth state (localStorage) |
-| `hooks/useSSE.ts` | SSE event subscription |
-| `lib/api.ts` | Axios client with auth header injection |
-| `types/index.ts` | TypeScript type definitions |
+| `/(dashboard)/devices` | Device list + online status |
+| `/about`, `/blog`, `/docs`, `/pricing` | Static pages |
 
 ### Authentication Flow
 1. POST `/auth/login` → receive JWT + user
@@ -458,7 +494,22 @@ power_readings → power_aggregates_hourly → power_aggregates_daily → power_
 
 ---
 
-## 7. Key TypeScript Types
+## 8. Flutter App (`client/flutter_app/`)
+
+| Category | Details |
+|----------|---------|
+| Version | 1.1.1+75 |
+| State management | Provider |
+| Storage | `flutter_secure_storage` (JWT, user object) |
+| Caching | `shared_preferences` (stale-while-revalidate) |
+| Notifications | `flutter_local_notifications` |
+| Charts | fl_chart |
+| Distribution | Direct APK (Android only, not on Play Store) |
+| API URL | `https://bluewatt-api-ydhd.onrender.com` |
+
+---
+
+## 9. Key TypeScript Types
 
 ```typescript
 interface User {
@@ -481,8 +532,7 @@ interface PowerReading {
 interface AnomalyEvent {
   id: number; device_id: number; timestamp: Date;
   anomaly_type: 'overcurrent' | 'short_circuit' | 'wire_fire' |
-                'overvoltage' | 'undervoltage' | 'overpower' |
-                'arc_fault' | 'ground_fault';
+                'overvoltage' | 'undervoltage';
   severity: 'low' | 'medium' | 'high' | 'critical';
   relay_tripped: boolean; is_resolved: boolean;
 }
@@ -490,6 +540,9 @@ interface AnomalyEvent {
 interface Pad {
   id: number; name: string; device_id?: number;
   tenant_id?: number; owner_id: number; rate_per_kwh: number;
+  bill_type: 'electricity' | 'flat_rate';
+  frequency: 'daily' | 'weekly' | 'monthly';
+  due_offset_days: number;
 }
 
 interface BillingPeriod {
@@ -510,21 +563,24 @@ interface Payment {
 interface RelayCommand {
   id: number; device_id: number; command: 'on' | 'off' | 'reset';
   issued_by: number; status: 'pending' | 'acked' | 'failed';
+  expires_at: Date;
 }
 ```
 
 ---
 
-## 8. Billing & Payment Workflow
+## 10. Billing & Payment Workflow
 
 ```
 1. ESP32 reads energy every 1s
        ↓
 2. Raw readings aggregated hourly → daily → monthly (cron)
        ↓
-3. 1st of month: Billing auto-generated
-   amount_due = energy_kwh × pad.rate_per_kwh
-   due_date   = period_end + 7 days
+3. Cron at :55 every hour: check billing schedules
+   Closed period → generate billing_period record
+   amount_due = energy_kwh × pad.rate_per_kwh (electricity)
+             or flat_rate (flat_rate type)
+   due_date   = period_end + due_offset_days
        ↓
 4. Tenant views bill → selects payment method → uploads receipt image
    → POST /payments/submit → stored as 'pending_verification'
@@ -539,7 +595,7 @@ interface RelayCommand {
 
 ---
 
-## 9. Environment Variables
+## 11. Environment Variables
 
 **Backend (`server/.env`):**
 
@@ -567,8 +623,14 @@ JWT_EXPIRES_IN=24h
 JWT_REFRESH_SECRET=<secret>
 JWT_REFRESH_EXPIRES_IN=7d
 
+# SMTP (Gmail app password for forgot-password email)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=<gmail>
+SMTP_PASS=<app-password>
+
 # CORS
-CORS_ORIGIN=http://localhost:3001,https://admin.bluewatt.com
+CORS_ORIGIN=http://localhost:3001,https://bluewatt-admin-cqis.onrender.com
 ```
 
 **Frontend (`client/web_admin/.env.local`):**
@@ -578,64 +640,41 @@ NEXT_PUBLIC_API_URL=http://localhost:3000/api/v1
 NEXT_PUBLIC_SITE_NAME=BlueWatt
 ```
 
-**ESP32 (NVS runtime config):**
-
-```
-server_url   → HTTP endpoint for backend
-api_key      → Device API key
-```
-
 ---
 
-## 10. Deployment
+## 12. Deployment
 
-| Component | Target |
-|-----------|--------|
-| Backend | Render (render.yaml configured) |
+| Component | URL / Target |
+|-----------|-------------|
+| API Server | https://bluewatt-api-ydhd.onrender.com |
+| Proxy (ESP points here) | https://bluewatt-api.onrender.com |
+| Web Admin | https://bluewatt-admin-cqis.onrender.com |
 | Database | Aiven Cloud MySQL |
 | File Storage | Supabase Storage |
-| Web Admin | Vercel (recommended for Next.js) |
-| ESP32 Firmware | PlatformIO (UART flash or OTA) |
+| Flutter App | Direct APK distribution |
+
+**Render free tier note:** Both the proxy and the ydhd server sleep after inactivity. Cold starts take up to 30s, which can consume the ESP's entire HTTP timeout. The ACK retry (3× with 3s delay) was added to handle this.
 
 ---
 
-## 11. Completeness Assessment
+## 13. Known Limitations
 
-### Complete
-- Core REST API (all CRUD operations)
-- ESP32 firmware: power reading, anomaly detection, relay control, HTTP client, WiFi provisioning
-- Real-time SSE event streaming
-- JWT + API Key dual authentication
-- Database schema with migrations (7 migrations)
-- Billing auto-generation from energy aggregates
-- Payment submission + admin receipt verification
-- Payment QR code management
-- Data aggregation pipeline (hourly → daily → monthly)
-- Background cron jobs
-- Rate limiting, security headers, CORS
-- File uploads via Supabase
-
-### Partial / In Progress
-- Web admin dashboard (login + minimal dashboard page; full feature pages not confirmed)
-- Reports/analytics (routes + controller files exist)
-- Flutter mobile app (project structure only, Dart source not confirmed)
-
-### Not Yet Implemented
-- OTA firmware updates
-- Email / SMS notifications
-- CSV/PDF export for reports
-- Multi-language support
-- Device onboarding wizard UI
-- Webhook integrations
+- **No offline data buffering**: Power queue holds only 5 readings (~50s). Readings during disconnection are dropped (PZEM hardware kWh counter is safe and persists).
+- **Render free tier cold starts**: Up to 30s wakeup; mitigated by ACK retry but first POST after sleep may time out.
+- **Single ESP per pad**: No hardware redundancy.
+- **Android only**: APK not on Play Store — distributed directly.
+- **Relay command expiry**: Currently 3 minutes; should be 10 minutes to survive a Render cold start + 3 ACK retries.
 
 ---
 
-## 12. Notable Design Decisions
+## 14. Notable Design Decisions
 
-1. **Pads decouple billing from devices** — a "pad" (billing unit) links one device to one tenant under one owner, allowing device reassignment without losing billing history.
-2. **Aggregation pipeline** — raw readings (30-day retention) are pre-aggregated into hourly/daily/monthly tables for fast report queries without expensive full scans.
-3. **Relay command polling** — ESP32 polls for commands rather than receiving push (simpler for embedded, works behind NAT).
-4. **In-memory SSE registry** — simple and effective for single-server deployments; would need Redis pub/sub for horizontal scaling.
-5. **Confirmation logic** — anomaly detector requires 3 consecutive threshold breaches before triggering, reducing false positives.
-6. **Dual auth** — JWT for human users, API key (bcrypt-hashed) for devices; kept intentionally separate in middleware.
-7. **Philippines-specific** — rate defaults, voltage range (180–250V, nominal 220V), payment methods (GCash, Maya) all reflect local context.
+1. **Pads decouple billing from devices** — a "pad" links one device to one tenant under one owner, allowing device reassignment without losing billing history.
+2. **Aggregation pipeline** — raw readings (30-day retention) are pre-aggregated into hourly/daily/monthly tables for fast report queries.
+3. **Relay command polling** — ESP32 polls every 5s rather than receiving push; simpler for embedded, works behind NAT.
+4. **ACK retry** — 3 attempts with 3s delay each; ensures commands stuck on a Render cold-start timeout are eventually ACKed rather than staying pending forever.
+5. **API key auto-rotation** — if device_id matches but key mismatches, old keys are deleted and new key registered automatically. Handles reflash without manual DB cleanup.
+6. **NTP fallback** — timestamps fall back to boot-uptime ms if NTP hasn't synced yet (`now > 1_000_000_000` check), so power readings are never blocked by clock sync.
+7. **Confirmation logic** — overcurrent requires 3 consecutive readings above threshold to reduce false positives from transient spikes.
+8. **Philippines-specific** — PEC 2017 voltage thresholds (207V–253V @ 230V nominal), 60Hz, payment methods (GCash, Maya).
+9. **In-memory SSE registry** — simple and effective for single-server deployments; would need Redis pub/sub for horizontal scaling.

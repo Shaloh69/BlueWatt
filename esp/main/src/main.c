@@ -236,7 +236,23 @@ static void task_http_client(void *pvParam)
                     const char   *rs_str = (rs == RELAY_STATE_ON)     ? "on"      :
                                            (rs == RELAY_STATE_TRIPPED) ? "tripped" : "off";
                     ESP_LOGI(TAG_MAIN, "Relay is now %s — ACKing command %d", rs_str, cmd_id);
-                    http_ack_relay_command(cmd_id, rs_str);
+                    // Retry ACK up to 3 times — a single timeout (e.g. Render cold start)
+                    // would otherwise leave the command stuck as pending forever.
+                    esp_err_t ack_err = ESP_FAIL;
+                    for (int attempt = 1; attempt <= 3; attempt++) {
+                        ack_err = http_ack_relay_command(cmd_id, rs_str);
+                        if (ack_err == ESP_OK) {
+                            ESP_LOGI(TAG_MAIN, "ACK sent for command %d (attempt %d)", cmd_id, attempt);
+                            break;
+                        }
+                        ESP_LOGW(TAG_MAIN, "ACK attempt %d failed (%s) — retrying in 3s",
+                                 attempt, esp_err_to_name(ack_err));
+                        vTaskDelay(pdMS_TO_TICKS(3000));
+                    }
+                    if (ack_err != ESP_OK) {
+                        ESP_LOGE(TAG_MAIN, "ACK for command %d failed after 3 attempts — server will re-queue",
+                                 cmd_id);
+                    }
                 }
             }
         }
