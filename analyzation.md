@@ -184,16 +184,45 @@ Status LED
 
 Compliant with **PEC 2017 (Philippine Electrical Code)** / IEC 60038:
 
+**Protection policy:** the relay is rated 30 A (SLA-05VDC-SL-C) and 30 A is the hard
+ceiling this device protects. Any load **at or below 30 A is legal and never trips**.
+Only a *sustained current above 30 A* opens the relay.
+
 | Anomaly | Condition | Threshold | Action |
 |---------|-----------|-----------|--------|
-| Short Circuit | I_rms spike | > 50A | Immediate relay TRIP |
-| Overcurrent | I_rms sustained (3 readings) | > 28A | Relay TRIP |
-| Wire Fire | P_real ≥ 1.5× baseline AND P_real > 2100W | Thermal runaway | Relay TRIP |
-| Overvoltage | V_rms | > 253V (230V + 10%) | Log only |
-| Undervoltage | V_rms | < 207V (230V − 10%) | Log only |
+| Short Circuit | I_rms sustained (2 readings, ~2s) | > 80A | Relay TRIP |
+| Overcurrent | I_rms sustained (5 readings, ~5s) | > 30A (strictly) | Relay TRIP |
+| Wire Fire | P_avg > 1.5× baseline AND P_avg > 6900W | Thermal runaway | **Report only** |
+| Overvoltage | V_rms | > 253V (230V + 10%) | Report only |
+| Undervoltage | V_rms | < 207V (230V − 10%) | Report only |
 
 > **Relay state machine:** TRIPPED cannot be overridden by an "on" command — admin must send "reset" first.
-> Undervoltage does NOT trip the relay; it logs only.
+> **Only short circuit and overcurrent operate the relay.** `anomaly_event_t.relay_triggered`
+> is the single source of truth — `task_relay_control` acts on that flag, not on the anomaly type.
+> Non-tripping anomalies are rate-limited to one POST per `ANOMALY_REPEAT_REPORT_S` (60s) so a
+> sustained brownout cannot flood `/api/v1/anomaly-events`.
+
+**Why these numbers (230V / 60Hz, PEC 2017):**
+
+| Load | P | PF | S = P/PF | I = S/V |
+|------|---|----|----------|---------|
+| Electric heater | 1500 W | 1.00 | 1500 VA | 6.52 A |
+| Air fryer | 1500 W | 1.00 | 1500 VA | 6.52 A |
+| Aircon 1.0 HP non-inverter | 1000 W | 0.85 | 1176 VA | 5.12 A |
+| **Total** | **4000 W** | 0.96 | **4176 VA** | **18.16 A** |
+
+That reference load is 61% of the 30 A ceiling and must run indefinitely without a cutoff.
+Short circuit sits at 80 A because a 1.5 HP compressor's locked-rotor inrush (LRA ≈ 49 A on top
+of ~13 A resistive ≈ 62 A for ~0.2 s) must not be mistaken for a fault; 80 A also stays under
+the PZEM-004T's 100 A ceiling. The 2-reading confirm makes a single inrush sample harmless.
+
+> **Scope limit:** 30 A protects the **relay**, not the branch conductor. 2.0 mm² THHN is 20 A
+> and 3.5 mm² is 30 A under PEC 2017 Sec. 240 — on a circuit wired below 30 A the house breaker
+> is the protective device and opens first. Stated here as a known limitation.
+
+> **Detection limit:** true arc-fault detection requires kHz–MHz current-signature analysis
+> (UL 1699 / IEC 62606). The PZEM-004T polls RMS at 1 Hz, so the "wire fire" rule can only
+> indicate *sustained abnormal power*, which is why it reports rather than trips.
 
 ### 4.5 WiFi Provisioning
 

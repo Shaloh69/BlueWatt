@@ -48,17 +48,41 @@
 // ============================================================
 // Anomaly Detection Thresholds
 // PEC 2017 Section 240: overcurrent protection must not exceed conductor ampacity.
-// Relay is rated 30A (SLA-05VDC-SL-C); threshold kept at 28A (2A safety margin).
-// Wire gauge of the installation determines true PEC ampacity limit —
-// if 2.0mm² (20A) wiring is used, recommend lowering to 18–20A in future.
+//
+// POLICY: the relay is rated 30A (SLA-05VDC-SL-C) and 30A is the hard ceiling
+// this device protects.  Anything AT OR BELOW 30A is treated as a legal load and
+// must NEVER trip the relay.  Only a load sustained ABOVE 30A trips.
+//
+//   30A @ 230V = 6900 VA  — the protected ceiling.
+//   Reference load (1.5kW heater + 1.5kW air fryer + 1.0HP aircon):
+//       P = 4000 W, S = 4176 VA, I = 18.2 A  → 61% of the 30A limit.
+//   That combination is expected to run indefinitely without tripping.
+//
+// NOTE: 30A only protects the RELAY.  The branch conductor sets the real PEC
+// ampacity limit — 2.0mm² THHN is 20A and 3.5mm² is 30A.  On a circuit wired
+// below 30A the house breaker is the protective device and will open first;
+// this threshold is deliberately aligned to the relay, not the wire.
 // ============================================================
-#define OVERCURRENT_THRESHOLD_A     28.0f  // 30A relay - 2A margin (PEC Sec. 240)
-#define SHORT_CIRCUIT_THRESHOLD_A   50.0f  // Severe fault detection (PZEM max 100A)
-#define MAX_POWER_W                 3000.0f // Practical room load limit (not a PEC value)
-#define WIRE_FIRE_POWER_RATIO       1.5f   // 1.5× baseline triggers thermal alert
-#define WIRE_FIRE_MIN_POWER_W       2100.0f // 70% of MAX_POWER_W before ratio check
-#define OVERCURRENT_CONFIRM_COUNT   3       // Consecutive readings to confirm (~3s)
-#define FIRE_HISTORY_SIZE           10      // Rolling window for thermal runaway
+#define OVERCURRENT_THRESHOLD_A     30.0f  // Trip only ABOVE this — exactly 30.000A does NOT trip
+#define OVERCURRENT_CONFIRM_COUNT   9      // 9 consecutive 1s reads => ~9s sustained before trip
+
+// Short circuit: must clear a running aircon's locked-rotor inrush.
+// Worst realistic case measured: 1.5HP compressor LRA ~49A + 13A resistive = ~62A
+// for ~0.2s.  80A sits above that and below the PZEM-004T 100A ceiling.
+#define SHORT_CIRCUIT_THRESHOLD_A   80.0f  // Severe fault detection (PZEM max 100A)
+#define SHORT_CIRCUIT_CONFIRM_COUNT 2      // 2 reads — rejects a single-sample inrush spike
+
+// High-load / thermal warning. REPORT-ONLY: this never operates the relay.
+// Floor is pinned to the same 30A ceiling (30A x 230V = 6900W) so it can never
+// fire on a legal load.  Reported to the server as anomaly_type "WIRE_FIRE".
+#define WIRE_FIRE_POWER_RATIO       1.5f    // 1.5x adaptive baseline AND above the watt floor
+#define WIRE_FIRE_MIN_POWER_W       6900.0f // 30A x 230V — matches OVERCURRENT_THRESHOLD_A
+#define FIRE_HISTORY_SIZE           10      // Rolling 10s window for thermal runaway
+
+// Non-tripping anomalies (wire fire, over/undervoltage) repeat at most this often.
+// Without this a brownout below VOLTAGE_MIN_V would POST one event every second.
+// Tripping anomalies (short circuit, overcurrent) are never throttled.
+#define ANOMALY_REPEAT_REPORT_S     60
 
 // ============================================================
 // WiFi Configuration
@@ -75,7 +99,7 @@
 #define HTTP_TIMEOUT_MS         30000                // 30s — Render cold starts can be slow
 #define HTTP_API_KEY            "bw_fd0fdbbc6e3f51a520eba4d733df02ac88ffd559f7c4f4837dcc45c06b138a2b"
 #define HTTP_POWER_INTERVAL     10
-#define HTTP_DEVICE_ID          "bluewatt-004"
+#define HTTP_DEVICE_ID          "bluewatt-001"
 
 // ============================================================
 // NVS

@@ -93,22 +93,17 @@ static void task_relay_control(void *pvParam)
 
     while (1) {
         if (xQueueReceive(queue_anomaly_events, &event, portMAX_DELAY) == pdTRUE) {
-            switch (event.type) {
-                case ANOMALY_SHORT_CIRCUIT:
-                case ANOMALY_OVERCURRENT:
-                case ANOMALY_WIRE_FIRE:
-                    relay_emergency_cutoff(event.type);
-                    break;
-
-                case ANOMALY_OVERVOLTAGE:
-                case ANOMALY_UNDERVOLTAGE:
-                    // Voltage anomalies: log only, relay unchanged
-                    LOG_WARN(TAG_MAIN, "Voltage anomaly: %s (%.1fV)",
-                             anomaly_type_to_string(event.type), event.v_rms);
-                    break;
-
-                default:
-                    break;
+            // event.relay_triggered is the detector's single source of truth:
+            // ONLY short circuit and sustained overcurrent (I > OVERCURRENT_THRESHOLD_A
+            // for OVERCURRENT_CONFIRM_COUNT consecutive reads) set it. High-load
+            // and voltage anomalies are reported to the server but never cut power,
+            // so a legal load at or below 30 A can never open the relay.
+            if (event.relay_triggered) {
+                relay_emergency_cutoff(event.type);
+            } else {
+                LOG_WARN(TAG_MAIN, "Warning (no cutoff): %s  I=%.2fA  V=%.1fV  P=%.1fW",
+                         anomaly_type_to_string(event.type),
+                         event.i_rms, event.v_rms, event.power);
             }
         }
     }
