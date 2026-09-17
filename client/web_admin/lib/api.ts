@@ -36,8 +36,15 @@ api.interceptors.response.use(
 // ── Helpers ───────────────────────────────────────────────────────────────────
 export function getErrorMessage(err: unknown): string {
   if (axios.isAxiosError(err)) {
-    const data = err.response?.data as { message?: string } | undefined;
-    return data?.message ?? err.message;
+    // The API returns failures as { success: false, error: { code, message } }
+    // (see server/src/utils/apiResponse.ts). Reading data.message instead of
+    // data.error.message silently fell through to axios's generic text, so every
+    // toast showed "Request failed with status code 4xx" rather than the reason.
+    const data = err.response?.data as
+      | { error?: { code?: string; message?: string }; message?: string }
+      | undefined;
+
+    return data?.error?.message ?? data?.message ?? err.message;
   }
   if (err instanceof Error) return err.message;
   return "An unexpected error occurred";

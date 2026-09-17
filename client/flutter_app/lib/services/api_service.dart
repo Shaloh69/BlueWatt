@@ -38,6 +38,22 @@ class ApiService {
     };
   }
 
+  /// Extract the server's error message.
+  ///
+  /// The API returns failures as { success: false, error: { code, message } }
+  /// (see server/src/utils/apiResponse.ts). Reading decoded['message'] missed
+  /// it entirely and fell back to a generic string, hiding the real reason.
+  static String _errorMessage(Map<String, dynamic> decoded, String fallback) {
+    final error = decoded['error'];
+    if (error is Map<String, dynamic>) {
+      final msg = error['message'];
+      if (msg is String && msg.isNotEmpty) return msg;
+    }
+    final top = decoded['message'];
+    if (top is String && top.isNotEmpty) return top;
+    return fallback;
+  }
+
   static Map<String, dynamic> _body(http.Response res) {
     Map<String, dynamic> decoded;
     try {
@@ -55,7 +71,7 @@ class ApiService {
     if (res.statusCode >= 400) {
       if (res.statusCode == 401) onUnauthorized?.call();
       throw ApiException(
-        decoded['message'] as String? ?? 'Request failed',
+        _errorMessage(decoded, 'Request failed'),
         res.statusCode,
       );
     }
@@ -151,7 +167,7 @@ class ApiService {
     if (res.statusCode >= 400) {
       final decoded = jsonDecode(res.body) as Map<String, dynamic>;
       throw ApiException(
-        decoded['message'] as String? ?? 'Upload failed',
+        _errorMessage(decoded, 'Upload failed'),
         res.statusCode,
       );
     }
