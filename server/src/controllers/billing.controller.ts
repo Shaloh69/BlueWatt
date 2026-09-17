@@ -8,6 +8,7 @@ import { sendSuccess } from '../utils/apiResponse';
 import { asyncHandler } from '../utils/asyncHandler';
 import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
 import { cache } from '../services/cache.service';
+import { toDateOnly } from '../utils/date';
 
 /** Drop all billing cache entries so the next GET sees fresh data. */
 function bustBillingCache(): void {
@@ -81,10 +82,59 @@ export const generateBilling = asyncHandler(
         ERROR_CODES.VALIDATION_ERROR
       );
     }
-    const periodDate = new Date(period_start);
-    await BillingService.generateBilling(parseInt(pad_id, 10), periodDate, {
-      periodEnd: period_end ? new Date(period_end) : undefined,
-      dueDate: due_date ? new Date(due_date) : undefined,
+
+    const padId = parseInt(pad_id, 10);
+    if (Number.isNaN(padId)) {
+      throw new AppError(
+        'pad_id must be a number',
+        HTTP_STATUS.BAD_REQUEST,
+        ERROR_CODES.VALIDATION_ERROR
+      );
+    }
+
+    // Parse dates here rather than in the service: an unparseable value used to
+    // reach .toISOString() downstream and surface as an opaque 500.
+    const parseDate = (value: unknown, field: string): Date => {
+      const d = new Date(value as string);
+      if (Number.isNaN(d.getTime())) {
+        throw new AppError(
+          `${field} is not a valid date`,
+          HTTP_STATUS.BAD_REQUEST,
+          ERROR_CODES.VALIDATION_ERROR
+        );
+      }
+      return d;
+    };
+
+    const periodDate = parseDate(period_start, 'period_start');
+    const periodEnd = period_end ? parseDate(period_end, 'period_end') : undefined;
+    const dueDate = due_date ? parseDate(due_date, 'due_date') : undefined;
+
+    if (periodEnd && periodEnd < periodDate) {
+      throw new AppError(
+        'period_end cannot be before period_start',
+        HTTP_STATUS.BAD_REQUEST,
+        ERROR_CODES.VALIDATION_ERROR
+      );
+    }
+
+    // billing_periods has UNIQUE (pad_id, period_start, bill_type) — only one
+    // electricity bill per pad per period start. Name the clashing bill instead
+    // of letting the INSERT fail with a bare duplicate-key error.
+    const existing = await BillingPeriodModel.findForPeriodType(padId, periodDate, 'electricity');
+    if (existing) {
+      throw new AppError(
+        `An electricity bill already exists for this pad starting ` +
+          `${toDateOnly(period_start)} (bill #${existing.id}). ` +
+          `Delete that bill first, or choose a different period start.`,
+        HTTP_STATUS.CONFLICT,
+        ERROR_CODES.DUPLICATE_ENTRY
+      );
+    }
+
+    await BillingService.generateBilling(padId, periodDate, {
+      periodEnd,
+      dueDate,
       allowDuplicate: true,
     });
     bustBillingCache();
@@ -129,8 +179,8 @@ export const deleteBilling = asyncHandler(
 
     // Roll back any schedule whose next_period_start is exactly period_end + 1 day
     // (i.e. the deleted bill was the last generated period for that schedule)
-    const periodEndStr = new Date(bill.period_end).toISOString().split('T')[0];
-    await BillingScheduleModel.rollbackIfLastPeriod(bill.pad_id, periodEndStr, new Date(bill.period_start).toISOString().split('T')[0]);
+    const periodEndStr = toDateOnly(bill.period_end);
+    await BillingScheduleModel.rollbackIfLastPeriod(bill.pad_id, periodEndStr, toDateOnly(bill.period_start));
 
     bustBillingCache();
     sendSuccess(res, { id: bill.id }, HTTP_STATUS.OK, 'Bill deleted');

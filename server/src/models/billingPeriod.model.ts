@@ -1,6 +1,7 @@
 import { pool } from '../database/connection';
 import { BillingPeriod } from '../types/models';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { toDateOnly } from '../utils/date';
 
 export class BillingPeriodModel {
   static async create(
@@ -119,12 +120,33 @@ export class BillingPeriodModel {
     return rows;
   }
 
-  static async existsForPeriod(padId: number, periodStart: Date): Promise<boolean> {
+  /**
+   * Find an existing bill for this pad + period start + bill type.
+   *
+   * bill_type MUST be part of the lookup: the UNIQUE key is
+   * (pad_id, period_start, bill_type), so an existing electricity bill must not
+   * block generating a rent bill for the same pad and period.
+   */
+  static async findForPeriodType(
+    padId: number,
+    periodStart: Date | string,
+    billType: 'electricity' | 'rent' = 'electricity'
+  ): Promise<{ id: number } | null> {
+    const startStr = toDateOnly(periodStart);
     const [rows] = await pool.execute<RowDataPacket[]>(
-      `SELECT id FROM billing_periods WHERE pad_id = ? AND period_start = ? LIMIT 1`,
-      [padId, periodStart]
+      `SELECT id FROM billing_periods
+        WHERE pad_id = ? AND period_start = ? AND bill_type = ? LIMIT 1`,
+      [padId, startStr, billType]
     );
-    return rows.length > 0;
+    return rows.length > 0 ? { id: rows[0].id as number } : null;
+  }
+
+  static async existsForPeriod(
+    padId: number,
+    periodStart: Date,
+    billType: 'electricity' | 'rent' = 'electricity'
+  ): Promise<boolean> {
+    return (await BillingPeriodModel.findForPeriodType(padId, periodStart, billType)) !== null;
   }
 
   static async markPaid(id: number): Promise<void> {

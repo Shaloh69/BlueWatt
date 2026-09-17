@@ -17,11 +17,12 @@ import { BillingPeriodModel } from '../models/billingPeriod.model';
 import { StayModel } from '../models/stay.model';
 import { PowerAggregateModel } from '../models/powerAggregate.model';
 import { logger } from '../utils/logger';
+import { toDateOnly } from '../utils/date';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function toDateStr(d: Date): string {
-  return d.toISOString().split('T')[0];
+  return toDateOnly(d);
 }
 
 /** Add N daily-cycle units to a date (minute-precise clone) */

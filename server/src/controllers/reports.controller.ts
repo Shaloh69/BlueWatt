@@ -7,6 +7,7 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { HTTP_STATUS, ERROR_CODES } from '../config/constants';
 import { pool } from '../database/connection';
 import { RowDataPacket } from 'mysql2';
+import { toDateOnly } from '../utils/date';
 
 /** GET /reports/hourly/:deviceId?date=YYYY-MM-DD */
 export const getHourlyReport = asyncHandler(
@@ -42,7 +43,7 @@ export const getDailyReport = asyncHandler(
       const today = now.toISOString().split('T')[0]; // 'YYYY-MM-DD'
       const hasToday = data.some((r) => {
         const d =
-          r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date).slice(0, 10);
+          r.date instanceof Date ? toDateOnly(r.date) : String(r.date).slice(0, 10);
         return d === today;
       });
       if (!hasToday) {
@@ -88,7 +89,7 @@ export const getAllDailyReport = asyncHandler(
     const today = now.toISOString().split('T')[0];
     const hasToday = data.some((r) => {
       const d =
-        r.date instanceof Date ? r.date.toISOString().split('T')[0] : String(r.date).slice(0, 10);
+        r.date instanceof Date ? toDateOnly(r.date) : String(r.date).slice(0, 10);
       return d === today;
     });
     if (!hasToday) {

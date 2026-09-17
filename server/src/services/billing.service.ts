@@ -5,6 +5,7 @@ import { StayModel } from '../models/stay.model';
 import { PowerAggregateModel } from '../models/powerAggregate.model';
 import { DeviceModel } from '../models/device.model';
 import { logger } from '../utils/logger';
+import { toDateOnly } from '../utils/date';
 
 export class BillingService {
   /**
@@ -39,8 +40,8 @@ export class BillingService {
         return d;
       })();
 
-    const startStr = periodStart.toISOString().split('T')[0];
-    const endStr = periodEnd.toISOString().split('T')[0];
+    const startStr = toDateOnly(periodStart);
+    const endStr = toDateOnly(periodEnd);
 
     // Skip if already exists (bypassed for manual admin generation)
     if (!opts?.allowDuplicate) {
@@ -122,7 +123,7 @@ export class BillingService {
 
   private static async processOneSchedule(schedule: any): Promise<void> {
     // next_period_start may be a Date object (mysql2 default) or a string — normalize to YYYY-MM-DD
-    const dateOnly = new Date(schedule.next_period_start).toISOString().split('T')[0];
+    const dateOnly = toDateOnly(schedule.next_period_start);
     const periodStart = new Date(dateOnly + 'T00:00:00Z');
 
     const periodEnd = new Date(periodStart);
@@ -137,7 +138,7 @@ export class BillingService {
     }
 
     const todayStr = new Date().toISOString().split('T')[0];
-    const periodEndStr = periodEnd.toISOString().split('T')[0];
+    const periodEndStr = toDateOnly(periodEnd);
 
     // Electricity bills need the period to be fully closed (all sensor data available)
     if (schedule.bill_type === 'electricity' && periodEndStr >= todayStr) {
@@ -153,7 +154,7 @@ export class BillingService {
       return;
     }
 
-    const startStr = periodStart.toISOString().split('T')[0];
+    const startStr = toDateOnly(periodStart);
     const dueDate = new Date(periodEnd);
     dueDate.setUTCDate(dueDate.getUTCDate() + schedule.due_date_offset_days);
 
@@ -198,7 +199,7 @@ export class BillingService {
 
     const nextStart = new Date(periodEnd);
     nextStart.setUTCDate(nextStart.getUTCDate() + 1);
-    await BillingScheduleModel.updateNextPeriod(schedule.id, nextStart.toISOString().split('T')[0]);
+    await BillingScheduleModel.updateNextPeriod(schedule.id, toDateOnly(nextStart));
 
     logger.info(
       `[schedule] ${schedule.id}: generated ${schedule.bill_type} bill ` +
