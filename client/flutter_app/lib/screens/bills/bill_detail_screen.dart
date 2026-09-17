@@ -91,11 +91,6 @@ class BillDetailScreen extends StatelessWidget {
                     value: '${liveBill.energyKwh.toStringAsFixed(3)} kWh',
                   ),
                   const Divider(color: kBorderColor, height: 24),
-                  _DetailRow(
-                    label: 'Rate per kWh',
-                    value: fmt.format(liveBill.ratePerKwh),
-                  ),
-                  const Divider(color: kBorderColor, height: 24),
                 ],
                 if (liveBill.isRent) ...[
                   _DetailRow(label: 'Type', value: 'Monthly Rent'),
